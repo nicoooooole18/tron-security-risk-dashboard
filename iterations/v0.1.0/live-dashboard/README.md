@@ -1,4 +1,6 @@
-# JustLend 第三方冻结风险实时看板 MVP
+# JustLend 第三方冻结风险实时看板
+
+这是一个零依赖 Node.js 实时看板，用于监控 JustLend 在 TRON 链上的第三方冻结风险、用户黑名单交集和 HTX SP 风险路径。
 
 ## 启动
 
@@ -12,25 +14,61 @@ node server.js
 http://localhost:8787
 ```
 
+VPS 部署时建议配置：
+
+```env
+TRON_PRO_API_KEY=your_trongrid_key
+HOST=0.0.0.0
+PORT=8787
+```
+
+## 看板结构
+
+- 顶部风险状态：展示当前是否存在冻结命中、用户黑名单交集或 HTX SP 风险路径。
+- 指标卡片：USDT 黑名单、USDC 黑名单、近期高风险流入、HTX SP 识别。
+- 地址风险监控：
+  - 协议地址监控：默认 tab，检查 JustLend 自身地址。
+  - 用户地址监控：检查 JustLend 用户地址库与 USDT / USDC 黑名单交集。
+- 链上流入事件：展示 watched address 的近期 USDT 流入，支持仅看命中。
+- 配置状态：页面底部按钮打开弹窗，查看 HTX seed、平台中转 seed、TronGrid Key 状态和监控地址数。
+
 ## 当前接入
 
-- TRON USDT `getBlackListStatus(address)`：检查 watched address 是否命中 USDT blacklist。
-- TRON USDC `isBlacklisted(address)`：检查 watched address 是否命中 USDC blacklist；接口不可用时展示“未知”。
-- 用户黑名单交集：优先从 `userAddressPool.onchainSources` 配置的 jToken Transfer 事件发现候选地址，并用 `balanceOf(address) > 0` 过滤当前 holder；`userAddressPool.addresses` 作为手工补充。随后逐个检查 USDT / USDC blacklist。
-- Tronscan TRC20 transfers：读取 watched address 的近期 USDT 流入。
-- HTX SP-1 / SP-2：优先复用既有 CEX 地址库，`config.json` 中的手工地址作为补充。SP-2 必须证明 HTX -> 平台地址 -> 钱包 -> JustLend 的完整链路。
+- 协议地址：31 个 JustLend 协议地址，包括核心合约、治理/Oracle 合约和 jToken market。
+- 用户地址库：从多个 jToken Transfer 事件增量发现地址，维护到 `data/justlend-address-book.json`。
+- USDT 黑名单：调用 TRON USDT `getBlackListStatus(address)`。
+- USDC 黑名单：调用 TRON USDC `isBlacklisted(address)`。
+- HTX SP：
+  - `HTX_SP0_direct`：HTX seed 直接流入 JustLend watched address。
+  - `HTX_SP1_wallet_inflow`：HTX -> TRON 钱包 -> JustLend。
+  - `HTX_SP2_platform_proven`：HTX -> 其他平台 -> TRON 钱包 -> JustLend。
+  - 单纯其他平台 -> 钱包 -> JustLend 只作为上下文，不计入 HTX 风险。
+
+## 后台快照
+
+页面不再直接等待链上全量扫描。
+
+- 服务启动后后台生成风险快照。
+- `/api/snapshot` 返回最近一次缓存快照。
+- 刷新按钮只触发后台刷新，不阻塞页面。
+- 默认每 300 秒后台刷新一次，可通过 `dashboard.snapshotRefreshSeconds` 或 `SNAPSHOT_REFRESH_SECONDS` 调整。
+- 运行时快照写入 `data/live-snapshot-cache.json`，该文件已忽略，不提交。
 
 ## 配置说明
 
-- `watchedAddresses`：JustLend market、reserve、treasury、bot、admin 等需要检查的地址。
-- `userAddressPool.onchainSources`：链上用户地址池来源；当前 MVP 接入 `jUSDT holder`，从近期 jUSDT Transfer 候选中调用 `balanceOf` 过滤当前持仓地址。
-- `userAddressPool.addresses`：手工补充的 JustLend 当前用户地址池，支持字符串地址或 `{ address, role, market, source, note }` 对象。
-- `cexAddressBookPath`：既有 CEX 地址库路径，当前指向 `tron-monitor-dashboard/data/cex-address-book.json`。
+- `watchedAddresses`：JustLend 协议地址清单。
+- `userAddressPool.addressBookPath`：JustLend 用户地址库路径。
+- `userAddressPool.autoJTokenSources`：从 watched jToken market 自动派生用户地址发现来源。
+- `userAddressPool.scanLimit`：每轮用户黑名单扫描地址数。
+- `cexAddressBookPath`：既有 CEX 地址库路径。
 - `riskSources.useCexAddressBook`：是否启用既有 CEX 地址库。
-- `riskSources.htxSeedAddresses`：经确认的 HTX / Huobi Global S.A. TRON 地址，作为地址库之外的手工补充。
-- `riskSources.intermediatePlatformAddresses`：经确认的平台中转地址，作为地址库之外的手工补充。
-- `dashboard.riskThresholdUsd`：大额观察阈值，只做辅助标签，不进入第三方冻结风险等级。
+- `riskSources.htxSeedAddresses`：手工补充 HTX / Huobi seed 地址。
+- `riskSources.intermediatePlatformAddresses`：手工补充其他平台中转地址。
+- `dashboard.riskThresholdUsd`：大额观察阈值，只做辅助标签。
 
-未接入地址库且未配置 HTX seed 时，看板仍读取真实链上流入和冻结状态，但不会伪造 SP-1 / SP-2 命中。
+## 安全说明
 
-没有冻结命中、没有 SP-1、没有 SP-2 时，看板显示为 `未命中`，不再使用 `P3` 表达正常状态。单纯 `其他平台地址 -> 钱包 -> JustLend` 不计入 HTX SP 风险，按 `未命中` 处理，只在说明中保留 CEX 来源上下文。链上流入事件支持 `仅看命中` 筛选，只显示真正命中 HTX SP 路径的事件。
+- `.env` 已被忽略，不提交 TronGrid API Key。
+- `data/live-snapshot-cache.json` 是运行时缓存，不提交。
+- `data/justlend-address-book.json` 是地址库初始数据，会提交。
+
