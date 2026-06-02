@@ -1,0 +1,375 @@
+{
+  "dashboard": {
+    "name": "JustLend 第三方冻结风险实时看板",
+    "refreshSeconds": 60,
+    "snapshotRefreshSeconds": 300,
+    "riskThresholdUsd": 100000,
+    "spLookbackHours": 72
+  },
+  "tokens": {
+    "USDT": {
+      "chain": "TRON",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "decimals": 6,
+      "symbol": "USDT",
+      "blacklistFunction": "getBlackListStatus(address)"
+    },
+    "USDC": {
+      "chain": "TRON",
+      "contract": "TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8",
+      "decimals": 6,
+      "symbol": "USDC",
+      "blacklistFunction": "isBlacklisted(address)"
+    }
+  },
+  "watchedAddresses": [
+    {
+      "name": "Unitroller",
+      "address": "TGjYzgCyPobsNS9n6WcbdLVR9dH7mWqFx7",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Core",
+      "asset": "Protocol",
+      "role": "comptroller proxy",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "Comptroller",
+      "address": "TB23wYojvAsSx6gR8ebHiBqwSeABiBMPAr",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Core",
+      "asset": "Protocol",
+      "role": "comptroller impl",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "PriceOracleProxy",
+      "address": "TCKp2AzuhzV4B4Ahx1ej4mvQgHZ1kH7F7k",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Oracle",
+      "asset": "Protocol",
+      "role": "oracle proxy",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "PriceOracle",
+      "address": "TMiNCmvD3zdsv6mk7niBU6NPBzVNjYMQTV",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Oracle",
+      "asset": "Protocol",
+      "role": "oracle impl",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "GovernorBravoDelegator",
+      "address": "TEqiF5JbhDPD77yjEfnEMncGRZNDt2uogD",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Governance",
+      "asset": "Protocol",
+      "role": "governance proxy",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "Timelock",
+      "address": "TRWNvb15NmfNKNLhQpxefFz7cNjrYjEw7x",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Governance",
+      "asset": "Protocol",
+      "role": "timelock",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "sTRX",
+      "address": "TU3kjFuhtEo42tsCBtfYUAZxoqQ4yuSLQ5",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Staked TRX",
+      "asset": "sTRX",
+      "role": "staking contract",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "EnergyRental",
+      "address": "TU2MJ5Veik1LRAgjeSzEdvmDYx7mefJZvd",
+      "chain": "TRON",
+      "market": "TRON Mainnet / Energy Rental",
+      "asset": "Protocol",
+      "role": "energy rental",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jTRX market",
+      "address": "TE2RzoSV3wFK99w6J9UnnZ4vLfXYoxvRwP",
+      "chain": "TRON",
+      "market": "TRON V1 / TRX",
+      "asset": "TRX",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jUSDD market",
+      "address": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+      "chain": "TRON",
+      "market": "TRON V1 / USDD",
+      "asset": "USDD",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jUSDT market",
+      "address": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "chain": "TRON",
+      "market": "TRON V1 / USDT",
+      "asset": "USDT",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": true
+    },
+    {
+      "name": "jwstUSDT market",
+      "address": "TD5SdLw5scR6mXgyMK2xKrFJpauDjpKqrW",
+      "chain": "TRON",
+      "market": "TRON V1 / wstUSDT",
+      "asset": "wstUSDT",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jsTRX market",
+      "address": "TJQ9rbVe9ei3nNtyGgBL22Fuu2xYjZaLAQ",
+      "chain": "TRON",
+      "market": "TRON V1 / sTRX",
+      "asset": "sTRX",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jSUN market",
+      "address": "TPXDpkg9e3eZzxqxAUyke9S4z4pGJBJw9e",
+      "chain": "TRON",
+      "market": "TRON V1 / SUN",
+      "asset": "SUN",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jBTT market",
+      "address": "TUaUHU9Dy8x5yNi1pKnFYqHWojot61Jfto",
+      "chain": "TRON",
+      "market": "TRON V1 / BTT",
+      "asset": "BTT",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jNFT market",
+      "address": "TFpPyDCKvNFgos3g3WVsAqMrdqhB81JXHE",
+      "chain": "TRON",
+      "market": "TRON V1 / NFT",
+      "asset": "NFT",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jJST market",
+      "address": "TWQhCXaWz4eHK4Kd1ErSDHjMFPoPc9czts",
+      "chain": "TRON",
+      "market": "TRON V1 / JST",
+      "asset": "JST",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jWIN market",
+      "address": "TRg6MnpsFXc82ymUPgf5qbj59ibxiEDWvv",
+      "chain": "TRON",
+      "market": "TRON V1 / WIN",
+      "asset": "WIN",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jHTX market",
+      "address": "TDA1mWPyAjTRATMGA55UTswGAHhV2itEXR",
+      "chain": "TRON",
+      "market": "TRON V1 / HTX",
+      "asset": "HTX",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jUSD1 market",
+      "address": "TBEKggwqFkrc4KckQVR9BLucAmQugafEZf",
+      "chain": "TRON",
+      "market": "TRON V1 / USD1",
+      "asset": "USD1",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jTUSD market",
+      "address": "TSXv71Fy5XdL3Rh2QfBoUu3NAaM4sMif8R",
+      "chain": "TRON",
+      "market": "TRON V1 / TUSD",
+      "asset": "TUSD",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jWBTC market",
+      "address": "TVyvpmaVmz25z2GaXBDDjzLZi5iR5dBzGd",
+      "chain": "TRON",
+      "market": "TRON V1 / WBTC",
+      "asset": "WBTC",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jBTC market",
+      "address": "TLeEu311Cbw63BcmMHDgDLu7fnk9fqGcqT",
+      "chain": "TRON",
+      "market": "TRON V1 / BTC",
+      "asset": "BTC",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jETH market",
+      "address": "TR7BUFRQeq1w5jAZf1FKx85SHuX6PfMqsV",
+      "chain": "TRON",
+      "market": "TRON V1 / ETH",
+      "asset": "ETH",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jETHB market",
+      "address": "TWBxQMb6RD3qmkXUXpNwVCYbL8SHNreru6",
+      "chain": "TRON",
+      "market": "TRON V1 / ETHB",
+      "asset": "ETHB",
+      "role": "market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jUSDDOLD market",
+      "address": "TX7kybeP6UwTBRHLNPYmswFESHfyjm9bAS",
+      "chain": "TRON",
+      "market": "TRON V1 / USDDOLD",
+      "asset": "USDDOLD",
+      "role": "legacy market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jUSDJ market",
+      "address": "TL5x9MtSnDy537FXKx53yAaHRRNdg9TkkA",
+      "chain": "TRON",
+      "market": "TRON V1 / USDJ",
+      "asset": "USDJ",
+      "role": "legacy market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jWBTT market",
+      "address": "TUY54PVeH6WCcYCd6ZXXoBDsHytN9V5PXt",
+      "chain": "TRON",
+      "market": "TRON V1 / WBTT",
+      "asset": "WBTT",
+      "role": "legacy market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jBUSDOLD market",
+      "address": "TLHASseQymmpGQdfAyNjkMXFTJh8nzR2x2",
+      "chain": "TRON",
+      "market": "TRON V1 / BUSDOLD",
+      "asset": "BUSDOLD",
+      "role": "legacy market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jSUNOLD market",
+      "address": "TGBr8uh9jBVHJhhkwSJvQN2ZAKzVkxDmno",
+      "chain": "TRON",
+      "market": "TRON V1 / SUNOLD",
+      "asset": "SUNOLD",
+      "role": "legacy market",
+      "enabled": true,
+      "trackTransfers": false
+    },
+    {
+      "name": "jUSDCOLD market",
+      "address": "TNSBA6KvSvMoTqQcEgpVK7VhHT3z7wifxy",
+      "chain": "TRON",
+      "market": "TRON V1 / USDCOLD",
+      "asset": "USDCOLD",
+      "role": "legacy market",
+      "enabled": true,
+      "trackTransfers": false
+    }
+  ],
+  "userAddressPool": {
+    "enabled": true,
+    "source": "justlend_address_book",
+    "addressBookPath": "./data/justlend-address-book.json",
+    "scanLimit": 60,
+    "addresses": [],
+    "autoJTokenSources": {
+      "enabled": true,
+      "includeLegacyMarkets": true,
+      "includeAssets": ["TRX", "USDD", "USDT", "wstUSDT", "sTRX", "USDCOLD"],
+      "transferLimit": 30,
+      "maxCandidates": 6
+    },
+    "onchainSources": [
+      {
+        "enabled": true,
+        "type": "jtoken_holders",
+        "name": "jUSDT holder",
+        "market": "TRON V1 / USDT",
+        "contract": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+        "transferLimit": 20,
+        "maxCandidates": 4
+      }
+    ]
+  },
+  "cexAddressBookPath": "/Users/lanyu/CodexWorkspace/Explore/tron-monitor-dashboard/data/cex-address-book.json",
+  "riskSources": {
+    "useCexAddressBook": true,
+    "htxSeedAddresses": [],
+    "intermediatePlatformAddresses": []
+  },
+  "notes": [
+    "HTX seed 地址优先复用 tron-monitor-dashboard 的 CEX 地址库，config.json 中的手工地址作为补充覆盖。",
+    "用户地址监控维护 JustLend 地址库：从多个 jToken Transfer 事件增量发现地址，记录当前 holder 状态，并复用本地地址库扫描黑名单。",
+    "SP-2 必须同时证明 HTX -> 平台地址 -> 钱包 -> JustLend；单纯平台地址 -> 钱包 -> JustLend 仅作上下文，不计入 HTX 风险。",
+    "协议地址监控已接入官方 jToken 市场与核心合约；未确认的 reserve、treasury、bot、admin 地址仍需由内部地址库补充。",
+    "为降低 Tronscan 限流，协议地址默认全量检查 USDT / USDC 黑名单；近期流入与 HTX SP 仅扫描 trackTransfers=true 的地址。"
+  ]
+}

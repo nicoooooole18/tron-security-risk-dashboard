@@ -1,0 +1,4 @@
+.DS_Store
+.env
+*.env
+iterations/v0.1.0/live-dashboard/data/live-snapshot-cache.json

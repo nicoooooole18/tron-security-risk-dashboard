@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JustLend 第三方冻结风险监控</title>
+  <style>
+    :root {
+      --bg: #f3f7fb;
+      --surface: rgba(255, 255, 255, 0.92);
+      --surface-solid: #ffffff;
+      --surface-sub: #f8fbff;
+      --border: #dbe4ef;
+      --border-strong: rgba(15, 23, 42, 0.16);
+      --text: #18212f;
+      --text-muted: #66758a;
+      --text-faint: #94a3b8;
+      --blue: #1f5eff;
+      --blue-bg: #e8f0ff;
+      --green: #1f8a57;
+      --green-bg: #e5f8ee;
+      --amber: #c97a09;
+      --amber-bg: #fff1d6;
+      --red: #d33f49;
+      --red-bg: #fdecee;
+      --gray: #64748b;
+      --gray-bg: #eef3f8;
+      --shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: rgba(20, 29, 47, 0.94);
+      --surface-solid: #111827;
+      --surface-sub: #182338;
+      --border: #2d3a50;
+      --border-strong: rgba(226, 232, 240, 0.22);
+      --text: #edf3fb;
+      --text-muted: #a8b3c7;
+      --text-faint: #7f8da3;
+      --blue: #7aa2ff;
+      --blue-bg: #1d2d55;
+      --green: #48d18f;
+      --green-bg: #173b2b;
+      --amber: #ffc35a;
+      --amber-bg: #4b3512;
+      --red: #ff8a94;
+      --red-bg: #4a1d25;
+      --gray: #a8b3c7;
+      --gray-bg: #202b3f;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(31, 94, 255, 0.10), transparent 24%),
+        radial-gradient(circle at top right, rgba(10, 132, 255, 0.08), transparent 18%),
+        linear-gradient(180deg, var(--surface-sub) 0%, var(--bg) 100%);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      min-height: 44px;
+      cursor: pointer;
+    }
+
+    .toolbar {
+      width: min(1460px, calc(100vw - 32px));
+      margin: 16px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .screen-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn,
+    .screen-tab {
+      border: 1px solid var(--border);
+      background: var(--surface-solid);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .screen-tab.active,
+    .tool-btn.active {
+      color: var(--blue);
+      background: var(--blue-bg);
+      border-color: rgba(31, 94, 255, 0.24);
+    }
+
+    .page {
+      width: min(1460px, calc(100vw - 32px));
+      margin: 12px auto 24px;
+      border: 1px solid rgba(219, 228, 239, 0.9);
+      border-radius: 30px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .platform-nav {
+      display: grid;
+      grid-template-columns: 360px 1fr 260px;
+      gap: 24px;
+      align-items: center;
+      padding: 40px 38px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .platform-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #2b63ff 0%, #24b2ff 100%);
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      background: rgba(255,255,255,0.85);
+      border-radius: 8px;
+    }
+
+    .brand-mark::before {
+      width: 24px;
+      height: 9px;
+      left: 16px;
+      top: 17px;
+      transform: rotate(-28deg);
+    }
+
+    .brand-mark::after {
+      width: 24px;
+      height: 9px;
+      left: 16px;
+      top: 30px;
+      transform: rotate(28deg);
+    }
+
+    .brand-text {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0;
+      line-height: 1.22;
+      white-space: normal;
+    }
+
+    .platform-menu {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .menu-group {
+      position: relative;
+    }
+
+    .menu-trigger {
+      padding: 14px 20px;
+      border-radius: 999px;
+      background: var(--gray-bg);
+      color: var(--gray);
+      font-size: 15px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      min-height: 48px;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .menu-trigger.active {
+      color: var(--blue);
+      background: var(--blue-bg);
+      border-color: rgba(31, 94, 255, 0.18);
+    }
+
+    .menu-trigger:hover,
+    .menu-group.open .menu-trigger {
+      transform: translateY(-1px);
+      border-color: rgba(31, 94, 255, 0.22);
+    }
+
+    .menu-link {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 14px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      padding: 16px 0;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: var(--surface-solid);
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+      z-index: 20;
+    }
+
+    .menu-group.open .nav-dropdown,
+    .menu-group:hover .nav-dropdown {
+      display: block;
+      animation: dropdownIn 0.18s ease both;
+    }
+
+    @keyframes dropdownIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    .nav-dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      min-height: 60px;
+      padding: 17px 28px;
+      border: 0;
+      background: transparent;
+      color: var(--gray);
+      text-align: left;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .nav-dropdown-item:hover {
+      color: var(--blue);
+      background: var(--blue-bg);
+    }
+
+    .nav-dropdown-item.active {
+      color: var(--text);
+      background: var(--surface-sub);
+    }
+
+    .nav-dropdown-item .version-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--blue-bg);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .nav-meta {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .account-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 24px;
+      border: 0;
+      border-radius: 18px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #255cff 0%, #4867ff 100%);
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 18px 34px rgba(37, 92, 255, 0.22);
+    }
+
+    .screen {
+      display: none;
+      min-height: 720px;
+      background: var(--surface-sub);
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .content {
+      padding: 30px 36px 36px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.22;
+      letter-spacing: 0;
+    }
+
+    .header-copy {
+      margin: 10px 0 0;
+      color: var(--text-muted);
+      max-width: 720px;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 16px;
+      background: var(--surface-solid);
+      color: var(--text);
+      font-weight: 800;
+      min-height: 44px;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+    }
+
+    .btn.primary {
+      background: var(--blue);
+      color: #ffffff;
+      border-color: var(--blue);
+    }
+
+    .btn.danger {
+      color: var(--red);
+      background: var(--red-bg);
+      border-color: rgba(211, 63, 73, 0.18);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--surface-solid);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .card.clickable {
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .card.clickable:hover {
+      transform: translateY(-2px);
+      border-color: rgba(31, 94, 255, 0.28);
+      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .metric-value {
+      margin-top: 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .metric-value small {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .metric-foot {
+      margin-top: 12px;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section-grid {
+      grid-template-columns: 1.6fr 1fr;
+      align-items: start;
+    }
+
+    .risk-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .risk-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-solid);
+      min-height: 96px;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .risk-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(31, 94, 255, 0.28);
+    }
+
+    .risk-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-weight: 800;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .risk-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .risk-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tag.red {
+      color: var(--red);
+      background: var(--red-bg);
+      border-color: rgba(211, 63, 73, 0.18);
+    }
+
+    .tag.amber {
+      color: var(--amber);
+      background: var(--amber-bg);
+      border-color: rgba(201, 122, 9, 0.18);
+    }
+
+    .tag.green {
+      color: var(--green);
+      background: var(--green-bg);
+      border-color: rgba(31, 138, 87, 0.18);
+    }
+
+    .tag.blue {
+      color: var(--blue);
+      background: var(--blue-bg);
+      border-color: rgba(31, 94, 255, 0.18);
+    }
+
+    .tag.gray {
+      color: var(--gray);
+      background: var(--gray-bg);
+      border-color: var(--border);
+    }
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .path-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-sub);
+      padding: 14px;
+      min-height: 148px;
+    }
+
+    .path-card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .path-card p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .status-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-sub);
+      margin-bottom: 12px;
+    }
+
+    .status-strip.critical {
+      border-color: rgba(211, 63, 73, 0.28);
+      background: linear-gradient(135deg, var(--red-bg), var(--surface-solid));
+      box-shadow: 0 12px 28px rgba(211, 63, 73, 0.08);
+    }
+
+    .status-strip strong {
+      font-size: 14px;
+    }
+
+    .status-strip.critical strong {
+      color: var(--red);
+      font-size: 15px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      line-height: 1.5;
+    }
+
+    .status-muted {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .mini-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .mini-btn {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: var(--surface-solid);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mini-btn.primary {
+      color: var(--red);
+      background: var(--red-bg);
+      border-color: rgba(211, 63, 73, 0.18);
+    }
+
+    .recommendation-panel {
+      margin-bottom: 16px;
+    }
+
+    .recommendation-detail {
+      margin-top: 12px;
+    }
+
+    .recommendation-detail.is-hidden {
+      display: none;
+    }
+
+    .tip-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .tip-trigger {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(211, 63, 73, 0.22);
+      background: var(--surface-solid);
+      color: var(--red);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tip-popover {
+      position: absolute;
+      left: 0;
+      top: 32px;
+      width: min(360px, calc(100vw - 48px));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      color: var(--text);
+      z-index: 20;
+    }
+
+    .tip-popover.is-hidden {
+      display: none;
+    }
+
+    .tip-popover strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .tip-popover ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-solid);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 800;
+      background: var(--surface-sub);
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .address {
+      font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+      font-size: 12px;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 6px;
+      background: var(--blue);
+      box-shadow: 0 0 0 5px var(--blue-bg);
+    }
+
+    .timeline-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-sub);
+      padding: 12px;
+    }
+
+    .timeline-card strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .timeline-card p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .profile-card {
+      position: sticky;
+      top: 16px;
+    }
+
+    .profile-address {
+      margin: 14px 0;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-sub);
+    }
+
+    .kv {
+      display: grid;
+      gap: 10px;
+    }
+
+    .kv-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .kv-row:last-child {
+      border-bottom: 0;
+    }
+
+    .kv-row span:first-child {
+      color: var(--text-muted);
+    }
+
+    .kv-row span:last-child {
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .status-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .status-actions .btn {
+      width: 100%;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .state-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .state-card {
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+    }
+
+    .state-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .state-card h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .state-card p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 260px;
+    }
+
+    .skeleton {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--gray-bg), var(--surface-sub), var(--gray-bg));
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite linear;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .notice {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-solid);
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      background: var(--text);
+      color: var(--surface-solid);
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-size: 14px;
+      z-index: 30;
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 980px) {
+      .platform-nav,
+      .page-header,
+      .detail-layout,
+      .section-grid,
+      .summary-grid,
+      .topic-grid,
+      .state-board {
+        grid-template-columns: 1fr;
+      }
+
+      .platform-menu {
+        justify-content: flex-start;
+      }
+
+      .nav-dropdown {
+        left: 0;
+        transform: none;
+      }
+
+      .menu-group.open .nav-dropdown,
+      .menu-group:hover .nav-dropdown {
+        animation: dropdownInMobile 0.18s ease both;
+      }
+
+      @keyframes dropdownInMobile {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .nav-meta,
+      .actions {
+        text-align: left;
+        justify-content: flex-start;
+      }
+
+      .profile-card {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="screen-tabs" aria-label="原型页面切换">
+      <button class="screen-tab active" data-target="home">外部风险看板</button>
+      <button class="screen-tab" data-target="topic">HTX 专题</button>
+      <button class="screen-tab" data-target="detail">风险事件详情</button>
+      <button class="screen-tab" data-target="states">状态页</button>
+    </div>
+    <button class="tool-btn" id="themeToggle">切换暗色</button>
+  </div>
+
+  <main class="page" id="app">
+    <header class="platform-nav">
+      <div class="platform-brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-text">JustLend DAO<br />监控平台</div>
+      </div>
+      <nav class="platform-menu" aria-label="主导航">
+        <div class="menu-group">
+          <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">数据监控</button>
+          <div class="nav-dropdown" role="menu" aria-label="数据监控菜单">
+            <button class="nav-dropdown-item" type="button" role="menuitem">平台风险 Dashboard</button>
+            <button class="nav-dropdown-item" type="button" role="menuitem">喂价监测</button>
+            <button class="nav-dropdown-item" type="button" role="menuitem">机器人监测</button>
+            <button class="nav-dropdown-item" type="button" role="menuitem">平台坏账监测</button>
+            <button class="nav-dropdown-item" type="button" role="menuitem">资金异常流水监测</button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <button class="menu-trigger" type="button">事件总览</button>
+        </div>
+        <div class="menu-group">
+          <button class="menu-trigger" type="button">告警中心</button>
+        </div>
+        <div class="menu-group open" id="externalRiskMenu">
+          <button class="menu-trigger active" type="button" aria-haspopup="true" aria-expanded="true">外部风险识别</button>
+          <div class="nav-dropdown" role="menu" aria-label="外部风险菜单">
+            <button class="nav-dropdown-item active" type="button" data-nav-action="address-blacklist" role="menuitem">
+              <span>第三方冻结风险</span>
+            </button>
+            <button class="nav-dropdown-item" type="button" data-nav-action="token-risk-list" role="menuitem">
+              <span>币种风险清单</span>
+              <span class="version-pill">待规划</span>
+            </button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <button class="menu-trigger" type="button">设置与权限</button>
+        </div>
+      </nav>
+      <div class="nav-meta">
+        <button class="account-pill" type="button">aaa.bbb@tron.network</button>
+      </div>
+    </header>
+
+    <section class="screen active" id="home">
+      <div class="content">
+        <div class="page-header">
+          <div>
+            <div class="eyebrow">THIRD-PARTY FREEZE RISK</div>
+            <h1>第三方冻结风险监控</h1>
+            <p class="header-copy">在平台风险看板中监测第三方发行方或包装资产协议的冻结、黑名单、暂停和高风险资金流入。HTX 制裁相关资金作为临时专题分支展示，风险解除后可降级或下线。</p>
+          </div>
+          <div class="actions">
+            <button class="btn primary">手动刷新</button>
+          </div>
+        </div>
+
+        <div class="status-strip critical">
+          <div class="status-line">
+            <strong>P1 待核查</strong>
+            <span class="status-muted">合约未冻结｜优先核查 HTX SP-1 210,000 USDT</span>
+              <span class="tip-wrap">
+                <button class="tip-trigger" type="button" aria-label="查看风险判断" data-toggle-panel="riskStatusTip">?</button>
+                <span class="tip-popover is-hidden" id="riskStatusTip">
+                  <strong>系统风险判断</strong>
+                  <ul>
+                    <li>当前未发现市场合约被冻结。</li>
+                    <li>存在 P1 高风险流入。</li>
+                    <li>优先核查 HTX SP-1 210,000 USDT。</li>
+                    <li>HTX 专题暂不可下线。</li>
+                  </ul>
+                </span>
+              </span>
+          </div>
+          <div class="actions">
+            <button class="mini-btn primary" type="button" data-target-tab="topic">查看 HTX 专区</button>
+          </div>
+        </div>
+
+        <div class="grid summary-grid">
+          <div class="card">
+            <div class="metric-label">冻结命中</div>
+            <div class="metric-value">0 <small>个</small></div>
+            <div class="metric-foot">市场合约 / reserve / bot 暂未命中</div>
+          </div>
+          <div class="card">
+            <div class="metric-label">高风险流入</div>
+            <div class="metric-value" style="color: var(--amber);">3 <small>笔</small></div>
+            <div class="metric-foot">含 HTX SP-1 / SP-2 路径</div>
+          </div>
+          <div class="card">
+            <div class="metric-label">临时专题</div>
+            <div class="metric-value" style="color: var(--amber);">1 <small>个</small></div>
+            <div class="metric-foot">HTX 专题监控中，暂不可下线</div>
+          </div>
+          <div class="card">
+            <div class="metric-label">待接入市场</div>
+            <div class="metric-value">4 <small>个</small></div>
+            <div class="metric-foot">ETH V2 USDC 相关市场待上线</div>
+          </div>
+        </div>
+
+        <div class="grid section-grid">
+          <div class="grid">
+            <div class="panel-title">
+              <h2>风险项</h2>
+              <span class="tag amber">需人工跟进</span>
+            </div>
+            <div class="risk-list">
+              <div class="risk-item" data-open-detail>
+                <div>
+                  <div class="risk-title">
+                    市场合约冻结命中
+                    <span class="tag green">0 个命中</span>
+                  </div>
+                  <div class="risk-desc">检查 USDT、USDCOLD 相关市场合约、reserve、资金持有地址、bot、admin 是否被第三方发行方冻结或加入黑名单。</div>
+                </div>
+                <div class="risk-meta">
+                  <span class="tag blue">TRON V1 USDT / USDCOLD</span>
+                  <span class="tag gray">查看详情</span>
+                </div>
+              </div>
+              <div class="risk-item" data-open-detail>
+                <div>
+                  <div class="risk-title">
+                    高风险资金流入
+                    <span class="tag amber">3 笔待核查</span>
+                  </div>
+                  <div class="risk-desc">识别来自观察名单、已冻结地址路径、direct transfer 或短路径平台风险来源的资金是否进入 JustLend 市场合约。</div>
+                </div>
+                <div class="risk-meta">
+                  <span class="tag amber">24h</span>
+                  <span class="tag gray">$496,400</span>
+                </div>
+              </div>
+              <div class="risk-item" data-target-tab="topic">
+                <div>
+                  <div class="risk-title">
+                    HTX 制裁相关资金冻结风险
+                    <span class="tag amber">监控中</span>
+                  </div>
+                  <div class="risk-desc">作为第三方冻结风险下的临时专题，识别 HTX 经 TRON 钱包、其他平台或多跳路径进入 JustLend 后可能触发第三方冻结、拒收或地址污染的风险。</div>
+                </div>
+                <div class="risk-meta">
+                  <span class="tag amber">SP-1 / SP-2</span>
+                  <span class="tag gray">查看专题</span>
+                </div>
+              </div>
+              <div class="risk-item" data-open-detail>
+                <div>
+                  <div class="risk-title">
+                    第三方协议状态异常
+                    <span class="tag amber">1 项待确认</span>
+                  </div>
+                  <div class="risk-desc">USDCOLD 合约冻结能力尚未确认；确认后决定是否接入 blacklist、freeze、pause 状态检查。</div>
+                </div>
+                <div class="risk-meta">
+                  <span class="tag amber">待研发确认</span>
+                  <span class="tag gray">USDCOLD</span>
+                </div>
+              </div>
+              <div class="risk-item">
+                <div>
+                  <div class="risk-title">
+                    ETH V2 市场接入状态
+                    <span class="tag gray">待上线</span>
+                  </div>
+                  <div class="risk-desc">USDD/USDC、WBTC/USDC、wstUSDT/USDC、wsETH/USDC 暂不参与真实风险统计，待市场地址确认后接入。</div>
+                </div>
+                <div class="risk-meta">
+                  <span class="tag gray">4 个市场</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <div class="panel-title">
+                <h2>待处理队列</h2>
+                <span class="tag red">3</span>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--red); box-shadow: 0 0 0 5px var(--red-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>P1 · HTX SP-1 流入</strong>
+                    <p>HTX 已知地址提现至 TRON 中转地址后，短时间内向 jUSDT 市场流入 210,000 USDT。建议动作：查看链路证据并升级人工核查。</p>
+                    <div class="risk-meta" style="margin-top: 10px; justify-content: flex-start;">
+                      <span class="tag red">优先处理</span>
+                      <span class="tag amber">HTX_SP1_wallet_inflow</span>
+                    </div>
+                    <div class="mini-actions">
+                      <button class="mini-btn primary" data-target-tab="detail">查看证据</button>
+                      <button class="mini-btn primary" data-action-toast="已将 HTX SP-1 事件标记为升级核查">升级核查</button>
+                      <button class="mini-btn" data-action-toast="已打开备注记录入口">记录备注</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--amber); box-shadow: 0 0 0 5px var(--amber-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>P1 · direct transfer 流入</strong>
+                    <p>观察名单来源地址向 jUSDT 市场合约流入 186,400 USDT。建议动作：确认是否属于正常 supply / repay 路径。</p>
+                    <div class="risk-meta" style="margin-top: 10px; justify-content: flex-start;">
+                      <span class="tag amber">待核查</span>
+                      <span class="tag gray">direct transfer</span>
+                    </div>
+                    <div class="mini-actions">
+                      <button class="mini-btn" data-action-toast="已打开 direct transfer 证据链">查看证据</button>
+                      <button class="mini-btn" data-action-toast="已标记为核查中">标记核查中</button>
+                      <button class="mini-btn" data-action-toast="关闭前需填写关闭原因">关闭事件</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--amber); box-shadow: 0 0 0 5px var(--amber-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>待确认 · USDCOLD 合约能力</strong>
+                    <p>USDCOLD 是否具备 blacklist / freeze / pause 能力尚未确认。建议动作：研发确认合约能力后决定是否接入检查。</p>
+                    <div class="risk-meta" style="margin-top: 10px; justify-content: flex-start;">
+                      <span class="tag amber">能力待确认</span>
+                    </div>
+                    <div class="mini-actions">
+                      <button class="mini-btn" data-action-toast="已生成 USDCOLD 合约能力确认任务">发起确认</button>
+                      <button class="mini-btn" data-action-toast="请补充 blacklist / freeze / pause 接口确认结果">补充接口</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--green); box-shadow: 0 0 0 5px var(--green-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>扫描完成</strong>
+                    <p>本轮扫描覆盖 TRON V1 USDT、USDCOLD watched address 和近 24h 市场合约流入。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="notice">文案约束：页面只表达“冻结命中”“高风险资金流入”“需人工核查”，不输出未经证实的法律定性，也不自动判断资金违法属性。</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px;">
+          <div class="panel-title">
+            <h2>市场监控列表</h2>
+            <span class="tag blue">当前范围 + 未来预留</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>市场</th>
+                  <th>链 / 版本</th>
+                  <th>资产</th>
+                  <th>冻结状态</th>
+                  <th>高风险流入</th>
+                  <th>处理状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-open-detail style="cursor: pointer;">
+                  <td>USDT</td>
+                  <td>TRON / V1</td>
+                  <td><span class="tag blue">USDT</span></td>
+                  <td><span class="tag green">未命中</span></td>
+                  <td>3 笔待核查 / $496,400</td>
+                  <td><span class="tag amber">待核查</span></td>
+                </tr>
+                <tr>
+                  <td>USDCOLD</td>
+                  <td>TRON / V1</td>
+                  <td><span class="tag blue">USDCOLD</span></td>
+                  <td><span class="tag amber">能力待确认</span></td>
+                  <td>无</td>
+                  <td><span class="tag amber">待确认</span></td>
+                </tr>
+                <tr>
+                  <td>USDD/USDC</td>
+                  <td>ETH / V2</td>
+                  <td><span class="tag blue">USDD</span> <span class="tag blue">USDC</span></td>
+                  <td><span class="tag gray">待上线</span></td>
+                  <td>未接入</td>
+                  <td><span class="tag gray">预留</span></td>
+                </tr>
+                <tr>
+                  <td>WBTC/USDC</td>
+                  <td>ETH / V2</td>
+                  <td><span class="tag blue">WBTC</span> <span class="tag blue">USDC</span></td>
+                  <td><span class="tag gray">待上线</span></td>
+                  <td>未接入</td>
+                  <td><span class="tag gray">预留</span></td>
+                </tr>
+                <tr>
+                  <td>wstUSDT/USDC</td>
+                  <td>ETH / V2</td>
+                  <td><span class="tag blue">wstUSDT</span> <span class="tag blue">USDC</span></td>
+                  <td><span class="tag gray">待上线</span></td>
+                  <td>未接入</td>
+                  <td><span class="tag gray">预留</span></td>
+                </tr>
+                <tr>
+                  <td>wsETH/USDC</td>
+                  <td>ETH / V2</td>
+                  <td><span class="tag blue">wsETH</span> <span class="tag blue">USDC</span></td>
+                  <td><span class="tag gray">待上线</span></td>
+                  <td>未接入</td>
+                  <td><span class="tag gray">预留</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="topic">
+      <div class="content">
+        <div class="page-header">
+          <div>
+            <div class="eyebrow">TEMPORARY TOPIC</div>
+            <h1>HTX 制裁相关资金冻结风险</h1>
+            <p class="header-copy">该分支展示在“第三方冻结风险”下，用于临时监控 HTX / Huobi Global S.A. 相关资金经 TRON 钱包、其他平台或多跳路径进入 JustLend 的第三方冻结风险。风险解除后可降级或下线。</p>
+          </div>
+          <div class="actions">
+            <button class="btn" data-target-tab="home">返回主页</button>
+            <button class="btn primary" data-action-toast="专题状态变更需先完成下线条件检查">更新专题状态</button>
+          </div>
+        </div>
+
+        <div class="status-strip">
+          <div>
+            <strong>专题状态：监控中</strong>
+            <div class="metric-foot">风险来源：英国 Russia Sanctions 制裁名单；涉及平台：HTX / Huobi Global S.A.；当前仍有新增 P1 命中，暂不可下线。</div>
+          </div>
+          <div class="risk-meta">
+            <span class="tag amber">监控中</span>
+            <span class="tag blue">TRON USDT</span>
+            <span class="tag red">不可下线</span>
+          </div>
+        </div>
+
+        <div class="grid summary-grid">
+          <div class="card">
+            <div class="metric-label">近 24h 命中地址</div>
+            <div class="metric-value" style="color: var(--amber);">2 <small>个</small></div>
+            <div class="metric-foot">SP-1 钱包 / SP-2 平台路径</div>
+          </div>
+          <div class="card">
+            <div class="metric-label">P1 待核查金额</div>
+            <div class="metric-value" style="color: var(--amber);">210K <small>USDT</small></div>
+            <div class="metric-foot">HTX SP-1 事件，优先处理</div>
+          </div>
+          <div class="card">
+            <div class="metric-label">最高风险等级</div>
+            <div class="metric-value" style="color: var(--amber);">P1</div>
+            <div class="metric-foot">短时间近似全额转入</div>
+          </div>
+          <div class="card">
+            <div class="metric-label">待处理事件</div>
+            <div class="metric-value">1 <small>条</small></div>
+            <div class="metric-foot">等待人工核查路径证据</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="panel-title">
+            <h2>路径识别范围</h2>
+            <span class="tag blue">专题规则</span>
+          </div>
+          <div class="topic-grid">
+            <div class="path-card">
+              <h3>SP-1：HTX -> TRON 地址 -> JustLend</h3>
+              <p>仅 1 个中转钱包，若金额大、时间短、近似全额转入，按 P1 待核查展示。</p>
+            </div>
+            <div class="path-card">
+              <h3>SP-2：HTX -> 其他平台 -> TRON 地址 -> JustLend</h3>
+              <p>中间平台不自动切断风险来源，系统按时间和金额相似度记录 SP-2 平台中转线索。</p>
+            </div>
+            <div class="path-card">
+              <h3>HTX -> 多跳 / 拆分 / 跨链 -> JustLend</h3>
+              <p>出现拆分、合并、快速转出、跨链或循环借贷时，上调为高风险路由线索。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-strip">
+          <div>
+            <strong>处理建议：先核查 P1 短路径大额流入</strong>
+            <div class="metric-foot">核查重点为 HTX 来源地址标签、TRON 中转地址归属、入金前后时间差、是否近似全额转入、进入市场后的借贷或转出行为。</div>
+          </div>
+          <div class="risk-meta">
+            <span class="tag amber">查看链路证据</span>
+            <span class="tag red">升级人工核查</span>
+            <span class="tag red">暂不下线</span>
+          </div>
+        </div>
+
+        <div class="grid section-grid">
+          <div class="card">
+            <div class="panel-title">
+              <h2>命中明细</h2>
+              <span class="tag amber">待核查</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>入金时间</th>
+                    <th>路径标签</th>
+                    <th>用户地址</th>
+                    <th>进入市场</th>
+                    <th>金额</th>
+                    <th>风险等级</th>
+                    <th>处置状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-open-detail style="cursor: pointer;">
+                    <td>2026-06-01 14:36</td>
+                    <td><span class="tag amber">HTX_SP1_wallet_inflow</span></td>
+                    <td class="address">TX7m...9aQ2</td>
+                    <td>TRON V1 / USDT</td>
+                    <td>210,000 USDT</td>
+                    <td><span class="tag amber">P1</span></td>
+                    <td><span class="tag amber">待核查</span></td>
+                  </tr>
+                  <tr>
+                    <td>2026-06-01 09:18</td>
+                    <td><span class="tag blue">HTX_SP2_platform_inflow</span></td>
+                    <td class="address">TW4c...mP8L</td>
+                    <td>TRON V1 / USDT</td>
+                    <td>42,500 USDT</td>
+                    <td><span class="tag blue">P2</span></td>
+                    <td><span class="tag gray">记录观察</span></td>
+                  </tr>
+                  <tr>
+                    <td>2026-05-31 22:05</td>
+                    <td><span class="tag gray">HTX_possible_indirect_exposure</span></td>
+                    <td class="address">TNe8...7kDs</td>
+                    <td>TRON V1 / USDT</td>
+                    <td>8,200 USDT</td>
+                    <td><span class="tag gray">P3</span></td>
+                    <td><span class="tag gray">仅留痕</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <div class="panel-title">
+                <h2>下线条件</h2>
+                <span class="tag gray">人工确认</span>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="dot"></div>
+                  <div class="timeline-card">
+                    <strong>制裁名单解除</strong>
+                    <p>HTX / Huobi Global S.A. 从相关制裁名单移除后，可作为下线判断依据之一。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot"></div>
+                  <div class="timeline-card">
+                    <strong>第三方风控解除</strong>
+                    <p>主流交易所、稳定币发行方或链上风控供应商不再对 HTX 相关资金执行额外冻结或审查。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot"></div>
+                  <div class="timeline-card">
+                    <strong>连续无新增命中</strong>
+                    <p>连续 N 天无新增命中后，合规 / 风控可将专题调整为已降级或已下线。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="panel-title">
+                <h2>处置标准</h2>
+                <span class="tag red">P1</span>
+              </div>
+              <div class="kv">
+                <div class="kv-row"><span>当前动作</span><span>查看证据并升级核查</span></div>
+                <div class="kv-row"><span>观察动作</span><span>跟踪借贷、转出、跨链</span></div>
+                <div class="kv-row"><span>降级条件</span><span>链路不成立或风险解除</span></div>
+                <div class="kv-row"><span>下线条件</span><span>无新增命中 + 风控确认</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="panel-title">
+                <h2>降级 / 下线前检查</h2>
+                <span class="tag amber">必填</span>
+              </div>
+              <div class="kv">
+                <div class="kv-row"><span>制裁状态</span><span>未解除</span></div>
+                <div class="kv-row"><span>新增命中</span><span>仍有 P1</span></div>
+                <div class="kv-row"><span>平台风控</span><span>仍需观察</span></div>
+                <div class="kv-row"><span>当前结论</span><span>不可下线</span></div>
+              </div>
+            </div>
+            <div class="notice">专题只表达“第三方冻结风险线索”，不将来自 HTX 的资金自动定性为制裁资金、违法资金或洗钱资金。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="detail">
+      <div class="content">
+        <div class="page-header">
+          <div>
+            <div class="eyebrow">RISK DETAIL</div>
+            <h1>风险事件详情：HTX SP-1 高风险流入</h1>
+            <p class="header-copy">HTX 已知地址提现至 TRON 中转地址后，短时间内向 TRON V1 USDT 市场流入 210,000 USDT。页面仅展示链上事实、风险线索与人工处理状态，不自动输出法律定性。</p>
+          </div>
+          <div class="actions">
+            <button class="btn" data-target-tab="home">返回主页</button>
+            <button class="btn primary" data-action-toast="已生成证据导出任务">导出证据</button>
+          </div>
+        </div>
+
+        <div class="detail-layout">
+          <aside class="card profile-card">
+            <div class="panel-title">
+              <h2>事件画像</h2>
+              <span class="tag amber">待核查</span>
+            </div>
+            <div class="profile-address">
+              <div class="address">TRq3kiuN4KYbAVZd78Tyj7goaZimA3dURa</div>
+            </div>
+            <div class="kv">
+              <div class="kv-row"><span>风险类型</span><span>高风险资金流入</span></div>
+              <div class="kv-row"><span>影响市场</span><span>TRON V1 / USDT</span></div>
+              <div class="kv-row"><span>目标地址</span><span>jUSDT market contract</span></div>
+              <div class="kv-row"><span>专题分支</span><span>HTX 制裁相关资金</span></div>
+              <div class="kv-row"><span>路径标签</span><span>HTX_SP1_wallet_inflow</span></div>
+              <div class="kv-row"><span>检查结果</span><span>市场合约未命中 blacklist</span></div>
+              <div class="kv-row"><span>命中时间</span><span>2026-06-01 14:36 UTC+8</span></div>
+              <div class="kv-row"><span>当前状态</span><span id="caseStatus">待核查</span></div>
+              <div class="kv-row"><span>风险等级</span><span>P1 / 优先处理</span></div>
+            </div>
+            <div class="status-actions">
+              <button class="btn" data-status="核查中">核查中</button>
+              <button class="btn danger" data-status="已确认风险">确认风险</button>
+              <button class="btn" data-status="误报 / 无需处理">无需处理</button>
+              <button class="btn" data-status="已关闭">关闭</button>
+            </div>
+          </aside>
+
+          <div class="grid">
+            <div class="card">
+              <div class="panel-title">
+                <h2>风险链路说明</h2>
+                <span class="tag amber">Warning</span>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="dot"></div>
+                  <div class="timeline-card">
+                    <strong>市场地址冻结检查</strong>
+                    <p>jUSDT market、reserve、bot、admin 地址当前 `getBlackListStatus` 均返回 false，未发现冻结命中。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--amber); box-shadow: 0 0 0 5px var(--amber-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>HTX 短路径来源线索</strong>
+                    <p>HTX 已知地址提现至 TRON 中转地址后，短时间内进入 JustLend USDT 市场。系统仅记录第三方冻结风险线索，结论待人工确认。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--amber); box-shadow: 0 0 0 5px var(--amber-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>进入市场行为</strong>
+                    <p>该笔资金进入 jUSDT market watched address 后，需要继续核查是否发生借贷、快速转出、跨链或循环借贷行为。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="dot" style="background: var(--green); box-shadow: 0 0 0 5px var(--green-bg);"></div>
+                  <div class="timeline-card">
+                    <strong>建议动作</strong>
+                    <p>先查看链路证据，确认来源标签和中转地址归属；如链路成立，升级合规核查并保持 HTX 专题为监控中。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid section-grid">
+              <div class="card">
+                <div class="panel-title">
+                  <h2>事件证据链</h2>
+                  <span class="tag amber">1 笔流入待核查</span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>交易</th>
+                        <th>流入金额</th>
+                        <th>命中原因</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>2026-06-01 14:36</td>
+                        <td><span class="tag amber">HTX SP-1</span></td>
+                        <td class="address">TX7m...9aQ2</td>
+                        <td>210,000 USDT</td>
+                        <td>HTX 专题短路径来源</td>
+                      </tr>
+                      <tr>
+                        <td>2026-06-01 14:38</td>
+                        <td><span class="tag gray">market check</span></td>
+                        <td class="address">jUSDT market</td>
+                        <td>未冻结</td>
+                        <td>市场合约 blacklist 检查为 false</td>
+                      </tr>
+                      <tr>
+                        <td>待核查</td>
+                        <td><span class="tag amber">behavior check</span></td>
+                        <td class="address">TX7m...9aQ2</td>
+                        <td>待确认</td>
+                        <td>是否快速借贷、转出或跨链</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="panel-title">
+                  <h2>市场影响判断</h2>
+                  <span class="tag amber">人工核查</span>
+                </div>
+                <div class="kv">
+                  <div class="kv-row"><span>本事件金额</span><span>210,000 USDT</span></div>
+                  <div class="kv-row"><span>市场合约冻结</span><span>未命中</span></div>
+                  <div class="kv-row"><span>HTX 专题状态</span><span>监控中</span></div>
+                  <div class="kv-row"><span>是否可下线</span><span>否，仍有新增命中</span></div>
+                  <div class="kv-row"><span>下一步动作</span><span>升级人工核查</span></div>
+                  <div class="kv-row"><span>估值依据</span><span>Transfer amount + 最近价格</span></div>
+                </div>
+                <div class="notice" style="margin-top: 14px;">高风险流入只作为人工核查线索，不自动定性为违法、被盗或制裁资金。</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-title">
+                <h2>标准处置路径</h2>
+                <span class="tag red">下一步</span>
+              </div>
+              <div class="topic-grid">
+                <div class="path-card">
+                  <h3>1. 核实链路</h3>
+                  <p>确认 HTX 来源标签、TRON 中转地址、时间差、金额相似度和是否近似全额转入。</p>
+                </div>
+                <div class="path-card">
+                  <h3>2. 跟踪行为</h3>
+                  <p>检查进入 JustLend 后是否发生供应、借款、快速转出、跨链或循环借贷。</p>
+                </div>
+                <div class="path-card">
+                  <h3>3. 更新状态</h3>
+                  <p>链路成立则升级人工核查；链路不成立则标记误报或记录观察，专题继续监控。</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-title">
+                <h2>处理要求</h2>
+                <span class="tag amber">SLA 30 分钟</span>
+              </div>
+              <div class="topic-grid">
+                <div class="path-card">
+                  <h3>当前影响</h3>
+                  <p>市场合约未被冻结，暂未确认影响提现、借款、还款或清算；继续观察 HTX 来源资金进入市场后的行为。</p>
+                </div>
+                <div class="path-card">
+                  <h3>责任分工</h3>
+                  <p>风控值班先核实链路；数据同学补充地址标签；合规同学判断是否需要升级专题处置。</p>
+                </div>
+                <div class="path-card">
+                  <h3>完成标准</h3>
+                  <p>链路证据、市场影响、后续行为和处理结论均已记录；未确认风险不得关闭为“已解决”。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="states">
+      <div class="content">
+        <div class="page-header">
+          <div>
+            <div class="eyebrow">PAGE STATES</div>
+            <h1>页面状态</h1>
+            <p class="header-copy">根据原型规范，Default、Empty、Loading、Error 状态均作为独立可见画面展示。</p>
+          </div>
+        </div>
+        <div class="state-board">
+          <div class="card state-card">
+            <div class="state-icon" style="background: var(--green-bg); color: var(--green);">✓</div>
+            <h2>Default</h2>
+            <p>展示冻结命中、高风险流入、临时专题、待接入市场和处理状态。</p>
+          </div>
+          <div class="card state-card">
+            <div class="state-icon" style="background: var(--gray-bg); color: var(--gray);">0</div>
+            <h2>Empty</h2>
+            <p>当前未发现第三方冻结命中或高风险资金流入。</p>
+            <span class="tag green">无新增风险</span>
+          </div>
+          <div class="card state-card">
+            <div class="state-icon" style="background: var(--blue-bg); color: var(--blue);">…</div>
+            <h2>Loading</h2>
+            <p>正在同步 watched address、第三方冻结状态和市场合约资金流入。</p>
+            <div style="width: 80%; display: grid; gap: 10px;">
+              <div class="skeleton"></div>
+              <div class="skeleton"></div>
+              <div class="skeleton"></div>
+            </div>
+          </div>
+          <div class="card state-card">
+            <div class="state-icon" style="background: var(--red-bg); color: var(--red);">!</div>
+            <h2>Error</h2>
+            <p>第三方冻结状态或 Transfer 事件查询失败，无法判断当前风险状态。</p>
+            <button class="btn danger">重试扫描</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top: 16px;">
+          <div class="panel-title">
+            <h2>临时专题状态</h2>
+            <span class="tag blue">HTX 分支</span>
+          </div>
+          <div class="topic-grid">
+            <div class="path-card">
+              <h3>监控中</h3>
+              <p>启用 HTX 来源识别、路径追踪、分级告警和事件入库，在第三方冻结风险下默认展示。</p>
+            </div>
+            <div class="path-card">
+              <h3>已降级</h3>
+              <p>保留历史事件和统计，新增命中默认仅记录不强告警，除非命中制裁地址或高风险实体。</p>
+            </div>
+            <div class="path-card">
+              <h3>已下线</h3>
+              <p>不再新增 HTX 专题监测和告警，历史事件归档，前台不再默认展示该分支。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">状态已更新</div>
+
+  <script>
+    const tabs = document.querySelectorAll(".screen-tab");
+    const screens = document.querySelectorAll(".screen");
+    const toast = document.getElementById("toast");
+    const statusText = document.getElementById("caseStatus");
+    const themeToggle = document.getElementById("themeToggle");
+    const menuGroups = document.querySelectorAll(".menu-group");
+
+    function showScreen(id) {
+      tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.target === id));
+      screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => showScreen(tab.dataset.target));
+    });
+
+    menuGroups.forEach((group) => {
+      const trigger = group.querySelector(".menu-trigger");
+      if (!trigger) return;
+      trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const hasDropdown = Boolean(group.querySelector(".nav-dropdown"));
+        menuGroups.forEach((item) => {
+          if (item !== group) item.classList.remove("open");
+        });
+        if (hasDropdown) {
+          const nextOpen = !group.classList.contains("open");
+          group.classList.toggle("open", nextOpen);
+          trigger.setAttribute("aria-expanded", String(nextOpen));
+        } else {
+          showToast(trigger.textContent.trim() + " 暂未接入当前原型");
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-nav-action]").forEach((item) => {
+      item.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const action = item.dataset.navAction;
+        if (action === "address-blacklist") {
+          showScreen("home");
+          showToast("当前入口：外部风险识别 / 第三方冻结风险");
+        }
+        if (action === "token-risk-list") {
+          showToast("币种风险清单为外部风险识别预留入口，当前未规划页面");
+        }
+      });
+    });
+
+    document.addEventListener("click", () => {
+      menuGroups.forEach((group) => {
+        if (group.id !== "externalRiskMenu") {
+          group.classList.remove("open");
+        }
+      });
+      const externalTrigger = document.querySelector("#externalRiskMenu .menu-trigger");
+      if (externalTrigger) externalTrigger.setAttribute("aria-expanded", "true");
+    });
+
+    document.querySelectorAll("[data-open-detail]").forEach((item) => {
+      item.addEventListener("click", () => showScreen("detail"));
+    });
+
+    document.querySelectorAll("[data-target-tab]").forEach((button) => {
+      button.addEventListener("click", () => showScreen(button.dataset.targetTab));
+    });
+
+    document.querySelectorAll("[data-status]").forEach((button) => {
+      button.addEventListener("click", () => {
+        statusText.textContent = button.dataset.status;
+        showToast("处理状态已更新：" + button.dataset.status);
+      });
+    });
+
+    document.querySelectorAll("[data-action-toast]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        showToast(button.dataset.actionToast);
+      });
+    });
+
+    document.querySelectorAll("[data-toggle-panel]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const panel = document.getElementById(button.dataset.togglePanel);
+        if (!panel) return;
+        const shouldShow = panel.classList.contains("is-hidden");
+        panel.classList.toggle("is-hidden", !shouldShow);
+        if (!button.classList.contains("tip-trigger")) {
+          button.textContent = shouldShow ? "收起推荐" : "查看推荐";
+        }
+      });
+    });
+
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.documentElement.dataset.theme === "dark";
+      document.documentElement.dataset.theme = isDark ? "" : "dark";
+      themeToggle.textContent = isDark ? "切换暗色" : "切换亮色";
+      themeToggle.classList.toggle("active", !isDark);
+    });
+  </script>
+</body>
+</html>

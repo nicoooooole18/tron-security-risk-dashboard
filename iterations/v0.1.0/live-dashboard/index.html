@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JustLend 第三方冻结风险实时看板</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div>
+        <div class="eyebrow">LIVE THIRD-PARTY FREEZE RISK</div>
+        <h1>JustLend 第三方冻结风险实时看板</h1>
+        <p>真实读取 TRON 链上 Transfer、USDT / USDC blacklist 状态；HTX SP-1 / SP-2 复用既有 CEX 地址库，不伪造标签命中。</p>
+      </div>
+      <div class="header-actions">
+        <button id="refreshBtn" class="btn primary">刷新数据</button>
+        <span class="sync-meta">最近同步：<strong id="syncTime">--</strong></span>
+      </div>
+    </header>
+
+    <section class="status-strip" id="statusStrip">
+      <div>
+        <strong id="statusTitle">加载中</strong>
+        <span id="statusDesc">正在读取 TRON 链上数据。</span>
+      </div>
+      <span class="pill" id="statusPill">SYNC</span>
+    </section>
+
+    <section class="grid metrics">
+      <article class="card">
+        <span class="label">USDT 黑名单</span>
+        <strong id="metricUsdt">--</strong>
+        <p>USDT getBlackListStatus</p>
+      </article>
+      <article class="card">
+        <span class="label">USDC 黑名单</span>
+        <strong id="metricUsdc">--</strong>
+        <p>USDC isBlacklisted</p>
+      </article>
+      <article class="card">
+        <span class="label">近期高风险流入</span>
+        <strong id="metricEvents">--</strong>
+        <p>仅统计 HTX SP 风险命中</p>
+      </article>
+      <article class="card">
+        <span class="label">HTX SP 识别</span>
+        <strong id="metricHtx">--</strong>
+        <p>复用 CEX 地址库</p>
+      </article>
+    </section>
+
+    <section class="card address-monitor">
+      <div class="section-head">
+        <div>
+          <h2>地址风险监控</h2>
+          <p class="section-copy">分开查看 JustLend 协议自身地址与用户地址池风险，默认展示协议地址监控。</p>
+        </div>
+        <span class="pill muted" id="watchedCount">--</span>
+      </div>
+      <div class="tabs" role="tablist" aria-label="地址风险监控类型">
+        <button id="protocolTab" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="protocolPanel">协议地址监控</button>
+        <button id="userTab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="userPanel">用户地址监控</button>
+      </div>
+
+      <div id="protocolPanel" class="tab-panel active" role="tabpanel" aria-labelledby="protocolTab">
+        <div class="section-head">
+          <div>
+            <h3>协议地址监控</h3>
+            <p class="section-copy">检查 market、reserve、treasury、bot、admin 等 JustLend 自身地址的第三方冻结风险和近期流入。</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>名称</th>
+                <th>市场</th>
+                <th>地址</th>
+                <th>冻结状态</th>
+                <th>近期流入</th>
+              </tr>
+            </thead>
+            <tbody id="addressRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="userPanel" class="tab-panel" role="tabpanel" aria-labelledby="userTab">
+        <div class="section-head">
+          <div>
+            <h3>用户地址监控</h3>
+            <p class="section-copy">检查 JustLend 当前用户地址池与 USDT / USDC 黑名单的交集；地址池未接入时不展示伪造结果。</p>
+          </div>
+          <span class="pill muted" id="userIntersectionCount">--</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用户地址</th>
+                <th>JustLend 身份</th>
+                <th>黑名单状态</th>
+                <th>命中资产</th>
+                <th>处理建议</th>
+              </tr>
+            </thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+        <div class="notice" id="userPoolNotice"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>链上流入事件</h2>
+        <div class="section-tools">
+          <button id="hitOnlyToggle" class="btn toggle" type="button" aria-pressed="false">仅看命中</button>
+          <span class="pill" id="eventCount">--</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>等级</th>
+              <th>市场</th>
+              <th>金额</th>
+              <th>来源</th>
+              <th>SP 标签</th>
+              <th>交易</th>
+            </tr>
+          </thead>
+          <tbody id="eventRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>说明</h2>
+        <span class="pill muted">只读</span>
+      </div>
+      <ul id="notes"></ul>
+    </section>
+
+    <section class="config-footer">
+      <button id="configOpenBtn" class="btn secondary" type="button">查看配置状态</button>
+      <span class="config-footer-copy">配置状态仅用于排查数据口径和地址库接入情况。</span>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="configModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="configModalTitle">配置状态</h2>
+          <p class="section-copy">当前实时看板的数据源、风险阈值和地址库接入口径。</p>
+        </div>
+        <button id="configCloseBtn" class="icon-btn" type="button" aria-label="关闭配置状态弹窗">×</button>
+      </div>
+      <div class="kv">
+        <div><span>HTX seed</span><strong id="configHtx">--</strong></div>
+        <div><span>平台中转 seed</span><strong id="configPlatform">--</strong></div>
+        <div><span>TronGrid Key</span><strong id="configTronGrid">--</strong></div>
+        <div><span>风险阈值</span><strong id="configThreshold">--</strong></div>
+        <div><span>协议监控地址数</span><strong id="configWatched">--</strong></div>
+      </div>
+      <div class="notice" id="configNotice"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">已刷新</div>
+  <script src="./app.js"></script>
+</body>
+</html>
