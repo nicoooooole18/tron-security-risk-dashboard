@@ -1,0 +1,136 @@
+{
+  "dashboard": {
+    "name": "JustLend Capital Intelligence Dashboard",
+    "version": "v0.2.0",
+    "defaultPeriod": "90d",
+    "timezone": "UTC",
+    "snapshotMode": "daily",
+    "summary": "Production data mode reads the latest SQLite Daily Snapshot and recalculates anomaly signals in the current view when thresholds change."
+  },
+  "productionData": {
+    "sourceAdapter": "json-export",
+    "sqliteStore": "data/capital-intelligence.sqlite",
+    "snapshotJob": "node snapshot-job.js",
+    "dailyRefresh": "UTC 00:00 after the last complete UTC day",
+    "webReadMode": "read_latest_sqlite_snapshot_with_mock_fallback",
+    "competitorBorrowPolicy": "TODO in MVP; Market Comparison only uses TVL median."
+  },
+  "assets": [
+    { "symbol": "USDT", "group": "stablecoin", "cmcAssetId": "825", "enabled": true, "marketId": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd", "contractAddress": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" },
+    { "symbol": "USDD", "group": "stablecoin", "cmcAssetId": "19891", "enabled": true, "marketId": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf", "contractAddress": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz" },
+    { "symbol": "TRX", "group": "tron_asset", "cmcAssetId": "1958", "enabled": true, "marketId": "TE2RzoSV3wFK99w6J9UnnZ4vLfXYoxvRwP", "contractAddress": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb" },
+    { "symbol": "sTRX", "group": "tron_asset", "cmcAssetId": "TODO", "enabled": true, "marketId": "TJQ9rbVe9ei3nNtyGgBL22Fuu2xYjZaLAQ", "contractAddress": "TU3kjFuhtEo42tsCBtfYUAZxoqQ4yuSLQ5" },
+    { "symbol": "BTC", "group": "btc_asset", "cmcAssetId": "1", "enabled": true, "marketId": "TLeEu311Cbw63BcmMHDgDLu7fnk9fqGcqT", "contractAddress": "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9" },
+    { "symbol": "ETHB", "group": "eth_asset", "cmcAssetId": "TODO", "enabled": true, "marketId": "TWBxQMb6RD3qmkXUXpNwVCYbL8SHNreru6", "contractAddress": "TRFe3hT5oYhjSZ6f3ji5FJ7YCfrkWnHRvh" },
+    { "symbol": "ETH", "group": "eth_asset", "cmcAssetId": "1027", "enabled": true, "marketId": "TR7BUFRQeq1w5jAZf1FKx85SHuX6PfMqsV", "contractAddress": "THb4CqiFdwNHsWsQCs4JhzwjMWys4aqCbF" }
+  ],
+  "competitors": [
+    { "protocolId": "aave", "name": "Aave", "defillamaSlug": "aave-v3", "enabled": true },
+    { "protocolId": "morpho", "name": "Morpho", "defillamaSlug": "morpho-blue", "enabled": true },
+    { "protocolId": "spark", "name": "Spark", "defillamaSlug": "sparklend", "enabled": true },
+    { "protocolId": "compound", "name": "Compound", "defillamaSlug": "compound-v3", "enabled": true },
+    { "protocolId": "venus", "name": "Venus", "defillamaSlug": "venus-core-pool", "enabled": true }
+  ],
+  "thresholds": [
+    {
+      "key": "competitor_underperformance_pct",
+      "name": "跑输竞品中位数",
+      "metricName": "tvl_relative_change_pct",
+      "operator": ">",
+      "value": 5,
+      "unit": "pct_point",
+      "scopeType": "global",
+      "enabled": true
+    },
+    {
+      "key": "borrow_demand_decline_pct",
+      "name": "核心资产 Borrow 下降",
+      "metricName": "borrow_usd_change_pct",
+      "operator": "<",
+      "value": -10,
+      "unit": "pct",
+      "scopeType": "asset",
+      "enabled": true
+    },
+    {
+      "key": "top20_unreturned_ratio_pct",
+      "name": "Top20 未回流资金占期初 Supply",
+      "metricName": "top20_unreturned_outflow_ratio",
+      "operator": ">",
+      "value": 5,
+      "unit": "pct",
+      "scopeType": "global",
+      "enabled": true
+    },
+    {
+      "key": "single_whale_unreturned_usd",
+      "name": "单个大户未回流流出金额",
+      "metricName": "unreturned_outflow_usd",
+      "operator": ">",
+      "value": 200000,
+      "unit": "usd",
+      "scopeType": "address",
+      "enabled": true
+    },
+    {
+      "key": "destination_concentration_pct",
+      "name": "目的地集中占比",
+      "metricName": "strong_destination_share_pct",
+      "operator": ">",
+      "value": 30,
+      "unit": "pct",
+      "scopeType": "global",
+      "enabled": true
+    },
+    {
+      "key": "hop1_window_hours",
+      "name": "Hop 1 强归因窗口",
+      "metricName": "hop1_window_hours",
+      "operator": "=",
+      "value": 24,
+      "unit": "hours",
+      "scopeType": "global",
+      "enabled": true
+    },
+    {
+      "key": "hop2_window_days",
+      "name": "Hop 2 弱归因窗口",
+      "metricName": "hop2_window_days",
+      "operator": "=",
+      "value": 7,
+      "unit": "days",
+      "scopeType": "global",
+      "enabled": true
+    },
+    {
+      "key": "collateral_intent_decline_usd",
+      "name": "抵押意愿下降金额",
+      "metricName": "collateral_disabled_usd",
+      "operator": ">",
+      "value": 1000000,
+      "unit": "usd",
+      "scopeType": "address",
+      "enabled": false
+    }
+  ],
+  "dataSources": [
+    { "name": "JustLend user position and event export", "type": "internal", "status": "json-export-adapter", "cadence": "daily UTC 00:00" },
+    { "name": "Existing DB read-only adapter", "type": "internal", "status": "reserved-for-schema-discovery", "cadence": "daily UTC 00:00" },
+    { "name": "CoinMarketCap", "type": "price", "status": "env-key-required", "cadence": "daily UTC 00:00" },
+    { "name": "DeFiLlama", "type": "competitor_tvl", "status": "production-source", "cadence": "daily UTC 00:00" },
+    { "name": "Protocol API / existing source", "type": "competitor_borrow", "status": "todo", "cadence": "daily UTC 00:00" }
+  ],
+  "attributionRules": {
+    "maxHops": 2,
+    "hop1WindowHours": 24,
+    "hop2WindowDays": 7,
+    "overviewUses": "strong_attribution_only",
+    "unknownPolicy": "preserve_unknown"
+  },
+  "permissions": {
+    "adminCanConfigure": true,
+    "readOnlyCanConfigure": false,
+    "changeReasonRequired": true,
+    "csvExportEnabled": true
+  }
+}

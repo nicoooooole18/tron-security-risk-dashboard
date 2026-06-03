@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JustLend Capital Intelligence Dashboard</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand">
+        <span class="brand-mark">JL</span>
+        <div>
+          <strong>Capital Intelligence</strong>
+          <span>Daily Snapshot · UTC</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-page="overview" type="button">Overview</button>
+        <button class="nav-item" data-page="market" type="button">Market Comparison</button>
+        <button class="nav-item" data-page="borrow" type="button">Borrow Demand</button>
+        <button class="nav-item" data-page="outflow" type="button">Capital Outflow</button>
+        <button class="nav-item" data-page="settings" type="button">Settings / Data Config</button>
+      </nav>
+      <div class="sidebar-note">
+        <span>默认周期</span>
+        <strong id="sidebarPeriod">90D</strong>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">JUSTLEND MVP · V0.2.0</div>
+          <h1 id="pageTitle">总览</h1>
+          <p id="pageSubtitle">90D 资金变化、主要异常信号和大户未回流摘要。</p>
+        </div>
+        <div class="topbar-meta">
+          <span class="role-badge admin" id="roleBadge">Admin</span>
+          <button class="btn secondary" id="csvExportBtn" type="button">导出 CSV</button>
+          <label class="select-label">
+            视图周期
+            <select id="periodSelect">
+              <option value="90d" selected>90D</option>
+              <option value="30d">30D</option>
+              <option value="7d">7D</option>
+            </select>
+          </label>
+          <span class="last-updated">Last Updated: <strong id="lastUpdated">--</strong></span>
+        </div>
+      </header>
+
+      <section id="overviewPage" class="page-section active">
+        <section class="hero-panel">
+          <div>
+            <span class="section-kicker" id="overviewKicker">90D 核心结论</span>
+            <h2 id="headline">加载中</h2>
+            <p>Overview 主结论只使用 Hop 1 强归因；Hop 2 弱归因仅在详情页辅助展示。</p>
+          </div>
+          <div class="hero-metrics">
+            <div><span>UTC Window</span><strong id="windowText">--</strong></div>
+            <div><span>Data Mode</span><strong id="dataMode">--</strong></div>
+          </div>
+        </section>
+
+        <section class="metric-grid" id="overviewKpis"></section>
+
+        <section class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>主要异常信号</h2>
+                <p>阈值修改后仅影响当前视图，不改写历史异常列表。</p>
+              </div>
+              <span class="pill amber" id="signalCount">--</span>
+            </div>
+            <div id="signalsList" class="signal-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Top20 Round Trip 摘要</h2>
+                <p>区分真实流失和短期资金调度。</p>
+              </div>
+            </div>
+            <div id="roundTripSummary" class="summary-stack"></div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Data Quality</h2>
+              <p>数据源缺失、延迟和 Unknown 归因不会被隐藏。</p>
+            </div>
+          </div>
+          <div id="dataQuality" class="quality-grid"></div>
+        </section>
+      </section>
+
+      <section id="marketPage" class="page-section">
+        <section class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>JustLend vs 竞品 TVL 中位数</h2>
+                <p>一期不做 Market Share，避免跨链体量分母误导。</p>
+              </div>
+            </div>
+            <div id="marketSummary" class="comparison-block"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>TVL 趋势</h2>
+                <p>竞品中位数使用指数化展示，Borrow 中位数缺失时标 TODO。</p>
+              </div>
+            </div>
+            <div id="trendChart" class="trend-chart" aria-label="TVL 趋势图"></div>
+          </article>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>竞品明细</h2>
+            <span class="pill muted">DeFiLlama TVL</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>协议</th>
+                  <th>TVL Change USD</th>
+                  <th id="competitorChangeHead">90D TVL Change</th>
+                  <th>Borrow</th>
+                  <th>Borrow Status</th>
+                </tr>
+              </thead>
+              <tbody id="competitorRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="borrowPage" class="page-section">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>借贷需求分析</h2>
+              <p>Borrow 必须同时看 USD 本位和币本位，避免把价格波动误判为需求下降。</p>
+            </div>
+            <span class="pill muted">USDT / USDD / TRX / sTRX / BTC / ETHB / ETH</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>资产</th>
+                  <th>Supply Change USD</th>
+                  <th>Borrow Change USD</th>
+                  <th>Borrow Amount Change</th>
+                  <th>Borrow USD Change</th>
+                  <th>Price Change</th>
+                  <th>Utilization</th>
+                  <th>Borrow APY</th>
+                  <th>Supply APY</th>
+                  <th>资产信号</th>
+                </tr>
+              </thead>
+              <tbody id="borrowRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="outflowPage" class="page-section">
+        <section class="outflow-summary" id="outflowSummary"></section>
+        <div class="tabs" role="tablist" aria-label="Capital Outflow tabs">
+          <button class="tab active" data-tab="current" type="button">Top20 Current</button>
+          <button class="tab" data-tab="lost" type="button">Top20 Lost</button>
+          <button class="tab" data-tab="roundtrip" type="button">Round Trip Detail</button>
+          <button class="tab" data-tab="destinations" type="button">Destination Ranking</button>
+          <button class="tab" data-tab="attribution" type="button">Attribution Detail</button>
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="outflowTitle">Top20 Current</h2>
+              <p id="outflowCopy">排除内部地址后，按当日 supply_usd 排名。</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead id="outflowHead"></thead>
+              <tbody id="outflowRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="settingsPage" class="page-section">
+        <div class="tabs settings-tabs" role="tablist" aria-label="Settings tabs">
+          <button class="tab settings-tab active" data-settings-tab="thresholds" type="button">Thresholds</button>
+          <button class="tab settings-tab" data-settings-tab="internal" type="button">Internal Address</button>
+          <button class="tab settings-tab" data-settings-tab="assets" type="button">Asset Scope</button>
+          <button class="tab settings-tab" data-settings-tab="sources" type="button">Data Sources</button>
+          <button class="tab settings-tab" data-settings-tab="attribution" type="button">Attribution Rules</button>
+        </div>
+
+        <section class="settings-panel active" data-settings-panel="thresholds">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Thresholds</h2>
+                <p>修改后当前视图立即重算；必须填写修改原因。</p>
+              </div>
+              <span class="pill green" id="thresholdRolePill">Admin</span>
+            </div>
+            <div class="permission-note" id="permissionNote">当前角色可调整阈值，修改写入 SQLite，并立即影响当前视图。</div>
+            <div id="thresholdRows" class="threshold-list"></div>
+            <div class="section-subhead">
+              <h3>Threshold Change Log</h3>
+            </div>
+            <div id="thresholdChangeLogRows" class="change-log"></div>
+          </article>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="sources">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Data Sources</h2>
+                <p>生产模式读取 SQLite Daily Snapshot；JSON export 可作为一期生产输入。</p>
+              </div>
+            </div>
+            <div id="dataSourceRows" class="summary-stack"></div>
+          </article>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="assets">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Asset Scope</h2>
+                <p>一期固定分析 USDT / USDD / TRX / sTRX / BTC / ETHB / ETH。</p>
+              </div>
+              <span class="pill muted">Read Only</span>
+            </div>
+            <div id="assetScopeRows" class="config-grid"></div>
+          </article>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="attribution">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Attribution Rules</h2>
+                <p>一期最多 2 跳；Overview 只使用 Hop 1 强归因。</p>
+              </div>
+              <span class="pill muted">Read Only</span>
+            </div>
+            <div id="attributionRulesRows" class="config-grid"></div>
+          </article>
+        </section>
+
+        <section class="settings-panel" data-settings-panel="internal">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Internal Address</h2>
+              <p>支持单条维护和批量导入；修改原因必填，写入 SQLite 后当前视图生效。</p>
+            </div>
+            <span class="pill green">SQLite Config</span>
+          </div>
+          <div class="settings-forms">
+            <form id="internalAddressForm" class="config-form">
+              <h3>单条新增</h3>
+              <label>
+                地址
+                <input id="internalAddressInput" type="text" placeholder="T..." />
+              </label>
+              <label>
+                标签
+                <input id="internalLabelInput" type="text" placeholder="team / treasury / ops / contract" value="internal" />
+              </label>
+              <label>
+                修改原因
+                <input id="internalReasonInput" type="text" placeholder="必填" />
+              </label>
+              <label class="checkbox-line">
+                <input id="internalExcludeInput" type="checkbox" checked />
+                排除 Top20 / Flow / Alert
+              </label>
+              <button class="btn primary" type="submit">新增内部地址</button>
+            </form>
+            <form id="internalImportForm" class="config-form">
+              <h3>批量导入</h3>
+              <label>
+                地址列表
+                <textarea id="internalImportText" rows="5" placeholder="每行一个：address,label,reason"></textarea>
+              </label>
+              <label>
+                导入原因
+                <input id="internalImportReason" type="text" placeholder="必填" />
+              </label>
+              <button class="btn secondary" type="submit">批量导入</button>
+            </form>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>地址</th>
+                  <th>标签</th>
+                  <th>排除 Top20</th>
+                  <th>排除 Flow</th>
+                  <th>排除 Alert</th>
+                  <th>原因</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="internalAddressRows"></tbody>
+            </table>
+          </div>
+          <div class="section-subhead">
+            <h3>Internal Address Change Log</h3>
+          </div>
+          <div id="internalAddressLogRows" class="change-log"></div>
+        </article>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">已更新当前视图</div>
+  <script src="./app.js"></script>
+</body>
+</html>

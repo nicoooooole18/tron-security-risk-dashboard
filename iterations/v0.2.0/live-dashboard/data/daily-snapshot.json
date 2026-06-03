@@ -1,0 +1,274 @@
+{
+  "generatedAt": "2026-06-02T00:00:00.000Z",
+  "period": "90d",
+  "periodStart": "2026-03-04T00:00:00.000Z",
+  "periodEnd": "2026-06-02T00:00:00.000Z",
+  "lastCompleteUtcDate": "2026-06-01",
+  "status": {
+    "mode": "MVP_MOCK_DAILY_SNAPSHOT",
+    "summary": "Mock data shaped to PRD v0.2.0. Replace with ETL-generated mart tables before production.",
+    "dataQualityLevel": "TODO"
+  },
+  "overview": {
+    "headline": "JustLend 90D TVL 跑输竞品中位数，USDT Borrow 与 Top20 未回流资金是主要异常信号。",
+    "kpis": {
+      "tvlUsd": 3260000000,
+      "tvlChangePct": -8.4,
+      "supplyUsd": 3880000000,
+      "supplyChangePct": -5.9,
+      "borrowUsd": 980000000,
+      "borrowChangePct": -14.2,
+      "utilization": 25.3,
+      "utilizationChangePct": -3.8,
+      "netFlowUsd": -268000000
+    }
+  },
+  "marketComparison": {
+    "justlend": {
+      "protocolId": "justlend",
+      "name": "JustLend",
+      "tvlUsd": 3260000000,
+      "tvlChangePct": -8.4,
+      "borrowUsd": 980000000,
+      "borrowChangePct": -14.2
+    },
+    "competitorMedian": {
+      "tvlChangePct": 1.8,
+      "borrowChangePct": null,
+      "borrowStatus": "TODO / Data unavailable"
+    },
+    "relative": {
+      "tvlUnderperformancePctPoint": 10.2,
+      "borrowUnderperformancePctPoint": null
+    },
+    "competitors": [
+      { "name": "Aave", "tvlUsd": 24300000000, "tvlChangePct": 3.4, "borrowUsd": null, "borrowChangePct": null, "borrowStatus": "TODO" },
+      { "name": "Morpho", "tvlUsd": 5420000000, "tvlChangePct": 6.8, "borrowUsd": null, "borrowChangePct": null, "borrowStatus": "TODO" },
+      { "name": "Spark", "tvlUsd": 6210000000, "tvlChangePct": 1.8, "borrowUsd": null, "borrowChangePct": null, "borrowStatus": "TODO" },
+      { "name": "Compound", "tvlUsd": 2860000000, "tvlChangePct": -2.1, "borrowUsd": null, "borrowChangePct": null, "borrowStatus": "TODO" },
+      { "name": "Venus", "tvlUsd": 1950000000, "tvlChangePct": -0.7, "borrowUsd": null, "borrowChangePct": null, "borrowStatus": "TODO" }
+    ],
+    "trend": [
+      { "date": "2026-03-04", "justlendTvl": 3560000000, "competitorMedianTvl": 100 },
+      { "date": "2026-03-19", "justlendTvl": 3510000000, "competitorMedianTvl": 101.2 },
+      { "date": "2026-04-03", "justlendTvl": 3430000000, "competitorMedianTvl": 101.9 },
+      { "date": "2026-04-18", "justlendTvl": 3380000000, "competitorMedianTvl": 102.6 },
+      { "date": "2026-05-03", "justlendTvl": 3310000000, "competitorMedianTvl": 101.5 },
+      { "date": "2026-05-18", "justlendTvl": 3290000000, "competitorMedianTvl": 102.1 },
+      { "date": "2026-06-02", "justlendTvl": 3260000000, "competitorMedianTvl": 101.8 }
+    ]
+  },
+  "borrowDemand": {
+    "assets": [
+      {
+        "asset": "USDT",
+        "supplyUsd": 2140000000,
+        "supplyChangePct": -6.1,
+        "borrowAmount": 748000000,
+        "borrowAmountChangePct": -16.4,
+        "borrowUsd": 748000000,
+        "borrowUsdChangePct": -16.4,
+        "assetPriceChangePct": 0.0,
+        "utilization": 35.0,
+        "utilizationChangePct": -5.2,
+        "borrowApy": 4.7,
+        "borrowApyChangePct": -1.1,
+        "supplyApy": 2.1,
+        "supplyApyChangePct": -0.6
+      },
+      {
+        "asset": "USDD",
+        "supplyUsd": 420000000,
+        "supplyChangePct": -3.5,
+        "borrowAmount": 126000000,
+        "borrowAmountChangePct": -6.2,
+        "borrowUsd": 126000000,
+        "borrowUsdChangePct": -6.0,
+        "assetPriceChangePct": 0.2,
+        "utilization": 30.0,
+        "utilizationChangePct": -1.4,
+        "borrowApy": 3.8,
+        "borrowApyChangePct": -0.4,
+        "supplyApy": 1.5,
+        "supplyApyChangePct": -0.2
+      },
+      {
+        "asset": "TRX",
+        "supplyUsd": 540000000,
+        "supplyChangePct": 2.4,
+        "borrowAmount": 1280000000,
+        "borrowAmountChangePct": 1.8,
+        "borrowUsd": 142000000,
+        "borrowUsdChangePct": -7.4,
+        "assetPriceChangePct": -9.1,
+        "utilization": 26.3,
+        "utilizationChangePct": -1.9,
+        "borrowApy": 5.3,
+        "borrowApyChangePct": -0.2,
+        "supplyApy": 2.4,
+        "supplyApyChangePct": 0.1
+      },
+      {
+        "asset": "sTRX",
+        "supplyUsd": 310000000,
+        "supplyChangePct": -1.2,
+        "borrowAmount": 450000000,
+        "borrowAmountChangePct": -2.1,
+        "borrowUsd": 52000000,
+        "borrowUsdChangePct": -9.8,
+        "assetPriceChangePct": -7.7,
+        "utilization": 16.8,
+        "utilizationChangePct": -1.1,
+        "borrowApy": 4.9,
+        "borrowApyChangePct": -0.3,
+        "supplyApy": 1.8,
+        "supplyApyChangePct": -0.1
+      },
+      {
+        "asset": "BTC",
+        "supplyUsd": 220000000,
+        "supplyChangePct": -4.0,
+        "borrowAmount": 510,
+        "borrowAmountChangePct": -1.0,
+        "borrowUsd": 35000000,
+        "borrowUsdChangePct": 5.6,
+        "assetPriceChangePct": 6.8,
+        "utilization": 15.9,
+        "utilizationChangePct": 1.2,
+        "borrowApy": 2.8,
+        "borrowApyChangePct": 0.2,
+        "supplyApy": 1.0,
+        "supplyApyChangePct": 0.0
+      },
+      {
+        "asset": "ETHB",
+        "supplyUsd": 146000000,
+        "supplyChangePct": -2.8,
+        "borrowAmount": 8200,
+        "borrowAmountChangePct": -3.1,
+        "borrowUsd": 25000000,
+        "borrowUsdChangePct": -1.9,
+        "assetPriceChangePct": 1.2,
+        "utilization": 17.1,
+        "utilizationChangePct": -0.3,
+        "borrowApy": 3.1,
+        "borrowApyChangePct": -0.1,
+        "supplyApy": 1.2,
+        "supplyApyChangePct": 0.0
+      },
+      {
+        "asset": "ETH",
+        "supplyUsd": 162000000,
+        "supplyChangePct": 1.4,
+        "borrowAmount": 10800,
+        "borrowAmountChangePct": 0.6,
+        "borrowUsd": 30000000,
+        "borrowUsdChangePct": 2.2,
+        "assetPriceChangePct": 1.6,
+        "utilization": 18.5,
+        "utilizationChangePct": 0.4,
+        "borrowApy": 3.4,
+        "borrowApyChangePct": 0.1,
+        "supplyApy": 1.3,
+        "supplyApyChangePct": 0.1
+      }
+    ]
+  },
+  "capitalOutflow": {
+    "summary": {
+      "beginningSupplyUsd": 812000000,
+      "grossWithdrawUsd": 73500000,
+      "grossDepositUsd": 28600000,
+      "netOutflowUsd": 44900000,
+      "returnedOutflowUsd": 22500000,
+      "unreturnedOutflowUsd": 51000000,
+      "unreturnedOutflowRatioPct": 6.28,
+      "returnRatePct": 30.6,
+      "avgTimeAwayDays": 12.4,
+      "unknownStrongAttributionPct": 38
+    },
+    "top20Current": [
+      { "rank": 1, "address": "TQ9xjR7o5pZqjR6dA7iWn9Qx5E7dL3JkVw", "supplyUsd": 86500000, "borrowUsd": 12400000, "netPositionUsd": 74100000, "primaryAsset": "USDT", "unreturnedOutflowUsd": 6200000, "returnRatePct": 28 },
+      { "rank": 2, "address": "TR7mHk8pVb3Lq2nJ9dK4sY6aNw1cF5eXrA", "supplyUsd": 74200000, "borrowUsd": 8200000, "netPositionUsd": 66000000, "primaryAsset": "USDD", "unreturnedOutflowUsd": 1900000, "returnRatePct": 71 },
+      { "rank": 3, "address": "TD4kL2nY8mQp7Vx6sC1aR9eW3zB5uHjPq", "supplyUsd": 65300000, "borrowUsd": 31500000, "netPositionUsd": 33800000, "primaryAsset": "TRX", "unreturnedOutflowUsd": 8100000, "returnRatePct": 12 },
+      { "rank": 4, "address": "TG6pA9eV2wLmQ8rN5xZt1KcY7hD3sJfBn", "supplyUsd": 58600000, "borrowUsd": 5100000, "netPositionUsd": 53500000, "primaryAsset": "USDT", "unreturnedOutflowUsd": 0, "returnRatePct": 100 },
+      { "rank": 5, "address": "TL8rB3nC7qWv2E9yJ5mH1xD4sP6zKfTa", "supplyUsd": 51200000, "borrowUsd": 20800000, "netPositionUsd": 30400000, "primaryAsset": "BTC", "unreturnedOutflowUsd": 2300000, "returnRatePct": 54 },
+      { "rank": 6, "address": "TN6aC4dE8fGh2Jk9LmPq3Rs7TuVx5YzAb", "supplyUsd": 48600000, "borrowUsd": 9600000, "netPositionUsd": 39000000, "primaryAsset": "USDT", "unreturnedOutflowUsd": 2800000, "returnRatePct": 44 },
+      { "rank": 7, "address": "TW4bD7eF2gHk8Lm5NpQr1St6UvXy9ZaBc", "supplyUsd": 45300000, "borrowUsd": 12100000, "netPositionUsd": 33200000, "primaryAsset": "USDD", "unreturnedOutflowUsd": 1700000, "returnRatePct": 67 },
+      { "rank": 8, "address": "TY8cE1fG6hJm3Np7QrSt2Uv9WxZa4BcDe", "supplyUsd": 42100000, "borrowUsd": 4300000, "netPositionUsd": 37800000, "primaryAsset": "TRX", "unreturnedOutflowUsd": 0, "returnRatePct": 100 },
+      { "rank": 9, "address": "TA5dF9gH2jKp6Qr1StUv4Wx8YzBc3DeFg", "supplyUsd": 39800000, "borrowUsd": 15500000, "netPositionUsd": 24300000, "primaryAsset": "USDT", "unreturnedOutflowUsd": 2450000, "returnRatePct": 39 },
+      { "rank": 10, "address": "TC2eG6hJ9kLq3St7UvWx1Yz5AbDe8FgHi", "supplyUsd": 37200000, "borrowUsd": 7600000, "netPositionUsd": 29600000, "primaryAsset": "ETH", "unreturnedOutflowUsd": 1200000, "returnRatePct": 72 },
+      { "rank": 11, "address": "TE9fH3jK6lMr2Uv8WxYz4Ab7CdFg1HiJk", "supplyUsd": 34900000, "borrowUsd": 6800000, "netPositionUsd": 28100000, "primaryAsset": "BTC", "unreturnedOutflowUsd": 980000, "returnRatePct": 76 },
+      { "rank": 12, "address": "TG3gJ7kL1mNs5Wx9YzAb2Cd6EfHi4JkLm", "supplyUsd": 32100000, "borrowUsd": 11400000, "netPositionUsd": 20700000, "primaryAsset": "sTRX", "unreturnedOutflowUsd": 1550000, "returnRatePct": 58 },
+      { "rank": 13, "address": "TJ7hK2lM8nPt4Yz1AbCd5Ef9GhJk3LmNp", "supplyUsd": 29800000, "borrowUsd": 5100000, "netPositionUsd": 24700000, "primaryAsset": "USDD", "unreturnedOutflowUsd": 760000, "returnRatePct": 82 },
+      { "rank": 14, "address": "TM1jL5mN9pQr3Ab7CdEf2Gh6JkLm4NpQs", "supplyUsd": 27400000, "borrowUsd": 9800000, "netPositionUsd": 17600000, "primaryAsset": "USDT", "unreturnedOutflowUsd": 2150000, "returnRatePct": 47 },
+      { "rank": 15, "address": "TP5kM9nP2qRs6Cd1EfGh4Jk8LmNp3QsTu", "supplyUsd": 25100000, "borrowUsd": 2400000, "netPositionUsd": 22700000, "primaryAsset": "ETHB", "unreturnedOutflowUsd": 640000, "returnRatePct": 88 },
+      { "rank": 16, "address": "TR9lN3pQ7rSt1Ef5GhJk2Lm6NpQs4TuVw", "supplyUsd": 23600000, "borrowUsd": 6200000, "netPositionUsd": 17400000, "primaryAsset": "TRX", "unreturnedOutflowUsd": 1350000, "returnRatePct": 61 },
+      { "rank": 17, "address": "TU3mP7qR1sTv5Gh9JkLm2Np6QsTu4VwXy", "supplyUsd": 21800000, "borrowUsd": 3900000, "netPositionUsd": 17900000, "primaryAsset": "USDT", "unreturnedOutflowUsd": 870000, "returnRatePct": 79 },
+      { "rank": 18, "address": "TW7nQ1rS5tUv9Jk3LmNp6Qs2TuVw4XyZa", "supplyUsd": 20300000, "borrowUsd": 8100000, "netPositionUsd": 12200000, "primaryAsset": "USDD", "unreturnedOutflowUsd": 1120000, "returnRatePct": 69 },
+      { "rank": 19, "address": "TY1pR5sT9uVw3Lm7NpQs2Tu6VwXy4ZaBc", "supplyUsd": 18700000, "borrowUsd": 1200000, "netPositionUsd": 17500000, "primaryAsset": "BTC", "unreturnedOutflowUsd": 520000, "returnRatePct": 91 },
+      { "rank": 20, "address": "TA9qS3tU7vWx1Np5QsTu2Vw6XyZa4BcDe", "supplyUsd": 17100000, "borrowUsd": 5400000, "netPositionUsd": 11700000, "primaryAsset": "ETH", "unreturnedOutflowUsd": 430000, "returnRatePct": 93 }
+    ],
+    "top20Lost": [
+      { "rank": 1, "address": "TD4kL2nY8mQp7Vx6sC1aR9eW3zB5uHjPq", "beginningSupplyUsd": 72800000, "grossWithdrawUsd": 13200000, "returnedOutflowUsd": 5100000, "unreturnedOutflowUsd": 8100000, "returnRatePct": 38.6, "topDestination": "Binance" },
+      { "rank": 2, "address": "TQ9xjR7o5pZqjR6dA7iWn9Qx5E7dL3JkVw", "beginningSupplyUsd": 90300000, "grossWithdrawUsd": 16500000, "returnedOutflowUsd": 10300000, "unreturnedOutflowUsd": 6200000, "returnRatePct": 62.4, "topDestination": "StUSDT" },
+      { "rank": 3, "address": "TP2vH8sN4kLq7Zd6aX1yR3wC9mB5eJtFu", "beginningSupplyUsd": 25500000, "grossWithdrawUsd": 5400000, "returnedOutflowUsd": 900000, "unreturnedOutflowUsd": 4500000, "returnRatePct": 16.7, "topDestination": "Unknown" },
+      { "rank": 4, "address": "TJ5nQ2wR8cVx4kP9mZt1aL6sD3yH7eFb", "beginningSupplyUsd": 31800000, "grossWithdrawUsd": 6200000, "returnedOutflowUsd": 2500000, "unreturnedOutflowUsd": 3700000, "returnRatePct": 40.3, "topDestination": "Aave" },
+      { "rank": 5, "address": "TK7pL3eD9wNq5aR2xY6mC1zV8sH4tJbG", "beginningSupplyUsd": 21900000, "grossWithdrawUsd": 4100000, "returnedOutflowUsd": 950000, "unreturnedOutflowUsd": 3150000, "returnRatePct": 23.2, "topDestination": "HTX" },
+      { "rank": 6, "address": "TN6aC4dE8fGh2Jk9LmPq3Rs7TuVx5YzAb", "beginningSupplyUsd": 50100000, "grossWithdrawUsd": 6800000, "returnedOutflowUsd": 4000000, "unreturnedOutflowUsd": 2800000, "returnRatePct": 58.8, "topDestination": "SUN" },
+      { "rank": 7, "address": "TA5dF9gH2jKp6Qr1StUv4Wx8YzBc3DeFg", "beginningSupplyUsd": 44200000, "grossWithdrawUsd": 5200000, "returnedOutflowUsd": 2750000, "unreturnedOutflowUsd": 2450000, "returnRatePct": 52.9, "topDestination": "OKX" },
+      { "rank": 8, "address": "TL8rB3nC7qWv2E9yJ5mH1xD4sP6zKfTa", "beginningSupplyUsd": 53600000, "grossWithdrawUsd": 6100000, "returnedOutflowUsd": 3800000, "unreturnedOutflowUsd": 2300000, "returnRatePct": 62.3, "topDestination": "Bridge" },
+      { "rank": 9, "address": "TM1jL5mN9pQr3Ab7CdEf2Gh6JkLm4NpQs", "beginningSupplyUsd": 29100000, "grossWithdrawUsd": 3950000, "returnedOutflowUsd": 1800000, "unreturnedOutflowUsd": 2150000, "returnRatePct": 45.6, "topDestination": "Venus" },
+      { "rank": 10, "address": "TR7mHk8pVb3Lq2nJ9dK4sY6aNw1cF5eXrA", "beginningSupplyUsd": 78100000, "grossWithdrawUsd": 5200000, "returnedOutflowUsd": 3300000, "unreturnedOutflowUsd": 1900000, "returnRatePct": 63.5, "topDestination": "USDD" },
+      { "rank": 11, "address": "TW4bD7eF2gHk8Lm5NpQr1St6UvXy9ZaBc", "beginningSupplyUsd": 46900000, "grossWithdrawUsd": 3600000, "returnedOutflowUsd": 1900000, "unreturnedOutflowUsd": 1700000, "returnRatePct": 52.8, "topDestination": "Unknown" },
+      { "rank": 12, "address": "TG3gJ7kL1mNs5Wx9YzAb2Cd6EfHi4JkLm", "beginningSupplyUsd": 33700000, "grossWithdrawUsd": 3150000, "returnedOutflowUsd": 1600000, "unreturnedOutflowUsd": 1550000, "returnRatePct": 50.8, "topDestination": "Compound" },
+      { "rank": 13, "address": "TR9lN3pQ7rSt1Ef5GhJk2Lm6NpQs4TuVw", "beginningSupplyUsd": 24900000, "grossWithdrawUsd": 2900000, "returnedOutflowUsd": 1550000, "unreturnedOutflowUsd": 1350000, "returnRatePct": 53.4, "topDestination": "Bybit" },
+      { "rank": 14, "address": "TC2eG6hJ9kLq3St7UvWx1Yz5AbDe8FgHi", "beginningSupplyUsd": 38600000, "grossWithdrawUsd": 2600000, "returnedOutflowUsd": 1400000, "unreturnedOutflowUsd": 1200000, "returnRatePct": 53.8, "topDestination": "Morpho" },
+      { "rank": 15, "address": "TW7nQ1rS5tUv9Jk3LmNp6Qs2TuVw4XyZa", "beginningSupplyUsd": 21400000, "grossWithdrawUsd": 2450000, "returnedOutflowUsd": 1330000, "unreturnedOutflowUsd": 1120000, "returnRatePct": 54.3, "topDestination": "Binance" },
+      { "rank": 16, "address": "TE9fH3jK6lMr2Uv8WxYz4Ab7CdFg1HiJk", "beginningSupplyUsd": 36100000, "grossWithdrawUsd": 2350000, "returnedOutflowUsd": 1370000, "unreturnedOutflowUsd": 980000, "returnRatePct": 58.3, "topDestination": "StUSDT" },
+      { "rank": 17, "address": "TU3mP7qR1sTv5Gh9JkLm2Np6QsTu4VwXy", "beginningSupplyUsd": 22600000, "grossWithdrawUsd": 2050000, "returnedOutflowUsd": 1180000, "unreturnedOutflowUsd": 870000, "returnRatePct": 57.6, "topDestination": "HTX" },
+      { "rank": 18, "address": "TJ7hK2lM8nPt4Yz1AbCd5Ef9GhJk3LmNp", "beginningSupplyUsd": 30600000, "grossWithdrawUsd": 1780000, "returnedOutflowUsd": 1020000, "unreturnedOutflowUsd": 760000, "returnRatePct": 57.3, "topDestination": "Unknown" },
+      { "rank": 19, "address": "TP5kM9nP2qRs6Cd1EfGh4Jk8LmNp3QsTu", "beginningSupplyUsd": 25900000, "grossWithdrawUsd": 1610000, "returnedOutflowUsd": 970000, "unreturnedOutflowUsd": 640000, "returnRatePct": 60.2, "topDestination": "Aave" },
+      { "rank": 20, "address": "TY1pR5sT9uVw3Lm7NpQs2Tu6VwXy4ZaBc", "beginningSupplyUsd": 19400000, "grossWithdrawUsd": 1420000, "returnedOutflowUsd": 900000, "unreturnedOutflowUsd": 520000, "returnRatePct": 63.4, "topDestination": "Unknown" }
+    ],
+    "roundTrips": [
+      { "address": "TQ9xjR7o5pZqjR6dA7iWn9Qx5E7dL3JkVw", "outflowTime": "2026-04-07T09:20:00.000Z", "outflowAsset": "USDT", "outflowUsd": 5000000, "strongDestination": "StUSDT", "destinationCategory": "TRON Eco", "weakDestination": null, "returnTime": "2026-04-26T03:10:00.000Z", "returnAsset": "USDT", "returnUsd": 6100000, "returnMarket": "jUSDT", "timeAwayHours": 449.7, "status": "returned" },
+      { "address": "TD4kL2nY8mQp7Vx6sC1aR9eW3zB5uHjPq", "outflowTime": "2026-03-18T18:40:00.000Z", "outflowAsset": "USDT", "outflowUsd": 3200000, "strongDestination": "Binance", "destinationCategory": "CEX", "weakDestination": null, "returnTime": null, "returnAsset": null, "returnUsd": 0, "returnMarket": null, "timeAwayHours": 1765.3, "status": "not_returned" },
+      { "address": "TJ5nQ2wR8cVx4kP9mZt1aL6sD3yH7eFb", "outflowTime": "2026-05-03T06:12:00.000Z", "outflowAsset": "ETH", "outflowUsd": 1800000, "strongDestination": "Unknown", "destinationCategory": "Unknown", "weakDestination": "Aave", "returnTime": "2026-05-19T14:32:00.000Z", "returnAsset": "ETH", "returnUsd": 900000, "returnMarket": "jETH", "timeAwayHours": 392.3, "status": "partially_returned" },
+      { "address": "TP2vH8sN4kLq7Zd6aX1yR3wC9mB5eJtFu", "outflowTime": "2026-04-20T11:04:00.000Z", "outflowAsset": "USDD", "outflowUsd": 2600000, "strongDestination": "Unknown", "destinationCategory": "Unknown", "weakDestination": null, "returnTime": null, "returnAsset": null, "returnUsd": 0, "returnMarket": null, "timeAwayHours": 1020.9, "status": "not_returned" }
+    ],
+    "destinations": [
+      { "destination": "Unknown", "category": "Unknown", "amountUsd": 19380000, "sharePct": 38.0, "walletCount": 8, "attribution": "unknown" },
+      { "destination": "StUSDT", "category": "TRON Eco", "amountUsd": 15810000, "sharePct": 31.0, "walletCount": 5, "attribution": "strong" },
+      { "destination": "Binance", "category": "CEX", "amountUsd": 7650000, "sharePct": 15.0, "walletCount": 3, "attribution": "strong" },
+      { "destination": "Aave", "category": "Lending", "amountUsd": 6120000, "sharePct": 12.0, "walletCount": 2, "attribution": "weak" },
+      { "destination": "HTX", "category": "CEX", "amountUsd": 2040000, "sharePct": 4.0, "walletCount": 1, "attribution": "strong" }
+    ],
+    "attributionDetails": [
+      { "hop": 1, "address": "TQ9xjR7o5pZqjR6dA7iWn9Qx5E7dL3JkVw", "amountUsd": 5000000, "destination": "StUSDT", "category": "TRON Eco", "confidence": 0.92, "usedInOverview": true },
+      { "hop": 1, "address": "TD4kL2nY8mQp7Vx6sC1aR9eW3zB5uHjPq", "amountUsd": 3200000, "destination": "Binance", "category": "CEX", "confidence": 0.89, "usedInOverview": true },
+      { "hop": 2, "address": "TJ5nQ2wR8cVx4kP9mZt1aL6sD3yH7eFb", "amountUsd": 1800000, "destination": "Aave", "category": "Lending", "confidence": 0.64, "usedInOverview": false },
+      { "hop": 1, "address": "TP2vH8sN4kLq7Zd6aX1yR3wC9mB5eJtFu", "amountUsd": 2600000, "destination": "Unknown", "category": "Unknown", "confidence": 0.0, "usedInOverview": false }
+    ]
+  },
+  "settings": {
+    "role": "admin",
+    "internalAddresses": [
+      { "address": "TTEAM00000000000000000000000000000001", "label": "team", "reason": "Internal team wallet", "excludeFromTopHolder": true, "excludeFromFlowAnalysis": true, "excludeFromAlert": true },
+      { "address": "TTREASURY0000000000000000000000000002", "label": "treasury", "reason": "Treasury wallet", "excludeFromTopHolder": true, "excludeFromFlowAnalysis": true, "excludeFromAlert": true },
+      { "address": "TCONTRACT0000000000000000000000000003", "label": "contract", "reason": "Protocol contract", "excludeFromTopHolder": true, "excludeFromFlowAnalysis": true, "excludeFromAlert": true }
+    ],
+    "changeLog": [
+      { "time": "2026-06-02T00:00:00.000Z", "user": "system", "target": "thresholds", "summary": "Loaded MVP default thresholds", "reason": "Initial MVP configuration" }
+    ]
+  },
+  "dataQuality": [
+    { "source": "Daily Snapshot", "status": "mock", "message": "Using MVP mock data until ETL mart tables are connected." },
+    { "source": "90D Start Snapshot", "status": "complete", "message": "periodStart 2026-03-04T00:00:00Z is available; beginning_supply_usd uses the 90D start snapshot." },
+    { "source": "Internal Address Filter", "status": "complete", "message": "Top20 Current, Top20 Lost, Capital Outflow, and anomaly signals exclude the configured internal addresses." },
+    { "source": "DeFiLlama", "status": "placeholder", "message": "TVL source configured in PRD; live connector not implemented in MVP shell." },
+    { "source": "CoinMarketCap", "status": "placeholder", "message": "Daily UTC price source configured in PRD; live connector not implemented in MVP shell." },
+    { "source": "Competitor Borrow", "status": "todo", "message": "Borrow median is excluded when data is unavailable." },
+    { "source": "Attribution Unknown", "status": "visible", "message": "Unknown is preserved and not force-attributed; current Hop 1 Unknown share is 38.0%." }
+  ]
+}
