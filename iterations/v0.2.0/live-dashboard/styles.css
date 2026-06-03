@@ -786,9 +786,10 @@ table[data-outflow-table="attribution"] td:nth-child(4) {
 
 .threshold-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px 110px;
+  grid-template-columns: minmax(220px, 1fr) minmax(96px, 120px) minmax(160px, 220px);
   gap: 10px;
   align-items: end;
+  min-width: 0;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -846,12 +847,15 @@ table[data-outflow-table="attribution"] td:nth-child(4) {
 .threshold-row label {
   display: grid;
   gap: 5px;
+  min-width: 0;
   color: var(--muted);
   font-size: var(--font-xs);
   font-weight: 800;
 }
 
 .threshold-row input {
+  width: 100%;
+  min-width: 0;
   min-height: 36px;
   padding: 0 9px;
 }
@@ -950,6 +954,9 @@ table[data-outflow-table="attribution"] td:nth-child(4) {
 .threshold-title > strong,
 .threshold-title > span {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .threshold-title > span {
@@ -1009,6 +1016,7 @@ table[data-outflow-table="attribution"] td:nth-child(4) {
   .outflow-summary { grid-template-columns: 1fr; }
   .metric-grid,
   .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .threshold-row { grid-template-columns: minmax(180px, 1fr) minmax(90px, 112px) minmax(140px, 190px); }
 }
 
 @media (max-width: 720px) {
