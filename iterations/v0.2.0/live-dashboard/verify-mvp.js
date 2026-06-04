@@ -163,9 +163,10 @@ function runSqliteChecks(dbPath) {
 }
 
 async function runApiChecks(base) {
-  const [overview, overview7d, snapshot7d, snapshot30d, overview30d, market7d, market90d, topCurrent30d, topLost7d, topCurrent, topLost, roundTrip, internalAddresses, thresholds, borrowCsv, topLostCsv] = await Promise.all([
+  const [overview, overview7d, snapshot90d, snapshot7d, snapshot30d, overview30d, market7d, market90d, topCurrent30d, topLost7d, topCurrent, topLost, roundTrip, borrowCsv, topLostCsv] = await Promise.all([
     fetchJson(base, "/api/v1/overview?period=90d"),
     fetchJson(base, "/api/v1/overview?period=7d"),
+    fetchJson(base, "/api/snapshot?period=90d"),
     fetchJson(base, "/api/snapshot?period=7d"),
     fetchJson(base, "/api/snapshot?period=30d"),
     fetchJson(base, "/api/v1/overview?period=30d"),
@@ -176,8 +177,6 @@ async function runApiChecks(base) {
     fetchJson(base, "/api/v1/capital-outflow/top-current?period=90d"),
     fetchJson(base, "/api/v1/capital-outflow/top-lost?period=90d"),
     fetchJson(base, "/api/v1/capital-outflow/round-trip?period=90d"),
-    fetchJson(base, "/api/v1/settings/internal-addresses"),
-    fetchJson(base, "/api/v1/settings/thresholds"),
     fetchText(base, "/api/v1/export.csv?dataset=borrow-demand&period=90d"),
     fetchText(base, "/api/v1/export.csv?dataset=top-lost&period=90d")
   ]);
@@ -195,17 +194,20 @@ async function runApiChecks(base) {
   check("api top current returns 20 rows", topCurrent.items?.length === 20);
   check("api top lost returns 20 rows", topLost.items?.length === 20);
   check("api round trip returns time away", roundTrip.items?.every((item) => Number.isFinite(item.timeAwayHours)));
-  check("api internal addresses are normalized", internalAddresses.items?.every((item) => item.excludeFromTopHolder && item.excludeFromFlowAnalysis && item.excludeFromAlert));
-  check("api thresholds return 8 rules", thresholds.items?.length === 8);
+  check("api public snapshot does not expose settings", snapshot90d.settings === undefined);
+  check("api public snapshot includes threshold config for view calculations", snapshot90d.config?.thresholds?.length === 8);
   check("api borrow demand csv exports", borrowCsv.includes("asset,supply_usd") && borrowCsv.includes("USDT"));
   check("api top lost csv exports", topLostCsv.includes("rank,address") && topLostCsv.includes("unreturned_outflow_usd"));
 
-  const readonlyPatch = await fetch(`${base}/api/v1/settings/thresholds/borrow_demand_decline_pct`, {
+  const unauthSettings = await fetch(`${base}/api/v1/settings/thresholds`);
+  check("api settings read requires admin login", unauthSettings.status === 401);
+
+  const unauthPatch = await fetch(`${base}/api/v1/settings/thresholds/borrow_demand_decline_pct`, {
     method: "PATCH",
-    headers: { "content-type": "application/json", "x-user-role": "readonly" },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({ value: -5, reason: "verify readonly gate" })
   });
-  check("api readonly role cannot modify thresholds", readonlyPatch.status === 403);
+  check("api settings write requires admin login", unauthPatch.status === 401);
 }
 
 async function fetchJson(base, route) {

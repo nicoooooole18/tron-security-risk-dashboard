@@ -1,4 +1,5 @@
 const http = require("node:http");
+const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { productionPaths } = require("./lib/env");
@@ -12,6 +13,11 @@ const CONFIG_PATH = path.join(ROOT, "config.json");
 const SNAPSHOT_PATH = path.join(ROOT, "data/daily-snapshot.json");
 const PRODUCTION_PATHS = productionPaths();
 const STORE = new SQLiteStore(PRODUCTION_PATHS.sqliteDbPath);
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+const SESSION_SECRET = process.env.SESSION_SECRET || "";
+const AUTH_COOKIE = "jl_admin_session";
+const SESSION_TTL_MS = Number(process.env.ADMIN_SESSION_TTL_HOURS || 12) * 60 * 60 * 1000;
 
 let runtimeThresholds = null;
 const runtimeThresholdChangeLog = [];
@@ -29,6 +35,15 @@ function sendJson(res, status, payload) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store"
+  });
+  res.end(JSON.stringify(payload, null, 2));
+}
+
+function sendJsonWithHeaders(res, status, payload, headers) {
+  res.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-store",
+    ...headers
   });
   res.end(JSON.stringify(payload, null, 2));
 }
@@ -69,6 +84,105 @@ async function readRequestBody(req) {
   if (!chunks.length) return {};
   const raw = Buffer.concat(chunks).toString("utf8");
   return raw ? JSON.parse(raw) : {};
+}
+
+function parseCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const index = item.indexOf("=");
+      if (index === -1) return [item, ""];
+      return [decodeURIComponent(item.slice(0, index)), decodeURIComponent(item.slice(index + 1))];
+    }));
+}
+
+function authSignature(payload) {
+  return crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
+}
+
+function constantTimeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left));
+  const rightBuffer = Buffer.from(String(right));
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function createSessionCookie(username) {
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  const nonce = crypto.randomBytes(16).toString("base64url");
+  const payload = `${username}.${expiresAt}.${nonce}`;
+  const token = `${payload}.${authSignature(payload)}`;
+  return `${AUTH_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`;
+}
+
+function clearSessionCookie() {
+  return `${AUTH_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
+function getAdminSession(req) {
+  if (!SESSION_SECRET) return null;
+  const token = parseCookies(req)[AUTH_COOKIE];
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 4) return null;
+  const [username, expiresAtText, nonce, signature] = parts;
+  const payload = `${username}.${expiresAtText}.${nonce}`;
+  if (!constantTimeEqual(signature, authSignature(payload))) return null;
+  const expiresAt = Number(expiresAtText);
+  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
+  if (username !== ADMIN_USERNAME) return null;
+  return { username, expiresAt };
+}
+
+function isAdminAuthenticated(req) {
+  return Boolean(getAdminSession(req));
+}
+
+function requireAdmin(req, res) {
+  if (!isAdminAuthenticated(req)) {
+    sendJson(res, 401, { error: "admin login required" });
+    return false;
+  }
+  return true;
+}
+
+async function serveAuthApi(req, res, url) {
+  if (url.pathname === "/api/v1/auth/session" && req.method === "GET") {
+    const session = getAdminSession(req);
+    sendJson(res, 200, {
+      authenticated: Boolean(session),
+      username: session?.username || null
+    });
+    return true;
+  }
+
+  if (url.pathname === "/api/v1/auth/login" && req.method === "POST") {
+    if (!ADMIN_PASSWORD || !SESSION_SECRET) {
+      sendJson(res, 503, { error: "admin password is not configured" });
+      return true;
+    }
+    const body = await readRequestBody(req);
+    const username = String(body.username || "");
+    const password = String(body.password || "");
+    if (!constantTimeEqual(username, ADMIN_USERNAME) || !constantTimeEqual(password, ADMIN_PASSWORD)) {
+      sendJson(res, 401, { error: "invalid admin credentials" });
+      return true;
+    }
+    sendJsonWithHeaders(res, 200, { authenticated: true, username: ADMIN_USERNAME }, {
+      "set-cookie": createSessionCookie(ADMIN_USERNAME)
+    });
+    return true;
+  }
+
+  if (url.pathname === "/api/v1/auth/logout" && req.method === "POST") {
+    sendJsonWithHeaders(res, 200, { authenticated: false }, {
+      "set-cookie": clearSessionCookie()
+    });
+    return true;
+  }
+
+  return false;
 }
 
 async function getRuntimeThresholds(config) {
@@ -121,9 +235,10 @@ async function buildApiContext() {
 async function getSnapshot(period) {
   const { config, snapshot, servedFromSQLite } = await buildApiContext();
   const viewSnapshot = normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period || snapshot.period));
+  const { settings, ...publicSnapshot } = viewSnapshot;
   const latestJobRun = await STORE.latestJobRun().catch(() => null);
   return {
-    ...viewSnapshot,
+    ...publicSnapshot,
     config,
     cache: {
       servedFromCache: true,
@@ -252,19 +367,6 @@ function parseInternalAddressImport(body) {
 function requireReason(body, res) {
   if (!body.reason || !String(body.reason).trim()) {
     sendJson(res, 400, { error: "reason is required" });
-    return false;
-  }
-  return true;
-}
-
-function getRequestRole(req) {
-  const role = String(req.headers["x-user-role"] || "admin").toLowerCase();
-  return role === "readonly" ? "readonly" : "admin";
-}
-
-function requireAdmin(req, res) {
-  if (getRequestRole(req) !== "admin") {
-    sendJson(res, 403, { error: "read-only user cannot modify config" });
     return false;
   }
   return true;
@@ -777,6 +879,7 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/internal-addresses" && req.method === "GET") {
+    if (!requireAdmin(req, res)) return true;
     sendJson(res, 200, { items: internalAddresses });
     return true;
   }
@@ -887,12 +990,14 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/internal-addresses/change-log") {
+    if (!requireAdmin(req, res)) return true;
     const persistedLog = await STORE.readInternalAddressChangeLog().catch(() => []);
     sendJson(res, 200, { items: [...persistedLog, ...runtimeInternalAddressChangeLog] });
     return true;
   }
 
   if (route === "/api/v1/settings/thresholds" && req.method === "GET") {
+    if (!requireAdmin(req, res)) return true;
     sendJson(res, 200, { items: thresholds });
     return true;
   }
@@ -930,6 +1035,7 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/thresholds/change-log") {
+    if (!requireAdmin(req, res)) return true;
     const persistedLog = await STORE.readThresholdChangeLog().catch(() => []);
     sendJson(res, 200, {
       items: [
@@ -951,16 +1057,19 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/data-sources") {
+    if (!requireAdmin(req, res)) return true;
     sendJson(res, 200, { items: config.dataSources });
     return true;
   }
 
   if (route === "/api/v1/settings/asset-scope") {
+    if (!requireAdmin(req, res)) return true;
     sendJson(res, 200, { items: config.assets });
     return true;
   }
 
   if (route === "/api/v1/settings/attribution-rules") {
+    if (!requireAdmin(req, res)) return true;
     sendJson(res, 200, config.attributionRules);
     return true;
   }
@@ -1004,6 +1113,12 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/snapshot") {
       sendJson(res, 200, await getSnapshot(url.searchParams.get("period")));
+      return;
+    }
+
+    if (url.pathname.startsWith("/api/v1/auth/")) {
+      const handled = await serveAuthApi(req, res, url);
+      if (!handled) sendJson(res, 404, { error: "Auth route not found" });
       return;
     }
 

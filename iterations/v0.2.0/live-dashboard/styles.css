@@ -166,6 +166,69 @@ p { margin-bottom: 0; color: var(--muted); line-height: var(--line-relaxed); }
   color: var(--muted);
 }
 
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.auth-modal[hidden] {
+  display: none;
+}
+
+.auth-card {
+  display: grid;
+  gap: 14px;
+  width: min(420px, 100%);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.auth-card h2 {
+  margin: 4px 0 6px;
+  font-size: 20px;
+  line-height: var(--line-tight);
+}
+
+.auth-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--font-sm);
+  line-height: var(--line-normal);
+}
+
+.auth-card label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--font-xs);
+  font-weight: 800;
+}
+
+.auth-card input {
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.auth-error {
+  min-height: 18px;
+  color: var(--red);
+  font-weight: 800;
+}
+
 .sidebar-note strong {
   margin-top: 4px;
   font-size: 20px;

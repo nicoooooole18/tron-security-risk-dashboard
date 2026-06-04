@@ -37,7 +37,7 @@
           <p id="pageSubtitle">90D 资金变化、主要异常信号和大户未回流摘要。</p>
         </div>
         <div class="topbar-meta">
-          <span class="role-badge admin" id="roleBadge">Admin</span>
+          <span class="role-badge readonly" id="roleBadge">Public</span>
           <button class="btn secondary" id="csvExportBtn" type="button">导出 CSV</button>
           <label class="select-label">
             视图周期
@@ -331,6 +331,29 @@
         </section>
       </section>
     </main>
+  </div>
+
+  <div class="auth-modal" id="authModal" hidden>
+    <form class="auth-card" id="authForm">
+      <div>
+        <span class="section-kicker">Admin Login</span>
+        <h2>进入数据与口径配置</h2>
+        <p>公开看板无需登录；修改阈值和内部地址前需要 admin 密码。</p>
+      </div>
+      <label>
+        账号
+        <input id="authUsername" type="text" autocomplete="username" value="admin" />
+      </label>
+      <label>
+        密码
+        <input id="authPassword" type="password" autocomplete="current-password" />
+      </label>
+      <div class="auth-actions">
+        <button class="btn secondary" id="authCancelBtn" type="button">取消</button>
+        <button class="btn primary" type="submit">登录</button>
+      </div>
+      <p class="auth-error" id="authError"></p>
+    </form>
   </div>
 
   <div class="toast" id="toast">已更新当前视图</div>

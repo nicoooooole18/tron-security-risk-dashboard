@@ -65,6 +65,12 @@ const els = {
   roleBadge: document.getElementById("roleBadge"),
   thresholdRolePill: document.getElementById("thresholdRolePill"),
   permissionNote: document.getElementById("permissionNote"),
+  authModal: document.getElementById("authModal"),
+  authForm: document.getElementById("authForm"),
+  authUsername: document.getElementById("authUsername"),
+  authPassword: document.getElementById("authPassword"),
+  authCancelBtn: document.getElementById("authCancelBtn"),
+  authError: document.getElementById("authError"),
   toast: document.getElementById("toast")
 };
 
@@ -75,14 +81,21 @@ let activeSettingsTab = "thresholds";
 let useServerSignals = true;
 const HIGH_UTILIZATION_THRESHOLD = 60;
 let activePeriod = "90d";
-const currentRole = new URLSearchParams(window.location.search).get("role") === "readonly" ? "readonly" : "admin";
+let settingsLoaded = false;
+let pendingSettingsOpen = false;
+let authState = {
+  authenticated: false,
+  username: null
+};
 
 function isAdmin() {
-  return currentRole === "admin";
+  return authState.authenticated;
 }
 
-function roleHeaders() {
-  return { "x-user-role": currentRole };
+function updateAuthChrome() {
+  els.roleBadge.textContent = isAdmin() ? "Admin" : "Public";
+  els.roleBadge.classList.toggle("admin", isAdmin());
+  els.roleBadge.classList.toggle("readonly", !isAdmin());
 }
 
 function formatUsd(value, compact = true) {
@@ -641,14 +654,12 @@ function renderOutflow(data) {
 function renderSettings(data) {
   const config = data.config;
   const disabledAttr = isAdmin() ? "" : "disabled";
-  els.roleBadge.textContent = isAdmin() ? "Admin" : "Read Only";
-  els.roleBadge.classList.toggle("admin", isAdmin());
-  els.roleBadge.classList.toggle("readonly", !isAdmin());
-  els.thresholdRolePill.textContent = isAdmin() ? "Admin" : "Read Only";
+  updateAuthChrome();
+  els.thresholdRolePill.textContent = isAdmin() ? "Admin" : "Login Required";
   els.thresholdRolePill.className = `pill ${isAdmin() ? "green" : "muted"}`;
   els.permissionNote.textContent = isAdmin()
     ? "当前角色可调整阈值，修改写入 SQLite，并立即影响当前视图。"
-    : "当前角色为只读：可查看阈值、内部地址和变更记录，但不能新增、导入或更新配置。";
+    : "Settings 需要 admin 登录后查看和修改。公开看板不需要登录。";
 
   els.thresholdRows.innerHTML = Object.values(thresholds).map((item) => `
     <div class="threshold-row" data-threshold="${escapeHtml(item.key)}">
@@ -829,6 +840,7 @@ function renderSettings(data) {
 }
 
 async function refreshInternalAddressSettings() {
+  if (!isAdmin()) return;
   const [addressesResponse, logResponse] = await Promise.all([
     fetch("/api/v1/settings/internal-addresses", { cache: "no-store" }),
     fetch("/api/v1/settings/internal-addresses/change-log", { cache: "no-store" })
@@ -843,6 +855,7 @@ async function refreshInternalAddressSettings() {
 }
 
 async function refreshThresholdSettings() {
+  if (!isAdmin()) return;
   const [thresholdsResponse, logResponse] = await Promise.all([
     fetch("/api/v1/settings/thresholds", { cache: "no-store" }),
     fetch("/api/v1/settings/thresholds/change-log", { cache: "no-store" })
@@ -860,10 +873,64 @@ async function refreshThresholdSettings() {
   renderSettings(snapshot);
 }
 
+async function loadSettingsDetails() {
+  if (!isAdmin()) return false;
+  const [thresholdsResponse, thresholdLogResponse, internalAddressResponse, internalAddressLogResponse] = await Promise.all([
+    fetch("/api/v1/settings/thresholds", { cache: "no-store" }),
+    fetch("/api/v1/settings/thresholds/change-log", { cache: "no-store" }),
+    fetch("/api/v1/settings/internal-addresses", { cache: "no-store" }),
+    fetch("/api/v1/settings/internal-addresses/change-log", { cache: "no-store" })
+  ]);
+  const thresholdPayload = await thresholdsResponse.json();
+  const thresholdLogPayload = await thresholdLogResponse.json();
+  const internalAddressPayload = await internalAddressResponse.json();
+  const internalAddressLogPayload = await internalAddressLogResponse.json();
+  if (!thresholdsResponse.ok) throw new Error(thresholdPayload.error || "Threshold API failed");
+  if (!thresholdLogResponse.ok) throw new Error(thresholdLogPayload.error || "Threshold log API failed");
+  if (!internalAddressResponse.ok) throw new Error(internalAddressPayload.error || "Internal address API failed");
+  if (!internalAddressLogResponse.ok) throw new Error(internalAddressLogPayload.error || "Internal address log API failed");
+  normalizeThresholds(thresholdPayload.items);
+  snapshot.settings = {
+    ...(snapshot.settings || {}),
+    internalAddresses: internalAddressPayload.items,
+    internalAddressChangeLog: internalAddressLogPayload.items,
+    thresholdChangeLog: thresholdLogPayload.items
+  };
+  settingsLoaded = true;
+  renderSettings(snapshot);
+  return true;
+}
+
+async function refreshAuthSession() {
+  const response = await fetch("/api/v1/auth/session", { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Auth session API failed");
+  authState = {
+    authenticated: Boolean(payload.authenticated),
+    username: payload.username || null
+  };
+  updateAuthChrome();
+  return authState;
+}
+
+function showAuthModal() {
+  pendingSettingsOpen = true;
+  els.authError.textContent = "";
+  els.authPassword.value = "";
+  els.authModal.hidden = false;
+  setTimeout(() => els.authPassword.focus(), 0);
+}
+
+function hideAuthModal() {
+  els.authModal.hidden = true;
+  els.authError.textContent = "";
+  els.authPassword.value = "";
+}
+
 async function postJson(url, body, method = "POST") {
   const response = await fetch(url, {
     method,
-    headers: { "content-type": "application/json", ...roleHeaders() },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify(body)
   });
   const payload = await response.json();
@@ -943,7 +1010,16 @@ function periodizedSubtitle(page) {
   return pageMeta[page].subtitle.replaceAll("90D", activePeriod.toUpperCase());
 }
 
-function setPage(page) {
+async function setPage(page) {
+  if (page === "settings") {
+    if (!isAdmin()) {
+      showAuthModal();
+      return;
+    }
+    if (!settingsLoaded) {
+      await loadSettingsDetails();
+    }
+  }
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.classList.toggle("active", item.dataset.page === page);
   });
@@ -979,37 +1055,28 @@ function setSettingsTab(tab) {
 
 async function loadSnapshot(period = activePeriod) {
   activePeriod = period;
-  const [snapshotResponse, overviewResponse, thresholdsResponse, thresholdLogResponse, internalAddressResponse, internalAddressLogResponse] = await Promise.all([
+  const [snapshotResponse, overviewResponse] = await Promise.all([
     fetch(`/api/snapshot?period=${encodeURIComponent(period)}`, { cache: "no-store" }),
-    fetch(`/api/v1/overview?period=${encodeURIComponent(period)}`, { cache: "no-store" }),
-    fetch("/api/v1/settings/thresholds", { cache: "no-store" }),
-    fetch("/api/v1/settings/thresholds/change-log", { cache: "no-store" }),
-    fetch("/api/v1/settings/internal-addresses", { cache: "no-store" }),
-    fetch("/api/v1/settings/internal-addresses/change-log", { cache: "no-store" })
+    fetch(`/api/v1/overview?period=${encodeURIComponent(period)}`, { cache: "no-store" })
   ]);
   const data = await snapshotResponse.json();
   const overview = await overviewResponse.json();
-  const thresholdPayload = await thresholdsResponse.json();
-  const thresholdLogPayload = await thresholdLogResponse.json();
-  const internalAddressPayload = await internalAddressResponse.json();
-  const internalAddressLogPayload = await internalAddressLogResponse.json();
   if (!snapshotResponse.ok) throw new Error(data.error || "Snapshot API failed");
   if (!overviewResponse.ok) throw new Error(overview.error || "Overview API failed");
-  if (!thresholdsResponse.ok) throw new Error(thresholdPayload.error || "Threshold API failed");
-  if (!thresholdLogResponse.ok) throw new Error(thresholdLogPayload.error || "Threshold log API failed");
-  if (!internalAddressResponse.ok) throw new Error(internalAddressPayload.error || "Internal address API failed");
-  if (!internalAddressLogResponse.ok) throw new Error(internalAddressLogPayload.error || "Internal address log API failed");
   snapshot = {
     ...data,
     serverOverview: overview,
     settings: {
       ...data.settings,
-      internalAddresses: internalAddressPayload.items,
-      internalAddressChangeLog: internalAddressLogPayload.items,
-      thresholdChangeLog: thresholdLogPayload.items
+      internalAddresses: settingsLoaded ? snapshot?.settings?.internalAddresses || [] : [],
+      internalAddressChangeLog: settingsLoaded ? snapshot?.settings?.internalAddressChangeLog || [] : [],
+      thresholdChangeLog: settingsLoaded ? snapshot?.settings?.thresholdChangeLog || [] : []
     }
   };
-  normalizeThresholds(thresholdPayload.items);
+  normalizeThresholds(data.config.thresholds || []);
+  if (isAdmin() && settingsLoaded) {
+    await loadSettingsDetails();
+  }
   useServerSignals = true;
   els.lastUpdated.textContent = formatDateTime(data.generatedAt);
   els.sidebarPeriod.textContent = data.period.toUpperCase();
@@ -1019,7 +1086,13 @@ async function loadSnapshot(period = activePeriod) {
 }
 
 document.querySelectorAll(".nav-item").forEach((item) => {
-  item.addEventListener("click", () => setPage(item.dataset.page));
+  item.addEventListener("click", async () => {
+    try {
+      await setPage(item.dataset.page);
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
 });
 
 document.querySelectorAll("[data-tab]").forEach((item) => {
@@ -1031,6 +1104,41 @@ document.querySelectorAll(".settings-tab").forEach((item) => {
 });
 
 els.csvExportBtn?.addEventListener("click", exportCurrentCsv);
+
+els.authCancelBtn?.addEventListener("click", () => {
+  pendingSettingsOpen = false;
+  hideAuthModal();
+});
+
+els.authForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  els.authError.textContent = "";
+  try {
+    const response = await fetch("/api/v1/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        username: els.authUsername.value.trim(),
+        password: els.authPassword.value
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "登录失败");
+    authState = {
+      authenticated: Boolean(payload.authenticated),
+      username: payload.username || null
+    };
+    updateAuthChrome();
+    hideAuthModal();
+    showToast("Admin 已登录");
+    if (pendingSettingsOpen) {
+      pendingSettingsOpen = false;
+      await setPage("settings");
+    }
+  } catch (error) {
+    els.authError.textContent = error.message;
+  }
+});
 
 els.periodSelect.addEventListener("change", async () => {
   try {
@@ -1095,4 +1203,8 @@ loadSnapshot().catch((error) => {
   els.headline.textContent = "数据读取失败";
   els.dataMode.textContent = error.message;
   showToast("数据读取失败");
+});
+
+refreshAuthSession().catch(() => {
+  updateAuthChrome();
 });

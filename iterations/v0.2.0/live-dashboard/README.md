@@ -25,11 +25,13 @@ Open:
 http://127.0.0.1:8790
 ```
 
-Read-only view:
+Public analytical view:
 
 ```text
-http://127.0.0.1:8790/?role=readonly
+http://127.0.0.1:8790/
 ```
+
+Settings / Data Config prompts for the admin password configured by environment variables.
 
 ## Production Data Mode
 
@@ -126,7 +128,7 @@ External refresh is off by default. Set `EXTERNAL_FETCH_ENABLED=true` to try DeF
 - Hop / Round Trip chain paths can be enriched from TronScan or TronGrid for Top20 Lost only.
 - Borrow Demand asset metrics are persisted to `fact_asset_daily_metrics`.
 - Threshold changes update the current view and are recorded in the SQLite threshold change log when the store is available.
-- Role behavior: Admin can edit settings; Read Only can view settings but cannot modify them.
+- Admin login protects Settings / Data Config and every Settings read/write API. Public analytical pages remain viewable without login.
 
 ## API
 
@@ -161,7 +163,13 @@ PRD v1 endpoints implemented against the latest SQLite Daily Snapshot, with mock
 - `GET /api/v1/settings/attribution-rules`
 - `GET /api/v1/export.csv?dataset=borrow-demand&period=90d`
 
-Write endpoints require the request header `x-user-role: admin`. Requests with `x-user-role: readonly` return `403`.
+Auth endpoints:
+
+- `GET /api/v1/auth/session`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+
+Settings endpoints require an admin session cookie. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `SESSION_SECRET` through environment variables. Unauthenticated Settings requests return `401`.
 
 Settings writes persist to SQLite when the store is available. Runtime memory remains as a fallback.
 
@@ -247,4 +255,4 @@ Deployment gates:
 - Top Account CSV is a Top Account list, not a complete user universe. Missing address-date rows are treated as top-list absence, not silently as full protocol zero balance.
 - Chain path enrichment is bounded to Top20 Lost candidates and is disabled by default to avoid high-cost chain scans.
 - Protocol Borrow connectors are TODO.
-- Authentication is not implemented; admin/read-only behavior is represented by URL/query and request-header mock roles.
+- Authentication is MVP-scoped to a single admin account from environment variables. Multi-user admin management, password reset, and audit login tables are not implemented.
