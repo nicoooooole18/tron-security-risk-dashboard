@@ -1,4 +1,9 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function normalizeAddress(value) {
   return String(value || "").trim().replace(/^['"`]+|['"`]+$/g, "");
@@ -100,6 +105,18 @@ function isRedeemInflow(row, address, config) {
   return marketIds.has(from) || /redeem/i.test(method) || /jtoken/i.test(tagFrom(row, "from"));
 }
 
+async function fetchJsonWithRetry(url, label, attempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const response = await fetch(url);
+    if (response.ok) return response.json();
+    lastError = new Error(`${label} returned HTTP ${response.status}`);
+    if (!RETRYABLE_STATUS.has(response.status) || attempt === attempts) throw lastError;
+    await sleep(1200 * attempt);
+  }
+  throw lastError || new Error(`${label} failed`);
+}
+
 async function fetchTronScanTrc20Transfers(paths, address, startIso, endIso, contractAddress) {
   const params = new URLSearchParams({
     limit: "200",
@@ -109,9 +126,7 @@ async function fetchTronScanTrc20Transfers(paths, address, startIso, endIso, con
     end_timestamp: String(new Date(endIso).getTime())
   });
   if (contractAddress) params.set("contract_address", contractAddress);
-  const response = await fetch(`${paths.tronScanApiBase}/api/token_trc20/transfers?${params.toString()}`);
-  if (!response.ok) throw new Error(`TronScan TRC20 transfers returned HTTP ${response.status}`);
-  const json = await response.json();
+  const json = await fetchJsonWithRetry(`${paths.tronScanApiBase}/api/token_trc20/transfers?${params.toString()}`, "TronScan TRC20 transfers");
   return Array.isArray(json.token_transfers) ? json.token_transfers : Array.isArray(json.data) ? json.data : [];
 }
 
@@ -123,9 +138,7 @@ async function fetchTronGridTrc20Transfers(paths, address, startIso, endIso, con
     max_timestamp: String(new Date(endIso).getTime())
   });
   if (contractAddress) params.set("contract_address", contractAddress);
-  const response = await fetch(`${paths.tronGridApiBase}/v1/accounts/${address}/transactions/trc20?${params.toString()}`);
-  if (!response.ok) throw new Error(`TronGrid TRC20 transfers returned HTTP ${response.status}`);
-  const json = await response.json();
+  const json = await fetchJsonWithRetry(`${paths.tronGridApiBase}/v1/accounts/${address}/transactions/trc20?${params.toString()}`, "TronGrid TRC20 transfers");
   return Array.isArray(json.data) ? json.data : [];
 }
 
@@ -137,13 +150,10 @@ async function fetchTrc20Transfers(paths, address, startIso, endIso, contractAdd
 }
 
 async function findHop1(paths, config, lostItem) {
-  const contracts = contractByAsset(config);
-  const contractAddress = contracts.get(lostItem.primaryAsset);
-  if (!contractAddress || lostItem.primaryAsset === "TRX") return null;
   const anchor = lostItem.outflowTime || `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`;
   const start = addHoursSafe(anchor, -72);
   const end = addHoursSafe(anchor, 24);
-  const rows = await fetchTrc20Transfers(paths, lostItem.address, start, end, contractAddress);
+  const rows = await fetchTrc20Transfers(paths, lostItem.address, start, end, null);
   const sorted = rows.sort((a, b) => rowTimeMs(a) - rowTimeMs(b));
   const redeemInflows = sorted.filter((row) => isRedeemInflow(row, lostItem.address, config));
   for (const redeem of redeemInflows) {
@@ -190,10 +200,8 @@ async function findHop1(paths, config, lostItem) {
 }
 
 async function findHop2(paths, config, asset, hop1Target, startIso) {
-  const contracts = contractByAsset(config);
-  const contractAddress = contracts.get(asset);
-  if (!contractAddress || !hop1Target || asset === "TRX") return null;
-  const rows = await fetchTrc20Transfers(paths, hop1Target, startIso, addDays(startIso, 7), contractAddress);
+  if (!hop1Target) return null;
+  const rows = await fetchTrc20Transfers(paths, hop1Target, startIso, addDays(startIso, 7), null);
   const outgoing = rows
     .filter((row) => isOutgoing(row, hop1Target))
     .map((row) => ({
@@ -308,32 +316,20 @@ function backfillTopLostDestinations(capitalOutflow) {
   });
 }
 
-async function enrichChainPaths(snapshot, config, paths) {
-  if (!paths.chainEnrichmentEnabled) {
-    return {
-      snapshot,
-      dataQuality: [
-        {
-          source: "Chain Path Enrichment",
-          status: "disabled",
-          message: "CHAIN_ENRICHMENT_ENABLED=false; Hop and Round Trip chain paths remain position-derived or pending lookup."
-        }
-      ]
-    };
-  }
-
-  const topLost = (snapshot.capitalOutflow?.top20Lost || []).slice(0, paths.chainLookbackTopLostLimit);
+async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths) {
+  const topLost = (capitalOutflow?.top20Lost || []).slice(0, paths.chainLookbackTopLostLimit);
   const attributionDetails = [];
-  const roundTrips = [...(snapshot.capitalOutflow?.roundTrips || [])];
+  const roundTrips = [...(capitalOutflow?.roundTrips || [])];
   const errors = [];
 
   for (const lostItem of topLost) {
     try {
+      await sleep(350);
       const hop1 = await findHop1(paths, config, lostItem);
       if (!hop1) continue;
       const destination = hop1.destination || classifyDestination(hop1.target);
       attributionDetails.push({
-        pathId: `${snapshot.lastCompleteUtcDate}-${lostItem.address}-hop1`,
+        pathId: `${snapshotDate}-${lostItem.address}-hop1`,
         hop: 1,
         address: lostItem.address,
         amountUsd: lostItem.unreturnedOutflowUsd,
@@ -361,7 +357,7 @@ async function enrichChainPaths(snapshot, config, paths) {
       if (hop2) {
         const weakDestination = hop2.destination || classifyDestination(hop2.target);
         attributionDetails.push({
-          pathId: `${snapshot.lastCompleteUtcDate}-${lostItem.address}-hop2`,
+          pathId: `${snapshotDate}-${lostItem.address}-hop2`,
           hop: 2,
           address: lostItem.address,
           amountUsd: Math.round((lostItem.unreturnedOutflowUsd || 0) * 0.8),
@@ -382,26 +378,73 @@ async function enrichChainPaths(snapshot, config, paths) {
     }
   }
 
-  const nextSnapshot = {
-    ...snapshot,
-    capitalOutflow: {
-      ...(snapshot.capitalOutflow || {}),
-      roundTrips,
-      attributionDetails: attributionDetails.length ? attributionDetails : snapshot.capitalOutflow?.attributionDetails || [],
-      destinations: attributionDetails.length ? destinationRows(attributionDetails) : snapshot.capitalOutflow?.destinations || []
-    }
+  const nextCapitalOutflow = {
+    ...(capitalOutflow || {}),
+    roundTrips,
+    attributionDetails: attributionDetails.length ? attributionDetails : capitalOutflow?.attributionDetails || [],
+    destinations: attributionDetails.length ? destinationRows(attributionDetails) : capitalOutflow?.destinations || []
   };
-  nextSnapshot.capitalOutflow.top20Lost = backfillTopLostDestinations(nextSnapshot.capitalOutflow);
+  nextCapitalOutflow.top20Lost = backfillTopLostDestinations(nextCapitalOutflow);
 
+  return {
+    capitalOutflow: nextCapitalOutflow,
+    queriedCount: topLost.length,
+    attributionCount: attributionDetails.length,
+    errors
+  };
+}
+
+function periodViewEntries(snapshot) {
+  const primaryPeriod = snapshot.period || "90d";
+  return Object.entries(snapshot.periodViews || {})
+    .filter(([, view]) => view?.capitalOutflow)
+    .filter(([period]) => period !== primaryPeriod)
+    .sort(([a], [b]) => a.localeCompare(b));
+}
+
+async function enrichChainPaths(snapshot, config, paths) {
+  if (!paths.chainEnrichmentEnabled) {
+    return {
+      snapshot,
+      dataQuality: [
+        {
+          source: "Chain Path Enrichment",
+          status: "disabled",
+          message: "CHAIN_ENRICHMENT_ENABLED=false; Hop and Round Trip chain paths remain position-derived or pending lookup."
+        }
+      ]
+    };
+  }
+
+  const nextSnapshot = { ...snapshot, periodViews: { ...(snapshot.periodViews || {}) } };
+  const results = [];
+
+  const primary = await enrichCapitalOutflow(snapshot.capitalOutflow, snapshot.lastCompleteUtcDate, config, paths);
+  nextSnapshot.capitalOutflow = primary.capitalOutflow;
+  results.push({ period: snapshot.period || "90d", ...primary });
+
+  for (const [period, view] of periodViewEntries(snapshot)) {
+    const result = await enrichCapitalOutflow(view.capitalOutflow, view.lastCompleteUtcDate || snapshot.lastCompleteUtcDate, config, paths);
+    nextSnapshot.periodViews[period] = {
+      ...view,
+      capitalOutflow: result.capitalOutflow
+    };
+    results.push({ period, ...result });
+  }
+
+  const queriedTotal = results.reduce((sum, item) => sum + item.queriedCount, 0);
+  const attributionTotal = results.reduce((sum, item) => sum + item.attributionCount, 0);
+  const errors = results.flatMap((item) => item.errors.map((error) => `${item.period}: ${error}`));
+  const periodSummary = results.map((item) => `${item.period} ${item.attributionCount}/${item.queriedCount}`).join(", ");
   return {
     snapshot: nextSnapshot,
     dataQuality: [
       {
         source: "Chain Path Enrichment",
         status: errors.length ? "partial" : "complete",
-        message: attributionDetails.length
-          ? `Queried ${topLost.length} Top20 Lost addresses via ${paths.chainProvider}; produced ${attributionDetails.length} hop attribution rows.${errors.length ? ` Errors: ${errors.slice(0, 3).join(" | ")}` : ""}`
-          : `Queried ${topLost.length} Top20 Lost addresses via ${paths.chainProvider}, but no matching outgoing TRC20 transfers were found in attribution windows.${errors.length ? ` Errors: ${errors.slice(0, 3).join(" | ")}` : ""}`
+        message: attributionTotal
+          ? `Queried ${queriedTotal} Top Lost period-addresses via ${paths.chainProvider}; produced ${attributionTotal} hop attribution rows across periods (${periodSummary}).${errors.length ? ` Errors: ${errors.slice(0, 3).join(" | ")}` : ""}`
+          : `Queried ${queriedTotal} Top Lost period-addresses via ${paths.chainProvider}, but no matching outgoing TRC20 transfers were found in attribution windows (${periodSummary}).${errors.length ? ` Errors: ${errors.slice(0, 3).join(" | ")}` : ""}`
       }
     ]
   };
