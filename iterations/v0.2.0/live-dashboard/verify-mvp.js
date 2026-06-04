@@ -83,6 +83,8 @@ function runStaticChecks() {
   check("unknown attribution is preserved", snapshot.capitalOutflow.destinations.some((item) => item.category === "Unknown" && item.sharePct > 0));
   check("pending chain lookup has readable display state", appJs.includes("function destinationDisplay") && appJs.includes("待链上归因") && topAccountSource.includes("const PENDING_CHAIN_LOOKUP = \"待链上归因\""));
   check("top lost destinations backfill from chain attribution", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("function backfillTopLostDestinations") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeCapitalOutflowSnapshot") && appJs.includes("destinationAttribution || item.attribution"));
+  check("chain attribution label priority exists", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("addressBookLabel(address, context)") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("tronScanLabel(row, context)") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("arkhamLabel(address, context)"));
+  check("protocol-internal destinations are skipped", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("isProtocolInternalDestination") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("protocolInternalSkipped"));
   check("hop2 attribution is detail-only", snapshot.capitalOutflow.attributionDetails.some((item) => item.hop === 2 && item.usedInOverview === false));
   check("overview attribution uses hop1 only", snapshot.capitalOutflow.attributionDetails.filter((item) => item.usedInOverview).every((item) => item.hop === 1));
   check("threshold defaults include 8 rules", config.thresholds.length === 8);
@@ -125,7 +127,11 @@ function runStaticChecks() {
     "VPS_SOURCE_CSV_TARGET",
     "TOP_ACCOUNT_TRX_USD",
     "CHAIN_ENRICHMENT_ENABLED",
-    "CHAIN_PROVIDER"
+    "CHAIN_PROVIDER",
+    "ARKHAM_LABEL_ENABLED",
+    "ARKHAM_API_BASE",
+    "ARKHAM_API_KEY",
+    "ARKHAM_CHAIN"
   ].every((name) => envExample.includes(name)));
   check("competitor borrow remains TODO", config.productionData.competitorBorrowPolicy.includes("TODO"));
 }

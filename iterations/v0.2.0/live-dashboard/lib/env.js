@@ -47,7 +47,11 @@ function productionPaths() {
     chainProvider: env("CHAIN_PROVIDER", "tronscan"),
     chainLookbackTopLostLimit: numberEnv("CHAIN_LOOKBACK_TOP_LOST_LIMIT", 10),
     tronScanApiBase: env("TRONSCAN_API_BASE", "https://apilist.tronscanapi.com"),
-    tronGridApiBase: env("TRONGRID_API_BASE", "https://api.trongrid.io")
+    tronGridApiBase: env("TRONGRID_API_BASE", "https://api.trongrid.io"),
+    arkhamLabelEnabled: env("ARKHAM_LABEL_ENABLED", "false") === "true",
+    arkhamApiBase: env("ARKHAM_API_BASE", "https://api.arkm.com"),
+    arkhamApiKey: env("ARKHAM_API_KEY", ""),
+    arkhamChain: env("ARKHAM_CHAIN", "tron")
   };
 }
 

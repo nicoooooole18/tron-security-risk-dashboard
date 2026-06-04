@@ -1,5 +1,13 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
+const { loadSharedAddressBook } = require("./shared-address-book");
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const CEX_KEYWORDS = ["htx", "binance", "okx", "bybit", "kucoin", "gate", "poloniex"];
+const PROTOCOL_TAG_PATTERNS = [
+  /justlend/i,
+  /jtoken/i,
+  /\bj(?:usdt|usdd|trx|strx|btc|ethb|eth)\s+token\b/i,
+  /\bj(?:usdt|usdd|trx|strx|btc|ethb|eth)\s+market\b/i
+];
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -27,10 +35,21 @@ function contractByAsset(config) {
   return new Map((config.assets || []).map((asset) => [asset.symbol, asset.contractAddress]).filter((item) => item[1]));
 }
 
+function protocolAddressSet(config) {
+  const addresses = [];
+  for (const asset of config.assets || []) {
+    addresses.push(asset.marketId, asset.jTokenAddress);
+  }
+  for (const item of config.protocolAddresses || config.watchedAddresses || []) {
+    addresses.push(item.address);
+  }
+  return new Set(addresses.map(normalizeAddress).filter(Boolean));
+}
+
 function classifyDestination(address) {
   const normalized = normalizeAddress(address);
-  if (!normalized) return { destination: "Unknown", category: "Unknown" };
-  return { destination: normalized, category: "Wallet / Contract" };
+  if (!normalized) return { destination: "Unknown", category: "Unknown", labelSource: "unknown", labelConfidence: 0 };
+  return { destination: normalized, category: "Wallet / Contract", labelSource: "unknown", labelConfidence: 0, address: normalized };
 }
 
 function tagFrom(row, side) {
@@ -39,22 +58,30 @@ function tagFrom(row, side) {
   return tag.from_address_tag || tag.to_address_tag || "";
 }
 
-function classifyDestinationFromRow(row) {
-  const address = transferTarget(row);
+function classifyTronScanTag(row) {
   const tag = tagFrom(row, "to");
   if (tag) {
     const normalizedTag = tag.trim();
     const lower = normalizedTag.toLowerCase();
-    if (["htx", "binance", "okx", "bybit", "kucoin", "gate", "poloniex"].some((item) => lower.includes(item))) {
-      return { destination: normalizedTag, category: "CEX", address };
+    if (CEX_KEYWORDS.some((item) => lower.includes(item))) {
+      return { destination: normalizedTag, category: "CEX", labelSource: "tronscan", labelConfidence: 0.85 };
     }
     if (["usdd", "psm", "justlend", "stusdt", "sun", "jtoken"].some((item) => lower.includes(item))) {
-      return { destination: normalizedTag, category: "TRON Eco", address };
+      return { destination: normalizedTag, category: "TRON Eco", labelSource: "tronscan", labelConfidence: 0.75 };
     }
-    return { destination: normalizedTag, category: row.toAddressIsContract ? "Contract" : "Labeled Wallet", address };
+    return { destination: normalizedTag, category: row.toAddressIsContract ? "Contract" : "Labeled Wallet", labelSource: "tronscan", labelConfidence: 0.75 };
   }
-  const classified = classifyDestination(address);
-  return { ...classified, address };
+  return null;
+}
+
+function isProtocolInternalTag(value) {
+  return PROTOCOL_TAG_PATTERNS.some((pattern) => pattern.test(String(value || "")));
+}
+
+function isProtocolInternalDestination(row, config, context) {
+  const address = transferTarget(row);
+  if (context?.protocolAddresses?.has(address) || protocolAddressSet(config).has(address)) return true;
+  return isProtocolInternalTag(tagFrom(row, "to"));
 }
 
 function tokenAmount(row) {
@@ -105,16 +132,112 @@ function isRedeemInflow(row, address, config) {
   return marketIds.has(from) || /redeem/i.test(method) || /jtoken/i.test(tagFrom(row, "from"));
 }
 
-async function fetchJsonWithRetry(url, label, attempts = 3) {
+async function fetchJsonWithRetry(url, label, attempts = 3, headers = {}) {
   let lastError = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const response = await fetch(url);
+    const response = await fetch(url, { headers });
     if (response.ok) return response.json();
     lastError = new Error(`${label} returned HTTP ${response.status}`);
     if (!RETRYABLE_STATUS.has(response.status) || attempt === attempts) throw lastError;
     await sleep(1200 * attempt);
   }
   throw lastError || new Error(`${label} failed`);
+}
+
+function emptyLabelStats() {
+  return {
+    addressBookLookups: 0,
+    addressBookHits: 0,
+    tronScanTagLookups: 0,
+    tronScanTagHits: 0,
+    arkhamLookups: 0,
+    arkhamHits: 0,
+    arkhamErrors: 0,
+    arkhamSkipped: 0,
+    protocolInternalSkipped: 0
+  };
+}
+
+function formatHitRate(hits, lookups) {
+  return lookups > 0 ? `${hits}/${lookups} (${((hits / lookups) * 100).toFixed(1)}%)` : "0/0";
+}
+
+function addressBookLabel(address, context) {
+  const normalized = normalizeAddress(address);
+  if (!normalized || !context.addressBookIndex) return null;
+  context.labelStats.addressBookLookups += 1;
+  const match = context.addressBookIndex.get(normalized);
+  if (!match) return null;
+  context.labelStats.addressBookHits += 1;
+  return {
+    destination: match.label,
+    category: match.category,
+    address: normalized,
+    labelSource: "address_book",
+    labelConfidence: match.confidence
+  };
+}
+
+function tronScanLabel(row, context) {
+  context.labelStats.tronScanTagLookups += 1;
+  const match = classifyTronScanTag(row);
+  if (!match) return null;
+  context.labelStats.tronScanTagHits += 1;
+  return {
+    ...match,
+    address: transferTarget(row)
+  };
+}
+
+function arkhamLabelFromJson(json, address) {
+  const entity = json.entity || json.arkhamEntity || json.predictedEntity || {};
+  const label = json.label
+    || json.addressLabel
+    || json.name
+    || entity.name
+    || entity.label
+    || (Array.isArray(json.tags) ? json.tags.map((item) => item.name || item.label || item.id).filter(Boolean).join(" / ") : "");
+  if (!label) return null;
+  const lower = String(label).toLowerCase();
+  return {
+    destination: label,
+    category: CEX_KEYWORDS.some((item) => lower.includes(item)) ? "CEX" : "Arkham Label",
+    address,
+    labelSource: "arkham",
+    labelConfidence: Number(json.confidence || json.confidenceScore || entity.confidence || 0.65)
+  };
+}
+
+async function arkhamLabel(address, context) {
+  if (!context.paths.arkhamLabelEnabled || !context.paths.arkhamApiKey) {
+    context.labelStats.arkhamSkipped += 1;
+    return null;
+  }
+  context.labelStats.arkhamLookups += 1;
+  const base = String(context.paths.arkhamApiBase || "https://api.arkm.com").replace(/\/$/, "");
+  const url = new URL(`${base}/intelligence/address/${encodeURIComponent(address)}`);
+  if (context.paths.arkhamChain) url.searchParams.set("chain", context.paths.arkhamChain);
+  const json = await fetchJsonWithRetry(url.toString(), "Arkham address intelligence", 2, {
+    "API-Key": context.paths.arkhamApiKey
+  });
+  const match = arkhamLabelFromJson(json, address);
+  if (match) context.labelStats.arkhamHits += 1;
+  return match;
+}
+
+async function resolveDestination(row, context) {
+  const address = transferTarget(row);
+  const fromBook = addressBookLabel(address, context);
+  if (fromBook) return fromBook;
+  const fromTronScan = tronScanLabel(row, context);
+  if (fromTronScan) return fromTronScan;
+  try {
+    const fromArkham = await arkhamLabel(address, context);
+    if (fromArkham) return fromArkham;
+  } catch (error) {
+    context.labelStats.arkhamErrors = (context.labelStats.arkhamErrors || 0) + 1;
+  }
+  return classifyDestination(address);
 }
 
 async function fetchTronScanTrc20Transfers(paths, address, startIso, endIso, contractAddress) {
@@ -149,7 +272,18 @@ async function fetchTrc20Transfers(paths, address, startIso, endIso, contractAdd
   return fetchTronScanTrc20Transfers(paths, address, startIso, endIso, contractAddress);
 }
 
-async function findHop1(paths, config, lostItem) {
+function externalOutgoingRows(rows, address, config, context) {
+  return rows.filter((row) => {
+    if (!isOutgoing(row, address)) return false;
+    if (isProtocolInternalDestination(row, config, context)) {
+      context.labelStats.protocolInternalSkipped += 1;
+      return false;
+    }
+    return true;
+  });
+}
+
+async function findHop1(paths, config, lostItem, context) {
   const anchor = lostItem.outflowTime || `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`;
   const start = addHoursSafe(anchor, -72);
   const end = addHoursSafe(anchor, 24);
@@ -159,13 +293,12 @@ async function findHop1(paths, config, lostItem) {
   for (const redeem of redeemInflows) {
     const redeemTime = rowTimestamp(redeem);
     const redeemEnd = addHours(redeemTime, 24);
-    const outgoingAfterRedeem = sorted
+    const outgoingAfterRedeem = externalOutgoingRows(sorted, lostItem.address, config, context)
       .filter((row) => {
         const timestamp = rowTimestamp(row);
         return timestamp
           && timestamp >= redeemTime
-          && timestamp <= redeemEnd
-          && isOutgoing(row, lostItem.address);
+          && timestamp <= redeemEnd;
       })
       .map((row) => ({
         row,
@@ -175,47 +308,49 @@ async function findHop1(paths, config, lostItem) {
         redeemTime,
         redeemTxHash: txHash(redeem),
         txHash: txHash(row),
-        destination: classifyDestinationFromRow(row),
         matchReason: "redeem_then_transfer"
       }))
       .filter((row) => row.target)
       .sort((a, b) => b.amount - a.amount);
-    if (outgoingAfterRedeem.length) return outgoingAfterRedeem[0];
+    if (outgoingAfterRedeem.length) {
+      const selected = outgoingAfterRedeem[0];
+      return { ...selected, destination: await resolveDestination(selected.row, context) };
+    }
   }
 
-  const outgoing = sorted
-    .filter((row) => isOutgoing(row, lostItem.address))
+  const outgoing = externalOutgoingRows(sorted, lostItem.address, config, context)
     .map((row) => ({
       row,
       amount: tokenAmount(row),
       time: rowTimestamp(row),
       target: transferTarget(row),
       txHash: txHash(row),
-      destination: classifyDestinationFromRow(row),
       matchReason: "expanded_window_transfer"
     }))
     .filter((row) => row.target)
     .sort((a, b) => b.amount - a.amount);
-  return outgoing[0] || null;
+  if (!outgoing.length) return null;
+  const selected = outgoing[0];
+  return { ...selected, destination: await resolveDestination(selected.row, context) };
 }
 
-async function findHop2(paths, config, asset, hop1Target, startIso) {
+async function findHop2(paths, config, asset, hop1Target, startIso, context) {
   if (!hop1Target) return null;
   const rows = await fetchTrc20Transfers(paths, hop1Target, startIso, addDays(startIso, 7), null);
-  const outgoing = rows
-    .filter((row) => isOutgoing(row, hop1Target))
+  const outgoing = externalOutgoingRows(rows, hop1Target, config, context)
     .map((row) => ({
       row,
       amount: tokenAmount(row),
       time: rowTimestamp(row),
       target: transferTarget(row),
       txHash: txHash(row),
-      destination: classifyDestinationFromRow(row),
       matchReason: "hop2_transfer"
     }))
     .filter((row) => row.target)
     .sort((a, b) => b.amount - a.amount);
-  return outgoing[0] || null;
+  if (!outgoing.length) return null;
+  const selected = outgoing[0];
+  return { ...selected, destination: await resolveDestination(selected.row, context) };
 }
 
 function destinationRows(attributionDetails) {
@@ -227,7 +362,9 @@ function destinationRows(attributionDetails) {
       category: item.category,
       amountUsd: 0,
       walletCount: 0,
-      attribution: item.attribution
+      attribution: item.attribution,
+      labelSource: item.labelSource,
+      labelConfidence: item.labelConfidence
     };
     previous.amountUsd += item.amountUsd || 0;
     previous.walletCount += 1;
@@ -270,6 +407,8 @@ function backfillTopLostDestinations(capitalOutflow) {
         destinationAddress: hop1.destinationAddress,
         destinationAttribution: hop1.attribution,
         destinationConfidence: hop1.confidence,
+        destinationLabelSource: hop1.labelSource,
+        destinationLabelConfidence: hop1.labelConfidence,
         destinationTxHash: hop1.txHash,
         destinationMatchReason: hop1.matchReason
       };
@@ -282,6 +421,8 @@ function backfillTopLostDestinations(capitalOutflow) {
         topDestination: roundTrip.strongDestination || roundTrip.outflowDestination,
         destinationCategory: roundTrip.destinationCategory || roundTrip.outflowDestinationCategory,
         destinationAttribution: roundTrip.source === "chain-enriched" ? "strong" : item.destinationAttribution,
+        destinationLabelSource: roundTrip.strongDestinationLabelSource || roundTrip.outflowDestinationLabelSource,
+        destinationLabelConfidence: roundTrip.strongDestinationLabelConfidence || roundTrip.outflowDestinationLabelConfidence,
         destinationTxHash: roundTrip.outflowTxHash,
         destinationMatchReason: roundTrip.matchReason
       };
@@ -316,7 +457,7 @@ function backfillTopLostDestinations(capitalOutflow) {
   });
 }
 
-async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths) {
+async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths, context) {
   const topLost = (capitalOutflow?.top20Lost || []).slice(0, paths.chainLookbackTopLostLimit);
   const attributionDetails = [];
   const roundTrips = [...(capitalOutflow?.roundTrips || [])];
@@ -325,9 +466,13 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths)
   for (const lostItem of topLost) {
     try {
       await sleep(350);
-      const hop1 = await findHop1(paths, config, lostItem);
+      const hop1 = await findHop1(paths, config, lostItem, context);
       if (!hop1) continue;
       const destination = hop1.destination || classifyDestination(hop1.target);
+      if (destination.category === "TRON Eco" && isProtocolInternalTag(destination.destination)) {
+        context.labelStats.protocolInternalSkipped += 1;
+        continue;
+      }
       attributionDetails.push({
         pathId: `${snapshotDate}-${lostItem.address}-hop1`,
         hop: 1,
@@ -341,7 +486,9 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths)
         eventTime: hop1.time,
         txHash: hop1.txHash,
         matchReason: hop1.matchReason,
-        destinationAddress: destination.address || hop1.target
+        destinationAddress: destination.address || hop1.target,
+        labelSource: destination.labelSource,
+        labelConfidence: destination.labelConfidence
       });
 
       const existingRoundTrip = roundTrips.find((item) => item.address === lostItem.address);
@@ -350,10 +497,12 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths)
         existingRoundTrip.destinationCategory = destination.category;
         existingRoundTrip.outflowTxHash = hop1.txHash;
         existingRoundTrip.matchReason = hop1.matchReason;
+        existingRoundTrip.strongDestinationLabelSource = destination.labelSource;
+        existingRoundTrip.strongDestinationLabelConfidence = destination.labelConfidence;
         existingRoundTrip.source = "chain-enriched";
       }
 
-      const hop2 = await findHop2(paths, config, lostItem.primaryAsset, hop1.target, hop1.time || lostItem.outflowTime);
+      const hop2 = await findHop2(paths, config, lostItem.primaryAsset, hop1.target, hop1.time || lostItem.outflowTime, context);
       if (hop2) {
         const weakDestination = hop2.destination || classifyDestination(hop2.target);
         attributionDetails.push({
@@ -369,9 +518,15 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths)
           eventTime: hop2.time,
           txHash: hop2.txHash,
           matchReason: hop2.matchReason,
-          destinationAddress: weakDestination.address || hop2.target
+          destinationAddress: weakDestination.address || hop2.target,
+          labelSource: weakDestination.labelSource,
+          labelConfidence: weakDestination.labelConfidence
         });
-        if (existingRoundTrip) existingRoundTrip.weakDestination = weakDestination.destination;
+        if (existingRoundTrip) {
+          existingRoundTrip.weakDestination = weakDestination.destination;
+          existingRoundTrip.weakDestinationLabelSource = weakDestination.labelSource;
+          existingRoundTrip.weakDestinationLabelConfidence = weakDestination.labelConfidence;
+        }
       }
     } catch (error) {
       errors.push(`${lostItem.address}: ${error.message}`);
@@ -417,14 +572,21 @@ async function enrichChainPaths(snapshot, config, paths) {
   }
 
   const nextSnapshot = { ...snapshot, periodViews: { ...(snapshot.periodViews || {}) } };
+  const addressBook = await loadSharedAddressBook(paths.root, paths.addressBookPath);
+  const context = {
+    paths,
+    addressBookIndex: addressBook.index,
+    protocolAddresses: protocolAddressSet(config),
+    labelStats: emptyLabelStats()
+  };
   const results = [];
 
-  const primary = await enrichCapitalOutflow(snapshot.capitalOutflow, snapshot.lastCompleteUtcDate, config, paths);
+  const primary = await enrichCapitalOutflow(snapshot.capitalOutflow, snapshot.lastCompleteUtcDate, config, paths, context);
   nextSnapshot.capitalOutflow = primary.capitalOutflow;
   results.push({ period: snapshot.period || "90d", ...primary });
 
   for (const [period, view] of periodViewEntries(snapshot)) {
-    const result = await enrichCapitalOutflow(view.capitalOutflow, view.lastCompleteUtcDate || snapshot.lastCompleteUtcDate, config, paths);
+    const result = await enrichCapitalOutflow(view.capitalOutflow, view.lastCompleteUtcDate || snapshot.lastCompleteUtcDate, config, paths, context);
     nextSnapshot.periodViews[period] = {
       ...view,
       capitalOutflow: result.capitalOutflow
@@ -436,6 +598,7 @@ async function enrichChainPaths(snapshot, config, paths) {
   const attributionTotal = results.reduce((sum, item) => sum + item.attributionCount, 0);
   const errors = results.flatMap((item) => item.errors.map((error) => `${item.period}: ${error}`));
   const periodSummary = results.map((item) => `${item.period} ${item.attributionCount}/${item.queriedCount}`).join(", ");
+  const labelStats = context.labelStats;
   return {
     snapshot: nextSnapshot,
     dataQuality: [
@@ -445,6 +608,11 @@ async function enrichChainPaths(snapshot, config, paths) {
         message: attributionTotal
           ? `Queried ${queriedTotal} Top Lost period-addresses via ${paths.chainProvider}; produced ${attributionTotal} hop attribution rows across periods (${periodSummary}).${errors.length ? ` Errors: ${errors.slice(0, 3).join(" | ")}` : ""}`
           : `Queried ${queriedTotal} Top Lost period-addresses via ${paths.chainProvider}, but no matching outgoing TRC20 transfers were found in attribution windows (${periodSummary}).${errors.length ? ` Errors: ${errors.slice(0, 3).join(" | ")}` : ""}`
+      },
+      {
+        source: "Chain Label Resolution",
+        status: paths.arkhamLabelEnabled && !paths.arkhamApiKey ? "partial" : "complete",
+        message: `Destination labels resolved in order: address book -> TronScan tag -> Arkham. Address book hit rate ${formatHitRate(labelStats.addressBookHits, labelStats.addressBookLookups)}; TronScan tag hit rate ${formatHitRate(labelStats.tronScanTagHits, labelStats.tronScanTagLookups)}; Arkham hit rate ${formatHitRate(labelStats.arkhamHits, labelStats.arkhamLookups)}${paths.arkhamLabelEnabled ? "" : " (Arkham disabled)"}${paths.arkhamLabelEnabled && !paths.arkhamApiKey ? " (Arkham key missing)" : ""}. Protocol-internal destinations skipped: ${labelStats.protocolInternalSkipped}. Arkham errors: ${labelStats.arkhamErrors}.`
       }
     ]
   };

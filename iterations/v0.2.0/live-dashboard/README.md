@@ -69,6 +69,7 @@ Supported variables:
 - `CHAIN_LOOKBACK_TOP_LOST_LIMIT=5`
 - `TRONSCAN_API_BASE=https://apilist.tronscanapi.com`
 - `TRONGRID_API_BASE=https://api.trongrid.io`
+- `ARKHAM_LABEL_ENABLED=false`, `ARKHAM_API_BASE=https://api.arkm.com`, `ARKHAM_API_KEY=`, `ARKHAM_CHAIN=tron` configure optional final-pass address labeling. Arkham is off by default and missing keys do not block snapshot generation.
 
 Run the daily snapshot job:
 
@@ -160,6 +161,8 @@ CHAIN_ENRICHMENT_ENABLED=true CHAIN_PROVIDER=tronscan CHAIN_LOOKBACK_TOP_LOST_LI
 ```
 
 When enabled, the job reverse-looks up Top20 Lost addresses only. Hop 1 first searches `outflowTime - 3D` to `outflowTime + 24h`, pairs JustLend redeem inflows with the following 24h user transfer when possible, and falls back to the largest expanded-window transfer. Hop 2 follows the Hop 1 counterparty for 7D and is written as weak/detail-only attribution.
+
+Destination labeling is resolved in this order: shared address book, TronScan transfer tag, then Arkham when enabled. JustLend protocol-internal destinations such as jToken markets are skipped as external outflow destinations so deposits or protocol-internal moves are not misclassified as strong outflow attribution.
 
 If no export snapshot exists, the job uses `data/daily-snapshot.json` as a fallback so the SQLite pipeline can still be verified. `existing-db` is intentionally reserved for read-only schema discovery until the production table mapping is confirmed:
 

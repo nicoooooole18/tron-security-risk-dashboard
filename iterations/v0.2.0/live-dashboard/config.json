@@ -119,6 +119,7 @@
     { "name": "Shared JustLend address book", "type": "address_book", "status": "shared-component", "cadence": "component-managed" },
     { "name": "CoinMarketCap", "type": "price", "status": "env-key-required", "cadence": "daily UTC 00:00" },
     { "name": "DeFiLlama", "type": "competitor_tvl", "status": "production-source", "cadence": "daily UTC 00:00" },
+    { "name": "Arkham Intelligence", "type": "address_label", "status": "optional-disabled-by-default", "cadence": "daily snapshot job fallback" },
     { "name": "Protocol API / existing source", "type": "competitor_borrow", "status": "todo", "cadence": "daily UTC 00:00" }
   ],
   "attributionRules": {
