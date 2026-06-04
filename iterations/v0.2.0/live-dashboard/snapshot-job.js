@@ -8,6 +8,7 @@ const { enrichExternalData } = require("./lib/external-sources");
 const { enrichLendInfoCsv } = require("./lib/source-lend-info-csv");
 const { enrichTopAccountCsv } = require("./lib/source-top-account-csv");
 const { enrichChainPaths } = require("./lib/chain-enrichment");
+const { prepareDailyCsvSources, nextUtcDate } = require("./lib/daily-csv-fetch");
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, "config.json");
@@ -75,11 +76,13 @@ async function loadSource(paths) {
 }
 
 async function run() {
-  const paths = productionPaths();
+  let paths = productionPaths();
   const config = await readJson(CONFIG_PATH);
   const store = new SQLiteStore(paths.sqliteDbPath);
   const owner = `snapshot-job-${process.pid}-${Date.now()}`;
-  const runId = `${latestCompleteUtcDate()}-${Date.now()}`;
+  const targetDate = latestCompleteUtcDate();
+  const runId = `${targetDate}-${Date.now()}`;
+  const startedAt = new Date().toISOString();
 
   if (process.argv.includes("--discover-existing-db")) {
     await store.init();
@@ -94,6 +97,8 @@ async function run() {
   }
 
   try {
+    const dailyCsv = await prepareDailyCsvSources(paths, targetDate);
+    paths = dailyCsv.paths;
     const source = await loadSource(paths);
     const lendInfo = await enrichLendInfoCsv({
       snapshot: source.snapshot,
@@ -109,15 +114,19 @@ async function run() {
     });
     const chain = await enrichChainPaths(topAccount.snapshot, config, paths);
     const snapshot = normalizeSnapshot(chain.snapshot, config, [
+      ...(dailyCsv.dataQuality || []),
       ...(source.dataQuality || []),
       ...(lendInfo.dataQuality || []),
       ...(external.dataQuality || []),
       ...(topAccount.dataQuality || []),
       ...(chain.dataQuality || [])
     ]);
+    if (paths.autoFetchDailyCsv && snapshot.lastCompleteUtcDate !== targetDate) {
+      throw new Error(`Daily freshness check failed: expected Data Through ${targetDate}, actual ${snapshot.lastCompleteUtcDate || "unknown"}. The snapshot was not updated.`);
+    }
     await store.persistSnapshot(snapshot, config, topAccount.facts, {
       runId,
-      startedAt: new Date().toISOString(),
+      startedAt,
       sourceAdapter: source.sourceAdapter
     });
     console.log(JSON.stringify({
@@ -125,8 +134,19 @@ async function run() {
       sourceAdapter: source.sourceAdapter,
       sqliteDbPath: paths.sqliteDbPath,
       snapshotDate: snapshot.lastCompleteUtcDate,
-      generatedAt: snapshot.generatedAt
+      generatedAt: snapshot.generatedAt,
+      expectedDataThrough: targetDate,
+      nextFetchEndDate: nextUtcDate(targetDate)
     }, null, 2));
+  } catch (error) {
+    await store.recordJobFailure({
+      runId,
+      snapshotDate: targetDate,
+      startedAt,
+      sourceAdapter: paths.sourceAdapter,
+      errorMessage: error.message
+    }).catch(() => {});
+    throw error;
   } finally {
     await store.releaseJobLock("daily-snapshot", owner);
   }

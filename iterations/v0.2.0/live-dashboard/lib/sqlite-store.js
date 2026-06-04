@@ -314,6 +314,15 @@ VALUES(${sqlString(lockKey)}, ${sqlString(now.toISOString())}, ${sqlString(expir
     return rows[0] || null;
   }
 
+  async recordJobFailure({ runId, snapshotDate, startedAt, sourceAdapter, errorMessage }) {
+    await this.init();
+    const finishedAt = new Date().toISOString();
+    await this.exec(`
+INSERT OR REPLACE INTO job_run(run_id, snapshot_date, status, started_at, finished_at, source_adapter, error_message)
+VALUES(${sqlString(runId)}, ${sqlString(snapshotDate)}, 'failed', ${sqlString(startedAt || finishedAt)}, ${sqlString(finishedAt)}, ${sqlString(sourceAdapter || "json-export")}, ${sqlString(errorMessage || "")});
+`);
+  }
+
   async readThresholds(fallback = []) {
     await this.init();
     const rows = await this.queryJson("SELECT * FROM dim_threshold_config ORDER BY threshold_key;");

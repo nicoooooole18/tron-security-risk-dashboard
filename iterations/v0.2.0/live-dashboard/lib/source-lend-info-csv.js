@@ -1,3 +1,5 @@
+const fs = require("node:fs/promises");
+const path = require("node:path");
 const { parseCsv } = require("./source-top-account-csv");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -67,6 +69,28 @@ function normalizeRows(rows, config) {
         source: "lend-info-csv"
       };
     });
+}
+
+function dedupeNormalizedRows(rows) {
+  const byDateAsset = new Map();
+  for (const item of rows) {
+    byDateAsset.set(`${item.snapshotDate}|${item.asset}`, item);
+  }
+  return [...byDateAsset.values()].sort((a, b) => `${a.snapshotDate}|${a.asset}`.localeCompare(`${b.snapshotDate}|${b.asset}`));
+}
+
+async function readLendInfoRows(paths) {
+  const rows = [];
+  if (paths.lendInfoCsvUrl) {
+    const response = await fetch(paths.lendInfoCsvUrl);
+    if (!response.ok) throw new Error(`LEND_INFO_CSV_URL returned HTTP ${response.status}`);
+    rows.push(...parseCsv(await response.text()));
+  }
+  for (const filePath of paths.lendInfoCsvFiles || []) {
+    const absolutePath = path.resolve(filePath);
+    rows.push(...parseCsv(await fs.readFile(absolutePath, "utf8")));
+  }
+  return rows;
 }
 
 function datesFrom(rows) {
@@ -278,24 +302,22 @@ function buildSnapshot(snapshot, config, normalizedRows) {
 }
 
 async function enrichLendInfoCsv({ snapshot, config, paths }) {
-  if (!paths.lendInfoCsvUrl) {
+  if (!paths.lendInfoCsvUrl && !paths.lendInfoCsvFiles?.length) {
     return {
       snapshot,
       dataQuality: [
         {
           source: "Lend Info CSV",
           status: "todo",
-          message: "LEND_INFO_CSV_URL is not configured; Overview and Borrow Demand remain sourced from the base snapshot."
+          message: "LEND_INFO_CSV_URL and LEND_INFO_CSV_FILES are not configured; Overview and Borrow Demand remain sourced from the base snapshot."
         }
       ]
     };
   }
 
   try {
-    const response = await fetch(paths.lendInfoCsvUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const rawRows = parseCsv(await response.text());
-    const normalizedRows = normalizeRows(rawRows, config);
+    const rawRows = await readLendInfoRows(paths);
+    const normalizedRows = dedupeNormalizedRows(normalizeRows(rawRows, config));
     const nextSnapshot = buildSnapshot(snapshot, config, normalizedRows);
     const dates = datesFrom(normalizedRows);
     return {

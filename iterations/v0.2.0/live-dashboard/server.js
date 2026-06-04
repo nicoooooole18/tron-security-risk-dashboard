@@ -232,11 +232,29 @@ async function buildApiContext() {
   };
 }
 
+function withLatestJobQuality(snapshot, latestJobRun) {
+  if (latestJobRun?.status !== "failed") return snapshot;
+  return {
+    ...snapshot,
+    dataQuality: [
+      ...(snapshot.dataQuality || []),
+      {
+        source: "Daily Snapshot Job",
+        status: "error",
+        message: `Latest job failed for expected Data Through ${latestJobRun.snapshot_date}: ${latestJobRun.error_message || "unknown error"}. Previous usable snapshot is still being served.`
+      }
+    ]
+  };
+}
+
 async function getSnapshot(period) {
   const { config, snapshot, servedFromSQLite } = await buildApiContext();
-  const viewSnapshot = normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period || snapshot.period));
-  const { settings, ...publicSnapshot } = viewSnapshot;
   const latestJobRun = await STORE.latestJobRun().catch(() => null);
+  const viewSnapshot = withLatestJobQuality(
+    normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period || snapshot.period)),
+    latestJobRun
+  );
+  const { settings, ...publicSnapshot } = viewSnapshot;
   return {
     ...publicSnapshot,
     config,
@@ -805,7 +823,11 @@ async function serveV1Api(req, res, url) {
   const { config, snapshot, thresholds, internalAddresses } = await buildApiContext();
   const route = url.pathname;
   const period = url.searchParams.get("period") || snapshot.period;
-  const viewSnapshot = normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period));
+  const latestJobRun = await STORE.latestJobRun().catch(() => null);
+  const viewSnapshot = withLatestJobQuality(
+    normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period)),
+    latestJobRun
+  );
 
   if (route === "/api/v1/export.csv") {
     if (!config.permissions?.csvExportEnabled) {

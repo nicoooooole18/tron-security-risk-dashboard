@@ -47,11 +47,14 @@ function runStaticChecks() {
   const stylesCss = fs.readFileSync(path.join(ROOT, "styles.css"), "utf8");
   const lendInfoSource = fs.readFileSync(path.join(ROOT, "lib/source-lend-info-csv.js"), "utf8");
   const topAccountSource = fs.readFileSync(path.join(ROOT, "lib/source-top-account-csv.js"), "utf8");
+  const dailyCsvSource = fs.readFileSync(path.join(ROOT, "lib/daily-csv-fetch.js"), "utf8");
   const externalSource = fs.readFileSync(path.join(ROOT, "lib/external-sources.js"), "utf8");
   check("period select supports 90d 30d 7d", ["value=\"90d\"", "value=\"30d\"", "value=\"7d\""].every((item) => indexHtml.includes(item)) && !indexHtml.includes("30D TODO") && !indexHtml.includes("7D TODO"));
   check("visible period labels are dynamic", indexHtml.includes("overviewKicker") && indexHtml.includes("competitorChangeHead") && appJs.includes("els.overviewKicker.textContent = `${periodLabel} 核心结论`") && appJs.includes("els.competitorChangeHead.textContent = `${periodLabel} TVL Change`") && appJs.includes("Top20 ${periodLabel} 未回流资金"));
   check("snapshot job builds real period views", lendInfoSource.includes("const windows = [7, 30, 90]") && lendInfoSource.includes("periodViews") && lendInfoSource.includes("generated real 7D/30D/90D"));
   check("top account builds real outflow period views", topAccountSource.includes("for (const days of [7, 30, 90])") && topAccountSource.includes("generated real 7D/30D/90D Top20 outflow period views"));
+  check("daily csv auto fetch enforces freshness", dailyCsvSource.includes("prepareDailyCsvSources") && dailyCsvSource.includes("did not return target date") && fs.readFileSync(path.join(ROOT, "snapshot-job.js"), "utf8").includes("Daily freshness check failed"));
+  check("header separates data through from snapshot built", indexHtml.includes("Data Through") && indexHtml.includes("Snapshot Built") && appJs.includes("els.dataThrough.textContent") && appJs.includes("els.snapshotBuilt.textContent") && !indexHtml.includes("Last Updated"));
   check("competitor tvl refreshes period views", externalSource.includes("enrichCompetitorTvlForWindow") && externalSource.includes("Object.entries(periodViews)"));
   check("overview uses high utilization asset count", appJs.includes("High Util Assets") && appJs.includes("HIGH_UTILIZATION_THRESHOLD = 60") && appJs.includes("highUtilAssetCountForPeriod") && !appJs.includes("[\"Utilization\""));
   check("overview kpis follow selected period", appJs.includes("periodChangeUsd") && appJs.includes("TVL Change") && appJs.includes("${periodLabel} period") && appJs.includes("formatSignedUsd(kpis.netFlowUsd)") && !appJs.includes("latest ${formatUsd"));
@@ -102,7 +105,13 @@ function runStaticChecks() {
     "SQLITE_DB_PATH",
     "SNAPSHOT_JOB_LOCK_TTL_MINUTES",
     "TOP_ACCOUNT_CSV_FILES",
+    "LEND_INFO_CSV_FILES",
     "LEND_INFO_CSV_URL",
+    "AUTO_FETCH_DAILY_CSV",
+    "SOURCE_CSV_DIR",
+    "LABC_ACCESS_TOKEN",
+    "LEND_INFO_API_BASE",
+    "TOP_ACCOUNT_API_BASE",
     "TOP_ACCOUNT_TRX_USD",
     "CHAIN_ENRICHMENT_ENABLED",
     "CHAIN_PROVIDER"

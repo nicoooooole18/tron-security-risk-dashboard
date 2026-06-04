@@ -58,6 +58,10 @@ Supported variables:
 - `EXISTING_DB_DSN=`
 - `TOP_ACCOUNT_CSV_FILES=` comma-separated DailyTopAccountList CSV paths.
 - `LEND_INFO_CSV_URL=` exportLendInfo CSV URL used for asset-level lending metrics and daily TRX/USD valuation.
+- `LEND_INFO_CSV_FILES=` comma-separated exportLendInfo CSV paths.
+- `AUTO_FETCH_DAILY_CSV=true` fetches the previous complete UTC day from LABC before snapshot generation.
+- `SOURCE_CSV_DIR=` directory for downloaded daily incremental CSV files.
+- `LABC_ACCESS_TOKEN=`, `LEND_INFO_API_BASE=`, `TOP_ACCOUNT_API_BASE=` configure the LABC daily CSV endpoints.
 - `TOP_ACCOUNT_TRX_USD=` fallback TRX/USD price when `LEND_INFO_CSV_URL` is unavailable.
 - `CHAIN_ENRICHMENT_ENABLED=false`
 - `CHAIN_PROVIDER=tronscan | trongrid`
@@ -95,6 +99,19 @@ SOURCE_ADAPTER=json-export node snapshot-job.js
 ```
 
 The Top Account CSV field `当日价格(TRX)` is valued as TRX, not USD. The job converts it to USD using the TRX reference price from `LEND_INFO_CSV_URL`; if that export is unavailable, `TOP_ACCOUNT_TRX_USD` can be used as an explicit fallback.
+
+Daily incremental CSV refresh can be enabled without re-downloading the full 90D history. The job calculates the previous complete UTC date, downloads only that target date, writes it to `SOURCE_CSV_DIR`, and merges it with the historical CSV baseline:
+
+```bash
+AUTO_FETCH_DAILY_CSV=true \
+SOURCE_CSV_DIR=/home/openclaw/project/justlend-capital-data/source \
+LABC_ACCESS_TOKEN=... \
+LEND_INFO_API_BASE=https://labc.ablesdxd.link/exportLendInfo \
+TOP_ACCOUNT_API_BASE=https://labc.ablesdxd.link/admin/justlend/getDailyTopAccountDetails \
+SOURCE_ADAPTER=json-export node snapshot-job.js
+```
+
+If the target date is missing from either daily endpoint, the job records a failed `job_run`, keeps serving the previous usable SQLite snapshot, and does not silently publish a snapshot with stale `Data Through`.
 
 Chain path enrichment is intentionally off by default:
 

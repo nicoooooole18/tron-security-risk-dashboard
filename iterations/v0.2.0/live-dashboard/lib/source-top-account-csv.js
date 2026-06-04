@@ -79,10 +79,28 @@ function buildExcludedAddressSet(config, snapshot) {
 }
 
 async function loadTrxUsdByDate(paths) {
-  if (!paths.lendInfoCsvUrl && !Number.isFinite(paths.topAccountTrxUsd)) return { prices: new Map(), quality: null };
+  if (!paths.lendInfoCsvUrl && !paths.lendInfoCsvFiles?.length && !Number.isFinite(paths.topAccountTrxUsd)) return { prices: new Map(), quality: null };
   if (!paths.lendInfoCsvUrl) {
+    const prices = new Map();
+    for (const filePath of paths.lendInfoCsvFiles || []) {
+      const rows = parseCsv(await fs.readFile(path.resolve(filePath), "utf8"));
+      for (const row of rows) {
+        if (row["币种"] === "TRX") prices.set(row["日期"], toNumber(row["参考价格"]));
+      }
+    }
+    if (prices.size) {
+      return {
+        prices,
+        fallback: Number.isFinite(paths.topAccountTrxUsd) ? paths.topAccountTrxUsd : null,
+        quality: {
+          source: "TRX USD Price",
+          status: "complete",
+          message: `Loaded ${prices.size} daily TRX/USD prices from lend info CSV files.`
+        }
+      };
+    }
     return {
-      prices: new Map(),
+      prices,
       fallback: paths.topAccountTrxUsd,
       quality: {
         source: "TRX USD Price",
@@ -99,6 +117,12 @@ async function loadTrxUsdByDate(paths) {
     const prices = new Map();
     for (const row of rows) {
       if (row["币种"] === "TRX") prices.set(row["日期"], toNumber(row["参考价格"]));
+    }
+    for (const filePath of paths.lendInfoCsvFiles || []) {
+      const fileRows = parseCsv(await fs.readFile(path.resolve(filePath), "utf8"));
+      for (const row of fileRows) {
+        if (row["币种"] === "TRX") prices.set(row["日期"], toNumber(row["参考价格"]));
+      }
     }
     return {
       prices,
@@ -126,10 +150,16 @@ async function loadTrxUsdByDate(paths) {
 
 async function readTopAccountRows(files) {
   const rows = [];
+  const seen = new Set();
   for (const filePath of files) {
     const absolutePath = path.resolve(filePath);
     const parsed = parseCsv(await fs.readFile(absolutePath, "utf8"));
-    for (const row of parsed) rows.push({ ...row, sourceFile: absolutePath });
+    for (const row of parsed) {
+      const dedupeKey = JSON.stringify(row);
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      rows.push({ ...row, sourceFile: absolutePath });
+    }
   }
   return rows;
 }

@@ -26,7 +26,8 @@ const els = {
   pageSubtitle: document.getElementById("pageSubtitle"),
   periodSelect: document.getElementById("periodSelect"),
   csvExportBtn: document.getElementById("csvExportBtn"),
-  lastUpdated: document.getElementById("lastUpdated"),
+  dataThrough: document.getElementById("dataThrough"),
+  snapshotBuilt: document.getElementById("snapshotBuilt"),
   sidebarPeriod: document.getElementById("sidebarPeriod"),
   headline: document.getElementById("headline"),
   overviewKicker: document.getElementById("overviewKicker"),
@@ -1078,7 +1079,8 @@ async function loadSnapshot(period = activePeriod) {
     await loadSettingsDetails();
   }
   useServerSignals = true;
-  els.lastUpdated.textContent = formatDateTime(data.generatedAt);
+  els.dataThrough.textContent = `${data.lastCompleteUtcDate || data.periodEnd?.slice(0, 10) || "--"} UTC`;
+  els.snapshotBuilt.textContent = formatDateTime(data.generatedAt);
   els.sidebarPeriod.textContent = data.period.toUpperCase();
   els.periodSelect.value = data.period;
   renderAll();
