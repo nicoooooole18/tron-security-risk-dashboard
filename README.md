@@ -57,7 +57,6 @@ node server.js
 ## 数据口径
 
 - 协议地址：当前覆盖 31 个 JustLend 协议地址，包括核心合约、治理/Oracle 合约与 jToken market。
-- 用户地址库：当前由多个 jToken 的链上 Transfer 事件增量维护，落地为 `data/justlend-address-book.json`。
+- 用户地址库：当前由多个 jToken 的链上 Transfer 事件增量维护，作为共享组件落地为 `shared/address-book/data/justlend-address-book.json`。
 - 快照缓存：运行时快照写入 `data/live-snapshot-cache.json`，该文件不提交。
 - CEX 地址库：HTX 和其他平台地址优先复用既有 CEX 地址库，手工 seed 作为补充。
-

@@ -9,6 +9,7 @@ const { enrichLendInfoCsv } = require("./lib/source-lend-info-csv");
 const { enrichTopAccountCsv } = require("./lib/source-top-account-csv");
 const { enrichChainPaths } = require("./lib/chain-enrichment");
 const { prepareDailyCsvSources, nextUtcDate } = require("./lib/daily-csv-fetch");
+const { loadSharedAddressBook } = require("./lib/shared-address-book");
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, "config.json");
@@ -113,13 +114,17 @@ async function run() {
       paths
     });
     const chain = await enrichChainPaths(topAccount.snapshot, config, paths);
+    const sharedAddressBook = await loadSharedAddressBook(ROOT, paths.addressBookPath);
+    chain.snapshot.settings = chain.snapshot.settings || {};
+    chain.snapshot.settings.addressBook = sharedAddressBook.metadata;
     const snapshot = normalizeSnapshot(chain.snapshot, config, [
       ...(dailyCsv.dataQuality || []),
       ...(source.dataQuality || []),
       ...(lendInfo.dataQuality || []),
       ...(external.dataQuality || []),
       ...(topAccount.dataQuality || []),
-      ...(chain.dataQuality || [])
+      ...(chain.dataQuality || []),
+      sharedAddressBook.dataQuality
     ]);
     if (paths.autoFetchDailyCsv && snapshot.lastCompleteUtcDate !== targetDate) {
       throw new Error(`Daily freshness check failed: expected Data Through ${targetDate}, actual ${snapshot.lastCompleteUtcDate || "unknown"}. The snapshot was not updated.`);

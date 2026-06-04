@@ -28,6 +28,7 @@ function productionPaths() {
     sourceAdapter: env("SOURCE_ADAPTER", "json-export"),
     sourceJsonDir: env("SOURCE_JSON_DIR", path.join(ROOT, "data/source-json")),
     existingDbDsn: env("EXISTING_DB_DSN", ""),
+    addressBookPath: env("ADDRESS_BOOK_PATH", path.join(ROOT, "../../../shared/address-book/data/justlend-address-book.json")),
     cmcApiKey: env("CMC_API_KEY", ""),
     externalFetchEnabled: env("EXTERNAL_FETCH_ENABLED", "false") === "true",
     jobLockTtlMinutes: numberEnv("SNAPSHOT_JOB_LOCK_TTL_MINUTES", 120),

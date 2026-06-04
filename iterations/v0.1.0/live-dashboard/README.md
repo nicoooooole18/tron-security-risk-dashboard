@@ -35,7 +35,7 @@ PORT=8787
 ## 当前接入
 
 - 协议地址：31 个 JustLend 协议地址，包括核心合约、治理/Oracle 合约和 jToken market。
-- 用户地址库：从多个 jToken Transfer 事件增量发现地址，维护到 `data/justlend-address-book.json`。
+- 用户地址库：从多个 jToken Transfer 事件增量发现地址，维护到共享组件 `../../../shared/address-book/data/justlend-address-book.json`。
 - USDT 黑名单：调用 TRON USDT `getBlackListStatus(address)`。
 - USDC 黑名单：调用 TRON USDC `isBlacklisted(address)`。
 - HTX SP：
@@ -57,7 +57,7 @@ PORT=8787
 ## 配置说明
 
 - `watchedAddresses`：JustLend 协议地址清单。
-- `userAddressPool.addressBookPath`：JustLend 用户地址库路径。
+- `userAddressPool.addressBookPath`：JustLend 用户地址库路径，默认指向仓库共享组件。
 - `userAddressPool.autoJTokenSources`：从 watched jToken market 自动派生用户地址发现来源。
 - `userAddressPool.scanLimit`：每轮用户黑名单扫描地址数。
 - `cexAddressBookPath`：既有 CEX 地址库路径。
@@ -70,5 +70,4 @@ PORT=8787
 
 - `.env` 已被忽略，不提交 TronGrid API Key。
 - `data/live-snapshot-cache.json` 是运行时缓存，不提交。
-- `data/justlend-address-book.json` 是地址库初始数据，会提交。
-
+- `../../../shared/address-book/data/justlend-address-book.json` 是共享地址库初始数据，会提交。

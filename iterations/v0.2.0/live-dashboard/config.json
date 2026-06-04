@@ -116,6 +116,7 @@
   "dataSources": [
     { "name": "JustLend user position and event export", "type": "internal", "status": "json-export-adapter", "cadence": "daily UTC 00:00" },
     { "name": "Existing DB read-only adapter", "type": "internal", "status": "reserved-for-schema-discovery", "cadence": "daily UTC 00:00" },
+    { "name": "Shared JustLend address book", "type": "address_book", "status": "shared-component", "cadence": "component-managed" },
     { "name": "CoinMarketCap", "type": "price", "status": "env-key-required", "cadence": "daily UTC 00:00" },
     { "name": "DeFiLlama", "type": "competitor_tvl", "status": "production-source", "cadence": "daily UTC 00:00" },
     { "name": "Protocol API / existing source", "type": "competitor_borrow", "status": "todo", "cadence": "daily UTC 00:00" }

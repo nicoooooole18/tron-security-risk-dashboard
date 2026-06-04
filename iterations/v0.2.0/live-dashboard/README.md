@@ -56,6 +56,7 @@ Supported variables:
 - `EXTERNAL_FETCH_ENABLED=false`
 - `CMC_API_KEY=`
 - `EXISTING_DB_DSN=`
+- `ADDRESS_BOOK_PATH=` shared JustLend address book path used for label-comparison metadata.
 - `TOP_ACCOUNT_CSV_FILES=` comma-separated DailyTopAccountList CSV paths.
 - `LEND_INFO_CSV_URL=` exportLendInfo CSV URL used for asset-level lending metrics and daily TRX/USD valuation.
 - `LEND_INFO_CSV_FILES=` comma-separated exportLendInfo CSV paths.

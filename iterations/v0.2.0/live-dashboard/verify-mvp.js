@@ -91,6 +91,7 @@ function runStaticChecks() {
   check("data quality covers 90d snapshot", snapshot.dataQuality.some((item) => item.source === "90D Start Snapshot"));
   check("data quality covers internal address filter", snapshot.dataQuality.some((item) => item.source === "Internal Address Filter"));
   check("data quality covers unknown attribution", snapshot.dataQuality.some((item) => item.source === "Attribution Unknown"));
+  check("shared address book is configured", config.dataSources.some((item) => item.type === "address_book" && item.status === "shared-component") && fs.existsSync(path.join(ROOT, "../../../shared/address-book/data/justlend-address-book.json")));
   check("csv export enabled", config.permissions.csvExportEnabled === true);
   check("csv export button exists", indexHtml.includes("csvExportBtn") && indexHtml.includes("导出 CSV"));
   check("snapshot job exists", fs.existsSync(path.join(ROOT, "snapshot-job.js")));
@@ -99,6 +100,7 @@ function runStaticChecks() {
   check("existing db adapter exists", fs.existsSync(path.join(ROOT, "lib/source-existing-db.js")));
   check("lend info csv adapter exists", fs.existsSync(path.join(ROOT, "lib/source-lend-info-csv.js")));
   check("top account csv adapter exists", fs.existsSync(path.join(ROOT, "lib/source-top-account-csv.js")));
+  check("shared address book loader exists", fs.existsSync(path.join(ROOT, "lib/shared-address-book.js")));
   check("chain enrichment module exists", fs.existsSync(path.join(ROOT, "lib/chain-enrichment.js")));
   const envExample = fs.readFileSync(path.join(ROOT, ".env.example"), "utf8");
   check("env template includes production variables", [
@@ -106,6 +108,7 @@ function runStaticChecks() {
     "SOURCE_ADAPTER",
     "SOURCE_JSON_DIR",
     "EXISTING_DB_DSN",
+    "ADDRESS_BOOK_PATH",
     "SQLITE_DB_PATH",
     "SNAPSHOT_JOB_LOCK_TTL_MINUTES",
     "TOP_ACCOUNT_CSV_FILES",

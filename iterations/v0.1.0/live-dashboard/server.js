@@ -282,7 +282,7 @@ function getConfiguredUserPool(config) {
   return {
     enabled: pool.enabled !== false,
     source: pool.source || "config.json",
-    addressBookPath: pool.addressBookPath || "./data/justlend-address-book.json",
+    addressBookPath: pool.addressBookPath || "../../../shared/address-book/data/justlend-address-book.json",
     scanLimit: Number(pool.scanLimit || 80),
     addresses,
     onchainSources: dedupeJTokenSources([...configuredSources, ...autoSources])
