@@ -50,53 +50,108 @@ async function writeDailyCsv(filePath, rows) {
   await fs.writeFile(filePath, `\uFEFF${rowsToCsv(rows)}\n`, "utf8");
 }
 
+async function fileExists(filePath) {
+  return fs.access(filePath).then(() => true).catch(() => false);
+}
+
+function dailyFilePaths(sourceCsvDir, targetDate) {
+  return {
+    lendInfoFile: path.join(sourceCsvDir, `lend-info-daily-${targetDate}.csv`),
+    topAccountFile: path.join(sourceCsvDir, `top-account-daily-${targetDate}.csv`)
+  };
+}
+
+async function discoverDailyCsvFiles(sourceCsvDir) {
+  const files = await fs.readdir(sourceCsvDir).catch(() => []);
+  return {
+    lendInfoFiles: files
+      .filter((name) => /^lend-info-daily-\d{4}-\d{2}-\d{2}\.csv$/.test(name))
+      .sort()
+      .map((name) => path.join(sourceCsvDir, name)),
+    topAccountFiles: files
+      .filter((name) => /^top-account-daily-\d{4}-\d{2}-\d{2}\.csv$/.test(name))
+      .sort()
+      .map((name) => path.join(sourceCsvDir, name))
+  };
+}
+
+async function assertCsvHasTargetDate(filePath, targetDate, sourceName) {
+  if (!(await fileExists(filePath))) {
+    throw new Error(`${sourceName} daily CSV is missing for target date ${targetDate}: ${filePath}`);
+  }
+  const rows = parseCsv(await fs.readFile(filePath, "utf8"));
+  const targetRows = rows.filter((row) => row["日期"] === targetDate);
+  if (!targetRows.length) {
+    const availableDates = [...new Set(rows.map((row) => row["日期"]).filter(Boolean))].sort();
+    throw new Error(`${sourceName} daily CSV file does not contain target date ${targetDate}; available dates: ${availableDates.join(",") || "none"}`);
+  }
+  return targetRows.length;
+}
+
 async function prepareDailyCsvSources(paths, targetDate) {
   if (!paths.autoFetchDailyCsv) {
+    const discovered = await discoverDailyCsvFiles(paths.sourceCsvDir);
     return {
-      paths,
+      paths: {
+        ...paths,
+        lendInfoCsvFiles: [...(paths.lendInfoCsvFiles || []), ...discovered.lendInfoFiles],
+        topAccountCsvFiles: [...(paths.topAccountCsvFiles || []), ...discovered.topAccountFiles]
+      },
       dataQuality: []
     };
   }
   if (!paths.labcAccessToken) throw new Error("LABC_ACCESS_TOKEN is required when AUTO_FETCH_DAILY_CSV=true");
-  if (!paths.lendInfoApiBase) throw new Error("LEND_INFO_API_BASE is required when AUTO_FETCH_DAILY_CSV=true");
-  if (!paths.topAccountApiBase) throw new Error("TOP_ACCOUNT_API_BASE is required when AUTO_FETCH_DAILY_CSV=true");
+  if (paths.autoFetchLendInfoDaily && !paths.lendInfoApiBase) throw new Error("LEND_INFO_API_BASE is required when AUTO_FETCH_LEND_INFO_DAILY=true");
+  if (paths.autoFetchTopAccountDaily && !paths.topAccountApiBase) throw new Error("TOP_ACCOUNT_API_BASE is required when AUTO_FETCH_TOP_ACCOUNT_DAILY=true");
 
   const endDate = nextUtcDate(targetDate);
-  const lendInfoUrl = buildUrl(paths.lendInfoApiBase, {
-    from: targetDate,
-    end: endDate,
-    accessToken: paths.labcAccessToken
-  });
-  const topAccountUrl = buildUrl(paths.topAccountApiBase, {
-    from: targetDate,
-    end: endDate,
-    accessToken: paths.labcAccessToken,
-    format: "csv"
-  });
+  const { lendInfoFile, topAccountFile } = dailyFilePaths(paths.sourceCsvDir, targetDate);
+  const qualityMessages = [];
 
-  const [lendInfo, topAccount] = await Promise.all([
-    fetchCsvRows({ url: lendInfoUrl, targetDate, sourceName: "exportLendInfo daily CSV" }),
-    fetchCsvRows({ url: topAccountUrl, targetDate, sourceName: "Top Account daily CSV" })
-  ]);
+  if (paths.autoFetchLendInfoDaily) {
+    const lendInfoUrl = buildUrl(paths.lendInfoApiBase, {
+      from: targetDate,
+      end: endDate,
+      accessToken: paths.labcAccessToken
+    });
+    const lendInfo = await fetchCsvRows({ url: lendInfoUrl, targetDate, sourceName: "exportLendInfo daily CSV" });
+    await writeDailyCsv(lendInfoFile, lendInfo.targetRows);
+    qualityMessages.push(`exportLendInfo ${lendInfo.targetRows.length}/${lendInfo.rows.length} rows`);
+  }
 
-  const lendInfoFile = path.join(paths.sourceCsvDir, `lend-info-daily-${targetDate}.csv`);
-  const topAccountFile = path.join(paths.sourceCsvDir, `top-account-daily-${targetDate}.csv`);
-  await Promise.all([
-    writeDailyCsv(lendInfoFile, lendInfo.targetRows),
-    writeDailyCsv(topAccountFile, topAccount.targetRows)
-  ]);
+  if (paths.autoFetchTopAccountDaily) {
+    const topAccountUrl = buildUrl(paths.topAccountApiBase, {
+      from: targetDate,
+      end: endDate,
+      accessToken: paths.labcAccessToken,
+      format: "csv"
+    });
+    const topAccount = await fetchCsvRows({ url: topAccountUrl, targetDate, sourceName: "Top Account daily CSV" });
+    await writeDailyCsv(topAccountFile, topAccount.targetRows);
+    qualityMessages.push(`Top Account ${topAccount.targetRows.length}/${topAccount.rows.length} rows`);
+  } else {
+    const targetRows = await assertCsvHasTargetDate(topAccountFile, targetDate, "Top Account");
+    qualityMessages.push(`Top Account uploaded file ${targetRows} rows`);
+  }
+
+  if (!paths.autoFetchLendInfoDaily) {
+    const targetRows = await assertCsvHasTargetDate(lendInfoFile, targetDate, "exportLendInfo");
+    qualityMessages.push(`exportLendInfo uploaded file ${targetRows} rows`);
+  }
+
+  const discovered = await discoverDailyCsvFiles(paths.sourceCsvDir);
 
   return {
     paths: {
       ...paths,
-      lendInfoCsvFiles: [...(paths.lendInfoCsvFiles || []), lendInfoFile],
-      topAccountCsvFiles: [...(paths.topAccountCsvFiles || []), topAccountFile]
+      lendInfoCsvFiles: [...(paths.lendInfoCsvFiles || []), ...discovered.lendInfoFiles],
+      topAccountCsvFiles: [...(paths.topAccountCsvFiles || []), ...discovered.topAccountFiles]
     },
     dataQuality: [
       {
         source: "Daily CSV Auto Fetch",
         status: "complete",
-        message: `Fetched target date ${targetDate}: exportLendInfo ${lendInfo.targetRows.length}/${lendInfo.rows.length} rows, Top Account ${topAccount.targetRows.length}/${topAccount.rows.length} rows.`
+        message: `Prepared target date ${targetDate}: ${qualityMessages.join(", ")}.`
       }
     ],
     files: {

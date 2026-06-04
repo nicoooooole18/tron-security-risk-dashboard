@@ -104,6 +104,8 @@ Daily incremental CSV refresh can be enabled without re-downloading the full 90D
 
 ```bash
 AUTO_FETCH_DAILY_CSV=true \
+AUTO_FETCH_LEND_INFO_DAILY=true \
+AUTO_FETCH_TOP_ACCOUNT_DAILY=false \
 SOURCE_CSV_DIR=/home/openclaw/project/justlend-capital-data/source \
 LABC_ACCESS_TOKEN=... \
 LEND_INFO_API_BASE=https://labc.ablesdxd.link/exportLendInfo \
@@ -112,6 +114,19 @@ SOURCE_ADAPTER=json-export node snapshot-job.js
 ```
 
 If the target date is missing from either daily endpoint, the job records a failed `job_run`, keeps serving the previous usable SQLite snapshot, and does not silently publish a snapshot with stale `Data Through`.
+
+When the Top Account endpoint blocks the VPS IP, fetch the previous UTC day locally and upload it before the VPS snapshot job runs:
+
+```bash
+LABC_ACCESS_TOKEN=... \
+UPLOAD_TO_VPS=true \
+VPS_SSH_KEY=/Users/lanyu/OpenClaw/openclaw2.pem \
+VPS_SSH_PORT=6673 \
+VPS_SOURCE_CSV_TARGET=openclaw@43.134.57.52:/home/openclaw/project/justlend-capital-data/source/ \
+node scripts/sync-top-account-daily.js
+```
+
+The VPS job can then use `AUTO_FETCH_LEND_INFO_DAILY=true` and `AUTO_FETCH_TOP_ACCOUNT_DAILY=false`: it fetches Lend Info itself, requires `top-account-daily-{targetDate}.csv` to have been uploaded, and fails loudly if that file is absent.
 
 Chain path enrichment is intentionally off by default:
 

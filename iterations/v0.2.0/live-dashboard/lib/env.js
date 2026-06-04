@@ -35,6 +35,8 @@ function productionPaths() {
     lendInfoCsvFiles: listEnv("LEND_INFO_CSV_FILES"),
     lendInfoCsvUrl: env("LEND_INFO_CSV_URL", ""),
     autoFetchDailyCsv: env("AUTO_FETCH_DAILY_CSV", "false") === "true",
+    autoFetchLendInfoDaily: env("AUTO_FETCH_LEND_INFO_DAILY", env("AUTO_FETCH_DAILY_CSV", "false")) === "true",
+    autoFetchTopAccountDaily: env("AUTO_FETCH_TOP_ACCOUNT_DAILY", env("AUTO_FETCH_DAILY_CSV", "false")) === "true",
     sourceCsvDir: env("SOURCE_CSV_DIR", path.join(ROOT, "data/source-csv")),
     labcAccessToken: env("LABC_ACCESS_TOKEN", ""),
     lendInfoApiBase: env("LEND_INFO_API_BASE", ""),
