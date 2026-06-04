@@ -1,24 +1,7 @@
 {
-  "updatedAt": "2026-06-02T10:35:41.243Z",
+  "updatedAt": "2026-06-04T06:46:16.084Z",
   "source": "live-dashboard",
   "entries": [
-    {
-      "address": "TVsnCkX9pkz4H4KabFsQowYwTeniGSyG2j",
-      "roles": [
-        "jTRX holder"
-      ],
-      "markets": [
-        "TRON V1 / TRX"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "836817565474",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
     {
       "address": "TXnZxPaNMj9oLizLhq5927rf4QKUXy67FG",
       "roles": [
@@ -31,7 +14,7 @@
         "onchain:tronscan_token_transfers"
       ],
       "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
       "currentHolder": false,
       "lastBalanceRaw": "0",
       "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
@@ -48,7 +31,7 @@
         "onchain:tronscan_token_transfers"
       ],
       "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
       "currentHolder": false,
       "lastBalanceRaw": "0",
       "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
@@ -65,26 +48,9 @@
         "onchain:tronscan_token_transfers"
       ],
       "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
       "currentHolder": true,
       "lastBalanceRaw": "47047447752046229718626001626380248720766511869140147733246388465840642096063275367562840500944795158765503770345767558110320235651668540225847546966047900133675237376",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "TDFjV971kDowrG23qvBsfmJdtVr1JG476U",
-      "roles": [
-        "jwstUSDT holder"
-      ],
-      "markets": [
-        "TRON V1 / wstUSDT"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "178182220949798910150018131099161070254230585554536782909684502389070628197836582736259442467850570693306151671870005204645158635266181362267700808449998255016615346176",
       "note": "balanceOf > 0; candidateLimit=6"
     },
     {
@@ -99,7 +65,7 @@
         "onchain:tronscan_token_transfers"
       ],
       "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
       "currentHolder": false,
       "lastBalanceRaw": "0",
       "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
@@ -118,9 +84,524 @@
         "onchain:tronscan_token_transfers"
       ],
       "firstSeenAt": "2026-06-02T06:37:21.356Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "271933304324542948901221536530415504559534537326023382225069618649216885147519262479327994731614288827200314505361676266368000712783806378258582268443791163538649645056",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TRKwen2TPcBkeuTq7uhqRrRk5fNguu4AMH",
+      "roles": [
+        "jsTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / sTRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:37:21.356Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "95900788468376601908523151764899129052544348436013260639810057764223095608723727161652203461859329749509415165259767300466657549599030798762530529092559865557169857363968",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TWVZb7dzEG9xsaAVAGD86xXsY71hXEYd7h",
+      "roles": [
+        "jUSDCOLD participant"
+      ],
+      "markets": [
+        "TRON V1 / USDCOLD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:52:39.195Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
+    },
+    {
+      "address": "TFrAJiRiq5Xrz57qi3o1TF4h6dYWPhZucS",
+      "roles": [
+        "jUSDCOLD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDCOLD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:52:39.195Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "8605777613712116860710959404611850535898985656237969573254475431542760086797440505926023380536553333474035376850192925235853257439674852219384223123358899169656832",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TRW5jtPnFDts2GuDLyGozuW68X8ig2AzGu",
+      "roles": [
+        "jUSDCOLD participant"
+      ],
+      "markets": [
+        "TRON V1 / USDCOLD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:52:39.195Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
+    },
+    {
+      "address": "TP2a5JkfkBA9ckkCxeYicnVzKJrS8LGxAF",
+      "roles": [
+        "jUSDCOLD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDCOLD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:52:39.195Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "2604229946192654791396116325522601564976888989394178073640968997128787754790894089940894313108884015461421217726788895396895903392552326820051290420615375558967033856",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TFjk9eauKVseYdBiquThVH7rjNKZVjPFxf",
+      "roles": [
+        "jUSDCOLD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDCOLD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:52:39.195Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "4091948406396930048735341856939162919700554222255175555778545931207935977725949765658509888883287554702135662923137590592196408146028776923755706997517412514737946624",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "THpZMi1egwfCaLWh3YBugQCEhXnAScDk4o",
+      "roles": [
+        "jUSDCOLD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDCOLD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:52:39.195Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "4949505764489197559830785664827320945864210332261175729721963520315815863378207537138907618367706210921917521437480516492101360672627573567971446547160280623424208896",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TLKMirCRnkkzr1h1ZpoPL3sKRfLZ4PAEoD",
+      "roles": [
+        "jwstUSDT holder"
+      ],
+      "markets": [
+        "TRON V1 / wstUSDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:37:21.356Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "16205135346307688369906202977607586558224430650692012742187574166740921248766029800636329835069327718974574670482587862650629998712368935931217168606771784549421597851648",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TZ1FxKdtw7aVQHufgVLkKkv9eq424Huyv5",
+      "roles": [
+        "jUSDD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T09:00:18.635Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "482072747462546275723534739996459425173790261390616968019229707907262607237028614997623787488550318026010965680481696002054512517414742045874013431067344535605938749440",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TSfwCfeYsiQKVfNYrAf9kprvK1ZUa28nAN",
+      "roles": [
+        "jTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / TRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:37:21.356Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "833324859251",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TNqd1fvEULSdpDKuGfpz4cCDD63Kmfn7Gb",
+      "roles": [
+        "jTRX holder",
+        "jWIN holder",
+        "jTRX participant"
+      ],
+      "markets": [
+        "TRON V1 / TRX",
+        "TRON V1 / WIN"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:37:21.356Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
+    },
+    {
+      "address": "TUvJWVPPBWkkGCiucHzRKHEuftSMssszbQ",
+      "roles": [
+        "jUSDT participant"
+      ],
+      "markets": [
+        "TRON V1 / USDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=4"
+    },
+    {
+      "address": "TH1xRK51uCJ1MyC6AC8rJtCFJ1WaTBnjJE",
+      "roles": [
+        "jUSDT participant"
+      ],
+      "markets": [
+        "TRON V1 / USDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=4"
+    },
+    {
+      "address": "TTtjuPS4Q8LUA4ivqsLMFBHXAPDMArfCkw",
+      "roles": [
+        "jUSDT participant"
+      ],
+      "markets": [
+        "TRON V1 / USDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=4"
+    },
+    {
+      "address": "TU2QopHNyujgQJUB2ihDn3y2y8ofHTbbAb",
+      "roles": [
+        "jUSDT participant"
+      ],
+      "markets": [
+        "TRON V1 / USDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=4"
+    },
+    {
+      "address": "TW3gc2omYjk3hazrRq6hRWjJaiHfxPV59j",
+      "roles": [
+        "jTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / TRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "56821633070",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TM7wMgxPLyhL3NaQ25PsMGEERgEoPjiVHj",
+      "roles": [
+        "jTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / TRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "186025774236592",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TPTU6MKvGYRDHWbnyR9e1Te1zP9joPsYEn",
+      "roles": [
+        "jTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / TRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "189098181999509",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TJBDa6q1RCYJeuq1YHvGToib89nWzSC8ac",
+      "roles": [
+        "jTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / TRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "51954416376109",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TGNGReoB2zRNxm7a4aorvPwAKHz1cUZQqW",
+      "roles": [
+        "jUSDD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "336016450457434490299063148024642958054345132604427205756673963601199920173194764943877966776686553649620139615753035979395698422132838443830527350377089473758363648",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TMKUdfmJy6u2rsiY4oHNo7c9A8BQWPJGYG",
+      "roles": [
+        "jUSDD holder",
+        "jsTRX participant"
+      ],
+      "markets": [
+        "TRON V1 / USDD",
+        "TRON V1 / sTRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
+    },
+    {
+      "address": "TQAJStoDtRQ75956H2mnbqLXZMR1FauKKS",
+      "roles": [
+        "jUSDD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "13390908738825095355072119998424483478682497934405833055576790865043893473586738409576352783584043414294941213855223158573429270376643437669573004449735613650298145341440",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TLcVweGqmsBv2RcGoi4EWWLpk4KXKdVPss",
+      "roles": [
+        "jUSDD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "2946000030564679082123522431209338574035126886615977152670514568861969917185037717294202129241733635161473387919083455858624769705290516074990971585635929414828342378496",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TSMoi5zXHubDnyaqVb3TALp3iReRVzFAei",
+      "roles": [
+        "jUSDD holder"
+      ],
+      "markets": [
+        "TRON V1 / USDD"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "7325496237338903396814006168808860011267579968282604391178443503956142803550255993049064821306624527231742022315822482134259395158566668141665658302512306644760087494656",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TUSowHLQ7FJ94a5sTwBdnUz32XDwd8xjx9",
+      "roles": [
+        "jwstUSDT participant"
+      ],
+      "markets": [
+        "TRON V1 / wstUSDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": false,
+      "lastBalanceRaw": "0",
+      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
+    },
+    {
+      "address": "TRBdbt6HtQ8ympHaXQ2YfHFtsWW2VH8rhR",
+      "roles": [
+        "jsTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / sTRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "8777864873469175413653352847541931382229945229763533281221236883050205750204818380867229164575355350514624758569670387201881041583070725826117063771176597261563600044032",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TWpCaDLGZBa5Bwnwh8RmM4HhMKUakTu4Rv",
+      "roles": [
+        "jsTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / sTRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "2728280858482875844163422735065000029846361205108109292284079702107373281141895893397168169451004434844516517403639680874081922302118284432863317336185152056004425285632",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TU78XaQfWxRKr7J8cWWrJfWgj7Qw3ZXSa7",
+      "roles": [
+        "jsTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / sTRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-04T06:45:56.374Z",
+      "lastSeenAt": "2026-06-04T06:45:56.374Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "29056595483011792914455846096019950353980505005409727027845943835867298117734782870616670505669000380725116755314532553034619469620229719224359409527794139653404106948608",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TVsnCkX9pkz4H4KabFsQowYwTeniGSyG2j",
+      "roles": [
+        "jTRX holder"
+      ],
+      "markets": [
+        "TRON V1 / TRX"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:37:21.356Z",
       "lastSeenAt": "2026-06-02T10:35:21.715Z",
       "currentHolder": true,
-      "lastBalanceRaw": "238742797702802092857045717822865192107193999659668730318844948891050567067647451169295378135315760645014905107974043499648875649833645218774449450449432012329582592000",
+      "lastBalanceRaw": "836817565474",
+      "note": "balanceOf > 0; candidateLimit=6"
+    },
+    {
+      "address": "TDFjV971kDowrG23qvBsfmJdtVr1JG476U",
+      "roles": [
+        "jwstUSDT holder"
+      ],
+      "markets": [
+        "TRON V1 / wstUSDT"
+      ],
+      "sources": [
+        "onchain:tronscan_token_transfers"
+      ],
+      "firstSeenAt": "2026-06-02T06:37:21.356Z",
+      "lastSeenAt": "2026-06-02T10:35:21.715Z",
+      "currentHolder": true,
+      "lastBalanceRaw": "178182220949798910150018131099161070254230585554536782909684502389070628197836582736259442467850570693306151671870005204645158635266181362267700808449998255016615346176",
       "note": "balanceOf > 0; candidateLimit=6"
     },
     {
@@ -162,23 +643,6 @@
       "note": "balanceOf > 0; candidateLimit=6"
     },
     {
-      "address": "TRKwen2TPcBkeuTq7uhqRrRk5fNguu4AMH",
-      "roles": [
-        "jsTRX holder"
-      ],
-      "markets": [
-        "TRON V1 / sTRX"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "92123344802886089162764411789467622121620950305100209248111728613701528575030641220440817569324412201438223105979972157616834552600096257556866133531940327370370739863552",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
       "address": "TN9u4j6t6U6DnAsDBRoqzEBMKTTVSFJzY3",
       "roles": [
         "jTRX holder"
@@ -193,108 +657,6 @@
       "lastSeenAt": "2026-06-02T10:35:21.715Z",
       "currentHolder": true,
       "lastBalanceRaw": "2318031009564985",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "TWVZb7dzEG9xsaAVAGD86xXsY71hXEYd7h",
-      "roles": [
-        "jUSDCOLD participant"
-      ],
-      "markets": [
-        "TRON V1 / USDCOLD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:52:39.195Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": false,
-      "lastBalanceRaw": "0",
-      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
-    },
-    {
-      "address": "TFrAJiRiq5Xrz57qi3o1TF4h6dYWPhZucS",
-      "roles": [
-        "jUSDCOLD holder"
-      ],
-      "markets": [
-        "TRON V1 / USDCOLD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:52:39.195Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "8605777613712116860710959404611850535898985656237969573254475431542760086797440505926023380536553333474035376850192925235853257439674852219384223123358899169656832",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "TRW5jtPnFDts2GuDLyGozuW68X8ig2AzGu",
-      "roles": [
-        "jUSDCOLD participant"
-      ],
-      "markets": [
-        "TRON V1 / USDCOLD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:52:39.195Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": false,
-      "lastBalanceRaw": "0",
-      "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=6"
-    },
-    {
-      "address": "TP2a5JkfkBA9ckkCxeYicnVzKJrS8LGxAF",
-      "roles": [
-        "jUSDCOLD holder"
-      ],
-      "markets": [
-        "TRON V1 / USDCOLD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:52:39.195Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "2604229946192654791396116325522601564976888989394178073640968997128787754790894089940894313108884015461421217726788895396895903392552326820051290420615375558967033856",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "TFjk9eauKVseYdBiquThVH7rjNKZVjPFxf",
-      "roles": [
-        "jUSDCOLD holder"
-      ],
-      "markets": [
-        "TRON V1 / USDCOLD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:52:39.195Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "4091948406396930048735341856939162919700554222255175555778545931207935977725949765658509888883287554702135662923137590592196408146028776923755706997517412514737946624",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "THpZMi1egwfCaLWh3YBugQCEhXnAScDk4o",
-      "roles": [
-        "jUSDCOLD holder"
-      ],
-      "markets": [
-        "TRON V1 / USDCOLD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:52:39.195Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "4949505764489197559830785664827320945864210332261175729721963520315815863378207537138907618367706210921917521437480516492101360672627573567971446547160280623424208896",
       "note": "balanceOf > 0; candidateLimit=6"
     },
     {
@@ -346,23 +708,6 @@
       "lastSeenAt": "2026-06-02T10:35:21.715Z",
       "currentHolder": true,
       "lastBalanceRaw": "21747158351",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "TLKMirCRnkkzr1h1ZpoPL3sKRfLZ4PAEoD",
-      "roles": [
-        "jwstUSDT holder"
-      ],
-      "markets": [
-        "TRON V1 / wstUSDT"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "16205135346307688369906202977607586558224430650692012742187574166740921248766029800636329835069327718974574670482587862650629998712368935931217168606771784549421597851648",
       "note": "balanceOf > 0; candidateLimit=6"
     },
     {
@@ -433,23 +778,6 @@
       "currentHolder": true,
       "lastBalanceRaw": "5167699815709357090994976691564659349524168244431027250002777990128421339295574317856429541925083188493467654666578860062625192829782393322718296172009941695194216792064",
       "note": "balanceOf > 0; candidateLimit=4"
-    },
-    {
-      "address": "TZ1FxKdtw7aVQHufgVLkKkv9eq424Huyv5",
-      "roles": [
-        "jUSDD holder"
-      ],
-      "markets": [
-        "TRON V1 / USDD"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T09:00:18.635Z",
-      "lastSeenAt": "2026-06-02T10:35:21.715Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "615981835071940250147557159502238398671023184422868966673520315972522875001065286299808369740970146093206016193982237043973431549542651464116865421633198705355668848640",
-      "note": "balanceOf > 0; candidateLimit=6"
     },
     {
       "address": "TFYY3A3PuWSTuPdnS53YEGvt3o4JMqTiB5",
@@ -777,42 +1105,6 @@
       "currentHolder": false,
       "lastBalanceRaw": "0",
       "note": "recent jToken transfer candidate; balanceOf = 0; candidateLimit=4"
-    },
-    {
-      "address": "TSfwCfeYsiQKVfNYrAf9kprvK1ZUa28nAN",
-      "roles": [
-        "jTRX holder"
-      ],
-      "markets": [
-        "TRON V1 / TRX"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T08:24:45.152Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "584329542044",
-      "note": "balanceOf > 0; candidateLimit=6"
-    },
-    {
-      "address": "TNqd1fvEULSdpDKuGfpz4cCDD63Kmfn7Gb",
-      "roles": [
-        "jTRX holder",
-        "jWIN holder"
-      ],
-      "markets": [
-        "TRON V1 / TRX",
-        "TRON V1 / WIN"
-      ],
-      "sources": [
-        "onchain:tronscan_token_transfers"
-      ],
-      "firstSeenAt": "2026-06-02T06:37:21.356Z",
-      "lastSeenAt": "2026-06-02T08:24:45.152Z",
-      "currentHolder": true,
-      "lastBalanceRaw": "412275913966796",
-      "note": "balanceOf > 0; candidateLimit=6"
     },
     {
       "address": "TEVVuXET7GXGrPxa1YRwNADkK2jPBJVjh5",

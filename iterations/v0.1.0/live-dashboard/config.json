@@ -370,6 +370,6 @@
     "用户地址监控维护 JustLend 地址库：从多个 jToken Transfer 事件增量发现地址，记录当前 holder 状态，并复用本地地址库扫描黑名单。",
     "SP-2 必须同时证明 HTX -> 平台地址 -> 钱包 -> JustLend；单纯平台地址 -> 钱包 -> JustLend 仅作上下文，不计入 HTX 风险。",
     "协议地址监控已接入官方 jToken 市场与核心合约；未确认的 reserve、treasury、bot、admin 地址仍需由内部地址库补充。",
-    "为降低 Tronscan 限流，协议地址默认全量检查 USDT / USDC 黑名单；近期流入与 HTX SP 仅扫描 trackTransfers=true 的地址。"
+    "为降低 Tronscan 限流，协议地址默认全量检查 Tether / Circle 黑名单；近期流入与 HTX SP 仅扫描 trackTransfers=true 的地址。"
   ]
 }

@@ -28,6 +28,11 @@ const els = {
   configOpenBtn: document.getElementById("configOpenBtn"),
   configCloseBtn: document.getElementById("configCloseBtn"),
   configModal: document.getElementById("configModal"),
+  adminLoginPanel: document.getElementById("adminLoginPanel"),
+  adminPassword: document.getElementById("adminPassword"),
+  adminLoginBtn: document.getElementById("adminLoginBtn"),
+  adminLoginError: document.getElementById("adminLoginError"),
+  configPanel: document.getElementById("configPanel"),
   notes: document.getElementById("notes"),
   refreshBtn: document.getElementById("refreshBtn"),
   hitOnlyToggle: document.getElementById("hitOnlyToggle"),
@@ -37,6 +42,7 @@ const els = {
 let currentSnapshot = null;
 let showOnlyHits = false;
 let activeAddressTab = "protocol";
+let adminAuthenticated = false;
 
 function showToast(message) {
   els.toast.textContent = message;
@@ -82,6 +88,12 @@ function blacklistPill(status) {
 
 function hitAssetsText(hitAssets = []) {
   return hitAssets.length ? hitAssets.join(" / ") : "无";
+}
+
+function blacklistIssuerLabel(symbol) {
+  if (symbol === "USDT") return "Tether";
+  if (symbol === "USDC") return "Circle";
+  return symbol || "--";
 }
 
 function inflowText(item) {
@@ -133,10 +145,58 @@ function setAddressTab(tab) {
       : "--";
 }
 
-function openConfigModal() {
+function setConfigAuthView(authenticated) {
+  adminAuthenticated = authenticated;
+  els.adminLoginPanel.classList.toggle("hidden", authenticated);
+  els.configPanel.classList.toggle("hidden", !authenticated);
+  els.adminLoginError.textContent = "";
+  if (!authenticated) els.adminPassword.value = "";
+}
+
+function renderAdminConfig(payload) {
+  const configSummary = payload.configSummary || {};
+  const addressBook = payload.addressBook || {};
+  const htxDetectionEnabled = payload.htxDetectionEnabled;
+  els.configHtx.textContent = `${configSummary.htxSeedCount || 0} 个`;
+  els.configPlatform.textContent = `${configSummary.platformSeedCount || 0} 个`;
+  els.configTronGrid.textContent = configSummary.tronGridApiKeyConfigured ? "已配置" : "未配置";
+  els.configThreshold.textContent = `${formatAmount(configSummary.riskThresholdUsd)} USDT`;
+  els.configWatched.textContent = `${configSummary.watchedCount || 0} 个`;
+  if (addressBook.error) {
+    els.configNotice.textContent = `CEX 地址库读取失败：${addressBook.error}。当前仅使用 config.json 中的手工地址。`;
+  } else if (htxDetectionEnabled && addressBook.enabled) {
+    els.configNotice.textContent = `已复用 CEX 地址库：HTX ${addressBook.htxCount || 0} 个用于风险识别，其他平台 ${addressBook.platformCount || 0} 个仅作路径上下文；更新于 ${addressBook.updatedAt || "--"}。`;
+  } else if (htxDetectionEnabled) {
+    els.configNotice.textContent = "当前已通过 config.json 手工地址启用 HTX SP 路径识别。";
+  } else {
+    els.configNotice.textContent = "HTX seed 地址未配置，当前不会产生 SP-1 / SP-2 命中。请接入 CEX 地址库或在 config.json 中补充经确认的 HTX 地址标签。";
+  }
+}
+
+async function loadAdminConfig() {
+  const response = await fetch("api/admin/config", { cache: "no-store", credentials: "same-origin" });
+  if (response.status === 401) {
+    setConfigAuthView(false);
+    setTimeout(() => els.adminPassword.focus(), 0);
+    return;
+  }
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "配置读取失败");
+  setConfigAuthView(true);
+  renderAdminConfig(payload);
+}
+
+async function openConfigModal() {
   els.configModal.classList.add("show");
   els.configModal.setAttribute("aria-hidden", "false");
-  els.configCloseBtn.focus();
+  try {
+    await loadAdminConfig();
+    els.configCloseBtn.focus();
+  } catch (error) {
+    setConfigAuthView(false);
+    els.adminLoginError.textContent = error.message;
+    els.adminPassword.focus();
+  }
 }
 
 function closeConfigModal() {
@@ -145,13 +205,37 @@ function closeConfigModal() {
   els.configOpenBtn.focus();
 }
 
+async function submitAdminLogin(event) {
+  event.preventDefault();
+  els.adminLoginBtn.disabled = true;
+  els.adminLoginBtn.textContent = "校验中";
+  els.adminLoginError.textContent = "";
+  try {
+    const response = await fetch("api/admin/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ password: els.adminPassword.value })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "密码校验失败");
+    await loadAdminConfig();
+  } catch (error) {
+    setConfigAuthView(false);
+    els.adminLoginError.textContent = error.message;
+    els.adminPassword.focus();
+  } finally {
+    els.adminLoginBtn.disabled = false;
+    els.adminLoginBtn.textContent = "进入配置页";
+  }
+}
+
 function render(snapshot) {
   currentSnapshot = snapshot;
   const frozen = snapshot.addresses.filter((item) => item.blacklist.status === "blacklisted");
   const p1Events = snapshot.events.filter((item) => item.level === "P1");
   const userIntersection = snapshot.userIntersection || { results: [], hits: [], hitCount: 0, scannedCount: 0 };
   const statusLevel = snapshot.status.level;
-  const addressBook = snapshot.addressBook || {};
   const visibleEvents = showOnlyHits ? snapshot.events.filter(isHitEvent) : snapshot.events;
 
   els.statusTitle.textContent = statusLevel === "SYNCING"
@@ -186,21 +270,6 @@ function render(snapshot) {
   els.metricHtx.textContent = snapshot.status.htxDetectionEnabled ? "已启用" : "未配置";
   els.syncTime.textContent = `${new Date(snapshot.generatedAt).toLocaleTimeString("zh-CN", { hour12: false })}${snapshot.cache?.servedFromCache ? " · 缓存" : ""}`;
 
-  els.configHtx.textContent = `${snapshot.configSummary.htxSeedCount} 个`;
-  els.configPlatform.textContent = `${snapshot.configSummary.platformSeedCount} 个`;
-  els.configTronGrid.textContent = snapshot.configSummary.tronGridApiKeyConfigured ? "已配置" : "未配置";
-  els.configThreshold.textContent = `${formatAmount(snapshot.configSummary.riskThresholdUsd)} USDT`;
-  els.configWatched.textContent = `${snapshot.configSummary.watchedCount} 个`;
-  if (addressBook.error) {
-    els.configNotice.textContent = `CEX 地址库读取失败：${addressBook.error}。当前仅使用 config.json 中的手工地址。`;
-  } else if (snapshot.status.htxDetectionEnabled && addressBook.enabled) {
-    els.configNotice.textContent = `已复用 CEX 地址库：HTX ${addressBook.htxCount || 0} 个用于风险识别，其他平台 ${addressBook.platformCount || 0} 个仅作路径上下文；更新于 ${addressBook.updatedAt || "--"}。`;
-  } else if (snapshot.status.htxDetectionEnabled) {
-    els.configNotice.textContent = "当前已通过 config.json 手工地址启用 HTX SP 路径识别。";
-  } else {
-    els.configNotice.textContent = "HTX seed 地址未配置，当前不会产生 SP-1 / SP-2 命中。请接入 CEX 地址库或在 config.json 中补充经确认的 HTX 地址标签。";
-  }
-
   els.addressRows.innerHTML = snapshot.addresses.map((item) => `
     <tr>
       <td>${item.name}<br><span class="label">${item.role}</span></td>
@@ -208,9 +277,9 @@ function render(snapshot) {
       <td class="address" title="${item.address}">${shortAddress(item.address)}</td>
       <td>
         ${blacklistPill(item.blacklists?.USDT?.status || item.blacklist.status)}
-        <span class="label compact">USDT</span>
+        <span class="label compact">${blacklistIssuerLabel("USDT")}</span>
         ${blacklistPill(item.blacklists?.USDC?.status)}
-        <span class="label compact">USDC</span>
+        <span class="label compact">${blacklistIssuerLabel("USDC")}</span>
       </td>
       <td>${inflowText(item)}</td>
     </tr>
@@ -233,15 +302,15 @@ function render(snapshot) {
         <td>${item.role}<br><span class="label">${item.market}</span></td>
         <td>
           ${blacklistPill(item.blacklists?.USDT?.status)}
-          <span class="label compact">USDT</span>
+          <span class="label compact">${blacklistIssuerLabel("USDT")}</span>
           ${blacklistPill(item.blacklists?.USDC?.status)}
-          <span class="label compact">USDC</span>
+          <span class="label compact">${blacklistIssuerLabel("USDC")}</span>
         </td>
         <td>${hitAssetsText(item.hitAssets)}</td>
         <td>${item.action}</td>
       </tr>
     `).join("")
-    : `<tr><td colspan="5">待接入 JustLend 当前用户地址池。接入后将展示用户地址与 USDT / USDC 黑名单的交集。</td></tr>`;
+    : `<tr><td colspan="5">待接入 JustLend 当前用户地址池。接入后将展示用户地址与 Tether / Circle 黑名单的交集。</td></tr>`;
 
   els.hitOnlyToggle.classList.toggle("active", showOnlyHits);
   els.hitOnlyToggle.setAttribute("aria-pressed", String(showOnlyHits));
@@ -269,7 +338,7 @@ async function loadSnapshot(forceRefresh = false) {
   els.refreshBtn.disabled = true;
   els.refreshBtn.textContent = forceRefresh ? "后台刷新中" : "读取中";
   try {
-    const response = await fetch(`/api/snapshot${forceRefresh ? "?refresh=1" : ""}`, { cache: "no-store" });
+    const response = await fetch(`api/snapshot${forceRefresh ? "?refresh=1" : ""}`, { cache: "no-store" });
     const snapshot = await response.json();
     if (!response.ok) throw new Error(snapshot.error || "API 请求失败");
     render(snapshot);
@@ -295,6 +364,7 @@ els.protocolTab.addEventListener("click", () => setAddressTab("protocol"));
 els.userTab.addEventListener("click", () => setAddressTab("user"));
 els.configOpenBtn.addEventListener("click", openConfigModal);
 els.configCloseBtn.addEventListener("click", closeConfigModal);
+els.adminLoginPanel.addEventListener("submit", submitAdminLogin);
 els.configModal.addEventListener("click", (event) => {
   if (event.target === els.configModal) closeConfigModal();
 });

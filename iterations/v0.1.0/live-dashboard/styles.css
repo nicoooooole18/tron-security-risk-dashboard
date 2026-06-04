@@ -345,6 +345,41 @@ tr:last-child td { border-bottom: 0; }
   margin-bottom: 16px;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.admin-login {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-login label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-login input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 11px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.form-error {
+  min-height: 20px;
+  margin: 0;
+  color: var(--red);
+  font-size: 13px;
+}
+
 .icon-btn {
   width: 34px;
   height: 34px;

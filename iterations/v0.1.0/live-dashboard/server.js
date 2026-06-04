@@ -51,6 +51,10 @@ const TRONGRID_API_KEY = [...new Set(TRONGRID_API_KEYS)][0] || "";
 const TRONGRID_REQUEST_DELAY_MS = Number(process.env.TRONGRID_REQUEST_DELAY_MS || 250);
 const BLACKLIST_CACHE_TTL_MS = Number(process.env.BLACKLIST_CACHE_TTL_MS || 10 * 60 * 1000);
 const BLACKLIST_UNKNOWN_CACHE_TTL_MS = Number(process.env.BLACKLIST_UNKNOWN_CACHE_TTL_MS || 30 * 1000);
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || process.env.SESSION_SECRET || ADMIN_PASSWORD;
+const ADMIN_COOKIE_NAME = "freezeRiskAdmin";
+const ADMIN_SESSION_TTL_MS = Number(process.env.ADMIN_SESSION_TTL_MS || 12 * 60 * 60 * 1000);
 const blacklistStatusCache = new Map();
 let nextTronGridRequestAt = 0;
 let snapshotCache = null;
@@ -80,6 +84,77 @@ function sendJson(res, status, payload) {
     "cache-control": "no-store"
   });
   res.end(body);
+}
+
+function parseCookies(header = "") {
+  return Object.fromEntries(String(header || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const eq = item.indexOf("=");
+      if (eq === -1) return [item, ""];
+      return [item.slice(0, eq), decodeURIComponent(item.slice(eq + 1))];
+    }));
+}
+
+function signAdminSession(timestamp) {
+  return crypto
+    .createHmac("sha256", ADMIN_SESSION_SECRET || "unconfigured")
+    .update(String(timestamp))
+    .digest("base64url");
+}
+
+function makeAdminSession() {
+  const timestamp = Date.now();
+  return `${timestamp}.${signAdminSession(timestamp)}`;
+}
+
+function constantTimeEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function isAdminAuthenticated(req) {
+  if (!ADMIN_PASSWORD || !ADMIN_SESSION_SECRET) return false;
+  const token = parseCookies(req.headers.cookie)[ADMIN_COOKIE_NAME];
+  if (!token) return false;
+  const [timestamp, signature] = String(token).split(".");
+  const sessionAge = Date.now() - Number(timestamp);
+  if (!timestamp || !signature || !Number.isFinite(sessionAge) || sessionAge < 0 || sessionAge > ADMIN_SESSION_TTL_MS) {
+    return false;
+  }
+  return constantTimeEqual(signature, signAdminSession(timestamp));
+}
+
+async function readRequestJson(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  if (!chunks.length) return {};
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function setAdminCookie(res) {
+  const maxAge = Math.floor(ADMIN_SESSION_TTL_MS / 1000);
+  res.setHeader("set-cookie", `${ADMIN_COOKIE_NAME}=${encodeURIComponent(makeAdminSession())}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`);
+}
+
+function sanitizeSnapshotForPublic(snapshot) {
+  const { configSummary, addressBook, ...publicSnapshot } = snapshot;
+  return publicSnapshot;
+}
+
+function adminConfigFromSnapshot(snapshot) {
+  return {
+    generatedAt: snapshot.generatedAt,
+    htxDetectionEnabled: Boolean(snapshot.status?.htxDetectionEnabled),
+    configSummary: snapshot.configSummary || {},
+    addressBook: snapshot.addressBook || {}
+  };
 }
 
 async function mapLimit(items, limit, mapper) {
@@ -399,7 +474,7 @@ function mergeAddressBookEntry(existing, discovered, nowIso) {
 }
 
 async function readCexAddressBook(config) {
-  const bookPath = config.cexAddressBookPath;
+  const bookPath = process.env.CEX_ADDRESS_BOOK_PATH || config.cexAddressBookPath;
   const enabled = config.riskSources?.useCexAddressBook !== false;
   if (!enabled || !bookPath) {
     return { enabled, path: bookPath || "", updatedAt: null, entries: [], error: null };
@@ -1020,7 +1095,7 @@ async function buildSnapshot() {
     for (const token of blacklistTokens) {
       blacklists[token.symbol] = await getTokenBlacklistStatus(token, item.address);
     }
-    const blacklist = blacklists.USDT || { status: "unknown", reason: "USDT blacklist token 未配置" };
+    const blacklist = blacklists.USDT || { status: "unknown", reason: "Tether blacklist token 未配置" };
 
     const transferScanEnabled = item.trackTransfers !== false;
     let transfers = [];
@@ -1212,12 +1287,46 @@ async function serveStatic(req, res) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === "/api/admin/login" && req.method === "POST") {
+      if (!ADMIN_PASSWORD) {
+        sendJson(res, 503, { error: "admin password is not configured" });
+        return;
+      }
+      const body = await readRequestJson(req);
+      if (!constantTimeEqual(body.password, ADMIN_PASSWORD)) {
+        sendJson(res, 401, { error: "admin password is incorrect" });
+        return;
+      }
+      setAdminCookie(res);
+      sendJson(res, 200, { authenticated: true });
+      return;
+    }
+    if (url.pathname === "/api/admin/session") {
+      sendJson(res, 200, {
+        configured: Boolean(ADMIN_PASSWORD),
+        authenticated: isAdminAuthenticated(req)
+      });
+      return;
+    }
+    if (url.pathname === "/api/admin/config") {
+      if (!isAdminAuthenticated(req)) {
+        sendJson(res, 401, { error: "admin authentication required" });
+        return;
+      }
+      sendJson(res, 200, adminConfigFromSnapshot(await getSnapshotResponse({ forceRefresh: false })));
+      return;
+    }
     if (url.pathname === "/api/config") {
+      if (!isAdminAuthenticated(req)) {
+        sendJson(res, 401, { error: "admin authentication required" });
+        return;
+      }
       sendJson(res, 200, await readConfig());
       return;
     }
     if (url.pathname === "/api/snapshot") {
-      sendJson(res, 200, await getSnapshotResponse({ forceRefresh: url.searchParams.get("refresh") === "1" }));
+      const snapshot = await getSnapshotResponse({ forceRefresh: url.searchParams.get("refresh") === "1" });
+      sendJson(res, 200, sanitizeSnapshotForPublic(snapshot));
       return;
     }
     await serveStatic(req, res);

@@ -12,7 +12,7 @@
       <div>
         <div class="eyebrow">LIVE THIRD-PARTY FREEZE RISK</div>
         <h1>JustLend 第三方冻结风险实时看板</h1>
-        <p>真实读取 TRON 链上 Transfer、USDT / USDC blacklist 状态；HTX SP-1 / SP-2 复用既有 CEX 地址库，不伪造标签命中。</p>
+        <p>真实读取 TRON 链上 Transfer、Tether / Circle blacklist 状态；HTX SP-1 / SP-2 复用既有 CEX 地址库，不伪造标签命中。</p>
       </div>
       <div class="header-actions">
         <button id="refreshBtn" class="btn primary">刷新数据</button>
@@ -30,14 +30,14 @@
 
     <section class="grid metrics">
       <article class="card">
-        <span class="label">USDT 黑名单</span>
+        <span class="label">Tether 黑名单</span>
         <strong id="metricUsdt">--</strong>
-        <p>USDT getBlackListStatus</p>
+        <p>Tether getBlackListStatus</p>
       </article>
       <article class="card">
-        <span class="label">USDC 黑名单</span>
+        <span class="label">Circle 黑名单</span>
         <strong id="metricUsdc">--</strong>
-        <p>USDC isBlacklisted</p>
+        <p>Circle isBlacklisted</p>
       </article>
       <article class="card">
         <span class="label">近期高风险流入</span>
@@ -91,7 +91,7 @@
         <div class="section-head">
           <div>
             <h3>用户地址监控</h3>
-            <p class="section-copy">检查 JustLend 当前用户地址池与 USDT / USDC 黑名单的交集；地址池未接入时不展示伪造结果。</p>
+            <p class="section-copy">检查 JustLend 当前用户地址池与 Tether / Circle 黑名单的交集；地址池未接入时不展示伪造结果。</p>
           </div>
           <span class="pill muted" id="userIntersectionCount">--</span>
         </div>
@@ -162,14 +162,24 @@
         </div>
         <button id="configCloseBtn" class="icon-btn" type="button" aria-label="关闭配置状态弹窗">×</button>
       </div>
-      <div class="kv">
-        <div><span>HTX seed</span><strong id="configHtx">--</strong></div>
-        <div><span>平台中转 seed</span><strong id="configPlatform">--</strong></div>
-        <div><span>TronGrid Key</span><strong id="configTronGrid">--</strong></div>
-        <div><span>风险阈值</span><strong id="configThreshold">--</strong></div>
-        <div><span>协议监控地址数</span><strong id="configWatched">--</strong></div>
+      <form class="admin-login" id="adminLoginPanel">
+        <label>
+          Admin 密码
+          <input id="adminPassword" type="password" autocomplete="current-password" />
+        </label>
+        <button id="adminLoginBtn" class="btn primary" type="submit">进入配置页</button>
+        <p class="form-error" id="adminLoginError"></p>
+      </form>
+      <div id="configPanel" class="hidden">
+        <div class="kv">
+          <div><span>HTX seed</span><strong id="configHtx">--</strong></div>
+          <div><span>平台中转 seed</span><strong id="configPlatform">--</strong></div>
+          <div><span>TronGrid Key</span><strong id="configTronGrid">--</strong></div>
+          <div><span>风险阈值</span><strong id="configThreshold">--</strong></div>
+          <div><span>协议监控地址数</span><strong id="configWatched">--</strong></div>
+        </div>
+        <div class="notice" id="configNotice"></div>
       </div>
-      <div class="notice" id="configNotice"></div>
     </div>
   </div>
 
