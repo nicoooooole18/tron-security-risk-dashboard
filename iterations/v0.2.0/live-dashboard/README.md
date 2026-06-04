@@ -128,6 +128,30 @@ node scripts/sync-top-account-daily.js
 
 The VPS job can then use `AUTO_FETCH_LEND_INFO_DAILY=true` and `AUTO_FETCH_TOP_ACCOUNT_DAILY=false`: it fetches Lend Info itself, requires `top-account-daily-{targetDate}.csv` to have been uploaded, and fails loudly if that file is absent.
 
+To run the full daily refresh from the local machine, use the wrapper script. It fetches and uploads the previous complete UTC day's Top Account CSV, triggers the VPS snapshot job, optionally restarts the web service, and verifies that the public API now serves the same `Data Through` date:
+
+```bash
+LOCAL_ENV_FILE=/path/to/local-justlend-refresh.env node scripts/refresh-vps-daily-snapshot.js
+```
+
+Example local env file:
+
+```bash
+LABC_ACCESS_TOKEN=...
+LOCAL_SOURCE_CSV_DIR=/Users/lanyu/Documents/justlend-capital-source
+UPLOAD_TO_VPS=true
+VPS_SSH_KEY=/Users/lanyu/OpenClaw/openclaw2.pem
+VPS_SSH_PORT=6673
+VPS_SOURCE_CSV_TARGET=openclaw@43.134.57.52:/home/openclaw/project/justlend-capital-data/source/
+PUBLIC_DASHBOARD_URL=http://43.134.57.52
+```
+
+For a one-off backfill or replay:
+
+```bash
+TARGET_DATE=2026-06-03 LOCAL_ENV_FILE=/path/to/local-justlend-refresh.env node scripts/refresh-vps-daily-snapshot.js
+```
+
 Chain path enrichment is intentionally off by default:
 
 ```bash

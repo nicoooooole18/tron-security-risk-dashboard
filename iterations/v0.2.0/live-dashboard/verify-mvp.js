@@ -49,6 +49,7 @@ function runStaticChecks() {
   const topAccountSource = fs.readFileSync(path.join(ROOT, "lib/source-top-account-csv.js"), "utf8");
   const dailyCsvSource = fs.readFileSync(path.join(ROOT, "lib/daily-csv-fetch.js"), "utf8");
   const topAccountSyncScript = fs.readFileSync(path.join(ROOT, "scripts/sync-top-account-daily.js"), "utf8");
+  const vpsRefreshScript = fs.readFileSync(path.join(ROOT, "scripts/refresh-vps-daily-snapshot.js"), "utf8");
   const externalSource = fs.readFileSync(path.join(ROOT, "lib/external-sources.js"), "utf8");
   check("period select supports 90d 30d 7d", ["value=\"90d\"", "value=\"30d\"", "value=\"7d\""].every((item) => indexHtml.includes(item)) && !indexHtml.includes("30D TODO") && !indexHtml.includes("7D TODO"));
   check("visible period labels are dynamic", indexHtml.includes("overviewKicker") && indexHtml.includes("competitorChangeHead") && appJs.includes("els.overviewKicker.textContent = `${periodLabel} 核心结论`") && appJs.includes("els.competitorChangeHead.textContent = `${periodLabel} TVL Change`") && appJs.includes("Top20 ${periodLabel} 未回流资金"));
@@ -56,6 +57,7 @@ function runStaticChecks() {
   check("top account builds real outflow period views", topAccountSource.includes("for (const days of [7, 30, 90])") && topAccountSource.includes("generated real 7D/30D/90D Top20 outflow period views"));
   check("daily csv auto fetch enforces freshness", dailyCsvSource.includes("prepareDailyCsvSources") && dailyCsvSource.includes("did not return target date") && dailyCsvSource.includes("top-account-daily-${targetDate}.csv") && fs.readFileSync(path.join(ROOT, "snapshot-job.js"), "utf8").includes("Daily freshness check failed"));
   check("top account local sync script exists", topAccountSyncScript.includes("UPLOAD_TO_VPS") && topAccountSyncScript.includes("top-account-daily-${targetDate}.csv") && topAccountSyncScript.includes("scp"));
+  check("local vps refresh script exists", vpsRefreshScript.includes("sync-top-account-daily.js") && vpsRefreshScript.includes("snapshot-job.js") && vpsRefreshScript.includes("lastCompleteUtcDate"));
   check("header separates data through from snapshot built", indexHtml.includes("Data Through") && indexHtml.includes("Snapshot Built") && appJs.includes("els.dataThrough.textContent") && appJs.includes("els.snapshotBuilt.textContent") && !indexHtml.includes("Last Updated"));
   check("competitor tvl refreshes period views", externalSource.includes("enrichCompetitorTvlForWindow") && externalSource.includes("Object.entries(periodViews)"));
   check("overview uses high utilization asset count", appJs.includes("High Util Assets") && appJs.includes("HIGH_UTILIZATION_THRESHOLD = 60") && appJs.includes("highUtilAssetCountForPeriod") && !appJs.includes("[\"Utilization\""));
