@@ -51,6 +51,16 @@ function runStaticChecks() {
   const topAccountSyncScript = fs.readFileSync(path.join(ROOT, "scripts/sync-top-account-daily.js"), "utf8");
   const vpsRefreshScript = fs.readFileSync(path.join(ROOT, "scripts/refresh-vps-daily-snapshot.js"), "utf8");
   const externalSource = fs.readFileSync(path.join(ROOT, "lib/external-sources.js"), "utf8");
+  const sharedAddressBookPath = path.join(ROOT, "../../../shared/address-book/data/justlend-address-book.json");
+  const sharedAddressBook = fs.existsSync(sharedAddressBookPath)
+    ? JSON.parse(fs.readFileSync(sharedAddressBookPath, "utf8"))
+    : { entries: [] };
+  const { buildAddressBookIndex } = require("./lib/shared-address-book");
+  const addressBookIndex = [...buildAddressBookIndex(sharedAddressBook.entries).values()];
+  const jTokenCexMisclassified = addressBookIndex.filter((item) =>
+    /\bj[a-z0-9]*\s+(holder|participant)\b/i.test(JSON.stringify(item.entry?.roles || []))
+    && item.category === "CEX"
+  );
   check("period select supports 90d 30d 7d", ["value=\"90d\"", "value=\"30d\"", "value=\"7d\""].every((item) => indexHtml.includes(item)) && !indexHtml.includes("30D TODO") && !indexHtml.includes("7D TODO"));
   check("visible period labels are dynamic", indexHtml.includes("overviewKicker") && indexHtml.includes("competitorChangeHead") && appJs.includes("els.overviewKicker.textContent = `${periodLabel} 核心结论`") && appJs.includes("els.competitorChangeHead.textContent = `${periodLabel} TVL Change`") && appJs.includes("Top20 ${periodLabel} 未回流资金"));
   check("snapshot job builds real period views", lendInfoSource.includes("const windows = [7, 30, 90]") && lendInfoSource.includes("periodViews") && lendInfoSource.includes("generated real 7D/30D/90D"));
@@ -85,6 +95,7 @@ function runStaticChecks() {
   check("top lost destinations backfill from chain attribution", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("function backfillTopLostDestinations") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeCapitalOutflowSnapshot") && appJs.includes("destinationAttribution || item.attribution"));
   check("chain attribution label priority exists", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("addressBookLabel(address, context)") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("tronScanLabel(row, context)") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("arkhamLabel(address, context)"));
   check("protocol-internal destinations are skipped", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("isProtocolInternalDestination") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("protocolInternalSkipped"));
+  check("jtoken address book labels are not cex", jTokenCexMisclassified.length === 0);
   check("hop2 attribution is detail-only", snapshot.capitalOutflow.attributionDetails.some((item) => item.hop === 2 && item.usedInOverview === false));
   check("overview attribution uses hop1 only", snapshot.capitalOutflow.attributionDetails.filter((item) => item.usedInOverview).every((item) => item.hop === 1));
   check("threshold defaults include 8 rules", config.thresholds.length === 8);
@@ -93,7 +104,7 @@ function runStaticChecks() {
   check("data quality covers 90d snapshot", snapshot.dataQuality.some((item) => item.source === "90D Start Snapshot"));
   check("data quality covers internal address filter", snapshot.dataQuality.some((item) => item.source === "Internal Address Filter"));
   check("data quality covers unknown attribution", snapshot.dataQuality.some((item) => item.source === "Attribution Unknown"));
-  check("shared address book is configured", config.dataSources.some((item) => item.type === "address_book" && item.status === "shared-component") && fs.existsSync(path.join(ROOT, "../../../shared/address-book/data/justlend-address-book.json")));
+  check("shared address book is configured", config.dataSources.some((item) => item.type === "address_book" && item.status === "shared-component") && fs.existsSync(sharedAddressBookPath));
   check("csv export enabled", config.permissions.csvExportEnabled === true);
   check("csv export button exists", indexHtml.includes("csvExportBtn") && indexHtml.includes("导出 CSV"));
   check("snapshot job exists", fs.existsSync(path.join(ROOT, "snapshot-job.js")));

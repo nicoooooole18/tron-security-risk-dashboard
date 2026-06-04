@@ -21,6 +21,11 @@ function labelFromEntry(entry) {
 }
 
 function categoryFromEntry(entry, label) {
+  const rolesText = [
+    label,
+    ...(entry.roles || []),
+    entry.role
+  ].filter(Boolean).join(" ").toLowerCase();
   const text = [
     label,
     entry.category,
@@ -30,11 +35,16 @@ function categoryFromEntry(entry, label) {
     ...(entry.roles || []),
     ...(entry.markets || [])
   ].filter(Boolean).join(" ").toLowerCase();
-  if (["htx", "binance", "okx", "bybit", "kucoin", "gate", "poloniex"].some((item) => text.includes(item))) {
-    return "CEX";
+
+  if (/\bj[a-z0-9]*\s+(holder|participant)\b/i.test(rolesText)) {
+    return "JustLend User";
   }
   if (["justlend", "jtoken", "jusdt", "jusdd", "jtrx", "jstrx", "jbtc", "jeth"].some((item) => text.includes(item))) {
     return "JustLend Address Book";
+  }
+  const explicitCex = ["exchange", "deposit", "withdraw", "hot wallet", "cold wallet", "cex"].some((item) => text.includes(item));
+  if (explicitCex && ["htx", "binance", "okx", "bybit", "kucoin", "gate", "poloniex"].some((item) => text.includes(item))) {
+    return "CEX";
   }
   return entry.category || "Address Book";
 }
