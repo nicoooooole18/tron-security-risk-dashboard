@@ -51,6 +51,7 @@ function runStaticChecks() {
   const topAccountSyncScript = fs.readFileSync(path.join(ROOT, "scripts/sync-top-account-daily.js"), "utf8");
   const vpsRefreshScript = fs.readFileSync(path.join(ROOT, "scripts/refresh-vps-daily-snapshot.js"), "utf8");
   const externalSource = fs.readFileSync(path.join(ROOT, "lib/external-sources.js"), "utf8");
+  const chainSource = fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8");
   const sharedAddressBookPath = path.join(ROOT, "../../../shared/address-book/data/justlend-address-book.json");
   const sharedAddressBook = fs.existsSync(sharedAddressBookPath)
     ? JSON.parse(fs.readFileSync(sharedAddressBookPath, "utf8"))
@@ -92,10 +93,11 @@ function runStaticChecks() {
   check("price impact case exists", snapshot.borrowDemand.assets.some((item) => item.borrowUsdChangePct < -5 && item.borrowAmountChangePct >= 0));
   check("unknown attribution is preserved", snapshot.capitalOutflow.destinations.some((item) => item.category === "Unknown" && item.sharePct > 0));
   check("pending chain lookup has readable display state", appJs.includes("function destinationDisplay") && appJs.includes("待链上归因") && topAccountSource.includes("const PENDING_CHAIN_LOOKUP = \"待链上归因\""));
-  check("top lost destinations backfill from chain attribution", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("function backfillTopLostDestinations") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeCapitalOutflowSnapshot") && appJs.includes("destinationAttribution || item.attribution"));
-  check("chain attribution label priority exists", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("addressBookLabel(address, context)") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("tronScanLabel(row, context)") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("arkhamLabel(address, context)"));
-  check("protocol-internal destinations are skipped", fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("isProtocolInternalDestination") && fs.readFileSync(path.join(ROOT, "lib/chain-enrichment.js"), "utf8").includes("protocolInternalSkipped"));
+  check("top lost destinations backfill from chain attribution", chainSource.includes("function backfillTopLostDestinations") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeCapitalOutflowSnapshot") && appJs.includes("destinationAttribution || item.attribution"));
+  check("chain attribution label priority exists", chainSource.includes("addressBookLabel(address, context)") && chainSource.includes("tronScanLabel(row, context)") && chainSource.includes("arkhamLabel(address, context)"));
+  check("protocol-internal destinations are skipped", chainSource.includes("isProtocolInternalDestination") && chainSource.includes("protocolInternalSkipped"));
   check("jtoken address book labels are not cex", jTokenCexMisclassified.length === 0);
+  check("jtoken address book profile labels are not strong flow entities", chainSource.includes("address_book_profile") && chainSource.includes("overviewEligibleDestination") && chainSource.includes("usedInOverview ? \"strong\" : \"profile\"") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeProfileDestinationFields"));
   check("hop2 attribution is detail-only", snapshot.capitalOutflow.attributionDetails.some((item) => item.hop === 2 && item.usedInOverview === false));
   check("overview attribution uses hop1 only", snapshot.capitalOutflow.attributionDetails.filter((item) => item.usedInOverview).every((item) => item.hop === 1));
   check("threshold defaults include 8 rules", config.thresholds.length === 8);
@@ -225,11 +227,16 @@ async function runApiChecks(base) {
   check("api snapshot supports 30d", snapshot30d.period === "30d" && snapshot30d.periodStart !== snapshot30d.periodEnd);
   check("api period views are real snapshots", [snapshot7d, snapshot30d, overview30d].every((item) => item.dataQuality.some((quality) => quality.source === "Period View" && quality.status === "complete")) && ![snapshot7d, snapshot30d, overview30d].some((item) => item.dataQuality.some((quality) => quality.source === "Derived Period View")));
   check("api 7d market comparison is not scaled from 90d", market7d.period === "7d" && Number.isFinite(market7d.justlend?.tvlChangePct) && Number.isFinite(market90d.justlend?.tvlChangePct) && Math.abs(market7d.justlend.tvlChangePct - market90d.justlend.tvlChangePct * 7 / 90) > 0.05);
-  check("api 30d top current returns 20 rows", topCurrent30d.items?.length === 20);
-  check("api 7d top lost returns 20 rows", topLost7d.items?.length === 20);
+  check("api 30d top current returns rows after runtime filters", topCurrent30d.items?.length > 0 && topCurrent30d.items?.length <= 20);
+  check("api 7d top lost returns rows after runtime filters", topLost7d.items?.length > 0 && topLost7d.items?.length <= 20);
   check("api 7d top lost is not inherited from 90d", Math.abs(sum(topLost7d.items, "unreturnedOutflowUsd") - sum(topLost.items, "unreturnedOutflowUsd")) > 1);
-  check("api top current returns 20 rows", topCurrent.items?.length === 20);
-  check("api top lost returns 20 rows", topLost.items?.length === 20);
+  check("api top current returns rows after runtime filters", topCurrent.items?.length > 0 && topCurrent.items?.length <= 20);
+  check("api top lost returns rows after runtime filters", topLost.items?.length > 0 && topLost.items?.length <= 20);
+  if (sqliteArg) {
+    const excluded = sqliteExcludedInternalAddresses(sqliteArg);
+    const visibleTopAddresses = [...(topCurrent.items || []), ...(topLost.items || [])].map((item) => String(item.address || "").toLowerCase());
+    check("api top lists exclude runtime internal addresses", visibleTopAddresses.every((address) => !excluded.has(address)));
+  }
   check("api round trip returns time away", roundTrip.items?.every((item) => Number.isFinite(item.timeAwayHours)));
   check("api public snapshot does not expose settings", snapshot90d.settings === undefined);
   check("api public snapshot includes threshold config for view calculations", snapshot90d.config?.thresholds?.length === 8);
@@ -257,6 +264,16 @@ async function fetchText(base, route) {
   const response = await fetch(`${base}${route}`);
   if (!response.ok) throw new Error(`${route} returned ${response.status}`);
   return response.text();
+}
+
+function sqliteExcludedInternalAddresses(dbPath) {
+  const absolutePath = path.isAbsolute(dbPath) ? dbPath : path.join(ROOT, dbPath);
+  const rows = JSON.parse(execFileSync("sqlite3", [
+    "-json",
+    absolutePath,
+    "SELECT address FROM dim_internal_address WHERE exclude_from_top_holder=1 OR exclude_from_flow_analysis=1;"
+  ], { encoding: "utf8" }) || "[]");
+  return new Set(rows.map((item) => String(item.address || "").toLowerCase()));
 }
 
 function printResults() {

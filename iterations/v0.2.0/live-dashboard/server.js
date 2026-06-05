@@ -4,7 +4,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { productionPaths } = require("./lib/env");
 const { SQLiteStore } = require("./lib/sqlite-store");
-const { backfillTopLostDestinations } = require("./lib/chain-enrichment");
+const { backfillTopLostDestinations, normalizeProfileDestinationFields } = require("./lib/chain-enrichment");
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 8790);
@@ -248,10 +248,13 @@ function withLatestJobQuality(snapshot, latestJobRun) {
 }
 
 async function getSnapshot(period) {
-  const { config, snapshot, servedFromSQLite } = await buildApiContext();
+  const { config, snapshot, internalAddresses, servedFromSQLite } = await buildApiContext();
   const latestJobRun = await STORE.latestJobRun().catch(() => null);
   const viewSnapshot = withLatestJobQuality(
-    normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period || snapshot.period)),
+    applyInternalAddressFilter(
+      normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period || snapshot.period)),
+      internalAddresses
+    ),
     latestJobRun
   );
   const { settings, ...publicSnapshot } = viewSnapshot;
@@ -341,6 +344,10 @@ function shortAddress(address) {
 
 function normalizeAddress(value) {
   return String(value || "").trim();
+}
+
+function addressKey(value) {
+  return normalizeAddress(value).toLowerCase();
 }
 
 function normalizeInternalAddressEntry(entry = {}, existing = {}) {
@@ -650,11 +657,150 @@ function derivePeriodSnapshot(snapshot, requestedPeriod) {
 
 function normalizeCapitalOutflowSnapshot(snapshot) {
   if (!snapshot?.capitalOutflow) return snapshot;
+  const normalizedAttributionDetails = (snapshot.capitalOutflow.attributionDetails || []).map(normalizeProfileDestinationFields);
+  const normalizedRoundTrips = (snapshot.capitalOutflow.roundTrips || []).map(normalizeProfileDestinationFields);
+  const normalizedDestinations = (snapshot.capitalOutflow.destinations || [])
+    .map(normalizeProfileDestinationFields)
+    .filter((item) => item.attribution !== "profile" && item.category !== "User Wallet");
   const capitalOutflow = {
     ...snapshot.capitalOutflow,
-    top20Lost: backfillTopLostDestinations(snapshot.capitalOutflow)
+    attributionDetails: normalizedAttributionDetails,
+    roundTrips: normalizedRoundTrips,
+    destinations: normalizedDestinations,
+    top20Lost: backfillTopLostDestinations({
+      ...snapshot.capitalOutflow,
+      attributionDetails: normalizedAttributionDetails,
+      roundTrips: normalizedRoundTrips,
+      destinations: normalizedDestinations
+    }).map(normalizeProfileDestinationFields)
   };
   return { ...snapshot, capitalOutflow };
+}
+
+function internalAddressSet(internalAddresses, flag) {
+  return new Set((internalAddresses || [])
+    .filter((item) => item?.[flag] !== false)
+    .map((item) => addressKey(item.address))
+    .filter(Boolean));
+}
+
+function rowAddressKey(item) {
+  return addressKey(item?.address || item?.userAddress || item?.fromAddress || item?.sourceAddress);
+}
+
+function rankRows(rows) {
+  return (rows || []).map((item, index) => ({ ...item, rank: index + 1 }));
+}
+
+function rebuildDestinationsFromAttribution(attributionDetails) {
+  const groups = new Map();
+  for (const item of attributionDetails || []) {
+    const amountUsd = Number(item.amountUsd || 0);
+    if (!Number.isFinite(amountUsd) || amountUsd <= 0) continue;
+    const destination = item.destination || item.topDestination || "待链上归因";
+    const category = item.category || item.destinationCategory || "Unknown";
+    const attribution = item.attribution || item.destinationAttribution || "unknown";
+    const key = `${destination}||${category}||${attribution}`;
+    const current = groups.get(key) || {
+      destination,
+      category,
+      amountUsd: 0,
+      walletCount: 0,
+      attribution,
+      labelSource: item.labelSource || item.destinationLabelSource,
+      labelConfidence: item.labelConfidence ?? item.destinationLabelConfidence
+    };
+    current.amountUsd += amountUsd;
+    current.walletCount += 1;
+    groups.set(key, current);
+  }
+  const total = [...groups.values()].reduce((sum, item) => sum + item.amountUsd, 0);
+  return [...groups.values()]
+    .map((item) => ({
+      ...item,
+      amountUsd: Number(item.amountUsd.toFixed(0)),
+      sharePct: total > 0 ? Number(((item.amountUsd / total) * 100).toFixed(1)) : 0
+    }))
+    .sort((a, b) => b.amountUsd - a.amountUsd);
+}
+
+function recalcOutflowSummary(summary, top20Lost, destinations) {
+  if (!summary || !(top20Lost || []).length) return summary;
+  const beginningSupplyUsd = top20Lost.reduce((sum, item) => sum + Number(item.beginningSupplyUsd || 0), 0);
+  const grossWithdrawUsd = top20Lost.reduce((sum, item) => sum + Number(item.grossWithdrawUsd || 0), 0);
+  const returnedOutflowUsd = top20Lost.reduce((sum, item) => sum + Number(item.returnedOutflowUsd || 0), 0);
+  const unreturnedOutflowUsd = top20Lost.reduce((sum, item) => sum + Number(item.unreturnedOutflowUsd || 0), 0);
+  const unknownUsd = (destinations || [])
+    .filter((item) => item.category === "Unknown" || item.attribution === "unknown")
+    .reduce((sum, item) => sum + Number(item.amountUsd || 0), 0);
+  return {
+    ...summary,
+    beginningSupplyUsd,
+    grossWithdrawUsd,
+    returnedOutflowUsd,
+    unreturnedOutflowUsd,
+    netOutflowUsd: unreturnedOutflowUsd,
+    unreturnedOutflowRatioPct: beginningSupplyUsd > 0
+      ? Number(((unreturnedOutflowUsd / beginningSupplyUsd) * 100).toFixed(2))
+      : 0,
+    returnRatePct: grossWithdrawUsd > 0
+      ? Number(((returnedOutflowUsd / grossWithdrawUsd) * 100).toFixed(1))
+      : 0,
+    unknownStrongAttributionPct: unreturnedOutflowUsd > 0
+      ? Number(((unknownUsd / unreturnedOutflowUsd) * 100).toFixed(1))
+      : 0,
+    top20BeginningSupplyUsd: beginningSupplyUsd,
+    totalGrossWithdrawUsd: grossWithdrawUsd,
+    totalReturnedOutflowUsd: returnedOutflowUsd,
+    totalUnreturnedOutflowUsd: unreturnedOutflowUsd
+  };
+}
+
+function applyInternalAddressFilter(snapshot, internalAddresses) {
+  if (!snapshot?.capitalOutflow) return snapshot;
+  const topExcluded = internalAddressSet(internalAddresses, "excludeFromTopHolder");
+  const flowExcluded = internalAddressSet(internalAddresses, "excludeFromFlowAnalysis");
+  if (!topExcluded.size && !flowExcluded.size) return snapshot;
+
+  const top20Current = rankRows((snapshot.capitalOutflow.top20Current || [])
+    .filter((item) => !topExcluded.has(rowAddressKey(item))));
+  const top20Lost = rankRows((snapshot.capitalOutflow.top20Lost || [])
+    .filter((item) => !topExcluded.has(rowAddressKey(item)) && !flowExcluded.has(rowAddressKey(item))));
+  const roundTrips = (snapshot.capitalOutflow.roundTrips || [])
+    .filter((item) => !flowExcluded.has(rowAddressKey(item)));
+  const attributionDetails = (snapshot.capitalOutflow.attributionDetails || [])
+    .filter((item) => !flowExcluded.has(rowAddressKey(item)));
+  const destinations = attributionDetails.length
+    ? rebuildDestinationsFromAttribution(attributionDetails)
+    : (snapshot.capitalOutflow.destinations || []);
+  const removedCount = (snapshot.capitalOutflow.top20Current || []).length - top20Current.length
+    + (snapshot.capitalOutflow.top20Lost || []).length - top20Lost.length
+    + (snapshot.capitalOutflow.roundTrips || []).length - roundTrips.length
+    + (snapshot.capitalOutflow.attributionDetails || []).length - attributionDetails.length;
+  const dataQuality = removedCount > 0
+    ? [
+      ...(snapshot.dataQuality || []),
+      {
+        source: "Runtime Internal Address Filter",
+        status: "complete",
+        message: `Removed ${removedCount} persisted rows from the current view using latest internal address config. Snapshot will be refilled on the next job run.`
+      }
+    ]
+    : snapshot.dataQuality;
+
+  return {
+    ...snapshot,
+    dataQuality,
+    capitalOutflow: {
+      ...snapshot.capitalOutflow,
+      summary: recalcOutflowSummary(snapshot.capitalOutflow.summary, top20Lost, destinations),
+      top20Current,
+      top20Lost,
+      roundTrips,
+      destinations,
+      attributionDetails
+    }
+  };
 }
 
 function withWindow(payload, snapshot, period) {
@@ -825,7 +971,10 @@ async function serveV1Api(req, res, url) {
   const period = url.searchParams.get("period") || snapshot.period;
   const latestJobRun = await STORE.latestJobRun().catch(() => null);
   const viewSnapshot = withLatestJobQuality(
-    normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period)),
+    applyInternalAddressFilter(
+      normalizeCapitalOutflowSnapshot(derivePeriodSnapshot(snapshot, period)),
+      internalAddresses
+    ),
     latestJobRun
   );
 

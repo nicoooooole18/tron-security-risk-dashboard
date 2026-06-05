@@ -20,6 +20,10 @@ function labelFromEntry(entry) {
   return "Address Book Match";
 }
 
+function isJTokenUserProfileLabel(value) {
+  return /\bj[a-z0-9]*\s+(holder|participant)\b/i.test(String(value || ""));
+}
+
 function categoryFromEntry(entry, label) {
   const rolesText = [
     label,
@@ -36,7 +40,7 @@ function categoryFromEntry(entry, label) {
     ...(entry.markets || [])
   ].filter(Boolean).join(" ").toLowerCase();
 
-  if (/\bj[a-z0-9]*\s+(holder|participant)\b/i.test(rolesText)) {
+  if (isJTokenUserProfileLabel(rolesText)) {
     return "JustLend User";
   }
   if (["justlend", "jtoken", "jusdt", "jusdd", "jtrx", "jstrx", "jbtc", "jeth"].some((item) => text.includes(item))) {
@@ -61,6 +65,7 @@ function buildAddressBookIndex(entries) {
       category: categoryFromEntry(entry, label),
       source: "address_book",
       confidence: 0.7,
+      profileOnly: isJTokenUserProfileLabel(label) || isJTokenUserProfileLabel((entry.roles || []).join(" / ")),
       entry
     });
   }
@@ -128,6 +133,7 @@ async function loadSharedAddressBook(root, filePath) {
 
 module.exports = {
   buildAddressBookIndex,
+  isJTokenUserProfileLabel,
   loadSharedAddressBook,
   normalizeAddress
 };
