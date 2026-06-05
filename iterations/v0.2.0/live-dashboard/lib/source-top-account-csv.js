@@ -234,6 +234,60 @@ function aggregateUserPositions(userAssetPositions) {
   }));
 }
 
+function unitUsd(position) {
+  const amount = Number(position?.supplyAmount || 0);
+  const usd = Number(position?.supplyUsd || 0);
+  return amount > 0 && Number.isFinite(usd) ? usd / amount : 0;
+}
+
+function groupAssetPositions(userAssetPositions, dates) {
+  const dateSet = new Set(dates);
+  const byAddressAsset = new Map();
+  for (const item of userAssetPositions.filter((position) => dateSet.has(position.snapshotDate))) {
+    const key = `${item.userAddress}|${item.asset}`;
+    if (!byAddressAsset.has(key)) byAddressAsset.set(key, []);
+    byAddressAsset.get(key).push(item);
+  }
+  for (const rows of byAddressAsset.values()) {
+    rows.sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate));
+  }
+  return byAddressAsset;
+}
+
+function assetWithdrawalRows(beginning, assetPositionsByAddress, latestDate) {
+  const rows = [];
+  const prefix = `${beginning.userAddress}|`;
+  for (const [key, history] of assetPositionsByAddress.entries()) {
+    if (!key.startsWith(prefix)) continue;
+    const beginningPosition = history.find((item) => item.snapshotDate === beginning.snapshotDate);
+    if (!beginningPosition || beginningPosition.supplyAmount <= 0) continue;
+    const latestPosition = history.find((item) => item.snapshotDate === latestDate) || history.at(-1);
+    const minPosition = history.reduce((min, item) => (
+      item.supplyAmount < min.supplyAmount ? item : min
+    ), beginningPosition);
+    const grossWithdrawAmount = Math.max(0, beginningPosition.supplyAmount - minPosition.supplyAmount);
+    const unreturnedAmount = Math.max(0, beginningPosition.supplyAmount - (latestPosition?.supplyAmount || 0));
+    if (grossWithdrawAmount <= 0 && unreturnedAmount <= 0) continue;
+    const valuationPosition = latestPosition || minPosition;
+    const grossWithdrawUsd = grossWithdrawAmount * unitUsd(valuationPosition);
+    const unreturnedOutflowUsd = unreturnedAmount * unitUsd(valuationPosition);
+    const returnedOutflowUsd = Math.max(0, grossWithdrawUsd - unreturnedOutflowUsd);
+    rows.push({
+      asset: beginningPosition.asset,
+      grossWithdrawAmount,
+      unreturnedAmount,
+      grossWithdrawUsd,
+      returnedOutflowUsd,
+      unreturnedOutflowUsd,
+      outflowDate: minPosition.snapshotDate,
+      beginningSupplyUsd: beginningPosition.supplyUsd,
+      endingSupplyUsd: latestPosition?.supplyUsd || 0,
+      priceEffectUsd: Math.max(0, (beginningPosition.supplyUsd - (latestPosition?.supplyUsd || 0)) - unreturnedOutflowUsd)
+    });
+  }
+  return rows;
+}
+
 function selectWindowDates(dates, latestDate, days) {
   const start = addDays(latestDate, -(days - 1));
   return dates.filter((date) => date >= start && date <= latestDate);
@@ -261,15 +315,10 @@ function latestTop20(userPositions, latestDate) {
     }));
 }
 
-function top20Lost(userPositions, latestDate, days) {
+function top20Lost(userPositions, userAssetPositions, latestDate, days) {
   const dates = selectWindowDates(sortDates(userPositions), latestDate, days);
   const earliestDate = dates[0];
-  const latestByAddress = new Map(userPositions.filter((item) => item.snapshotDate === latestDate).map((item) => [item.userAddress, item]));
-  const positionsByAddress = new Map();
-  for (const item of userPositions.filter((position) => dates.includes(position.snapshotDate))) {
-    if (!positionsByAddress.has(item.userAddress)) positionsByAddress.set(item.userAddress, []);
-    positionsByAddress.get(item.userAddress).push(item);
-  }
+  const assetPositionsByAddress = groupAssetPositions(userAssetPositions, dates);
 
   const beginningTop = userPositions
     .filter((item) => item.snapshotDate === earliestDate)
@@ -277,14 +326,13 @@ function top20Lost(userPositions, latestDate, days) {
     .slice(0, 20);
 
   return beginningTop.map((beginning) => {
-    const history = (positionsByAddress.get(beginning.userAddress) || []).sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate));
-    const current = latestByAddress.get(beginning.userAddress);
-    const endSupply = current?.supplyUsd ?? history.at(-1)?.supplyUsd ?? 0;
-    const minSupply = history.length ? Math.min(...history.map((item) => item.supplyUsd)) : endSupply;
-    const grossWithdrawUsd = Math.max(0, beginning.supplyUsd - minSupply);
-    const unreturnedOutflowUsd = Math.max(0, beginning.supplyUsd - endSupply);
+    const withdrawals = assetWithdrawalRows(beginning, assetPositionsByAddress, latestDate);
+    const grossWithdrawUsd = withdrawals.reduce((sum, item) => sum + item.grossWithdrawUsd, 0);
+    const unreturnedOutflowUsd = withdrawals.reduce((sum, item) => sum + item.unreturnedOutflowUsd, 0);
     const returnedOutflowUsd = Math.max(0, grossWithdrawUsd - unreturnedOutflowUsd);
     const returnRatePct = grossWithdrawUsd > 0 ? (returnedOutflowUsd / grossWithdrawUsd) * 100 : 100;
+    const primary = withdrawals
+      .sort((a, b) => b.unreturnedOutflowUsd - a.unreturnedOutflowUsd || b.grossWithdrawUsd - a.grossWithdrawUsd)[0];
     const status = grossWithdrawUsd === 0
       ? "returned"
       : unreturnedOutflowUsd <= 1
@@ -300,12 +348,15 @@ function top20Lost(userPositions, latestDate, days) {
       unreturnedOutflowUsd: Math.round(unreturnedOutflowUsd),
       returnRatePct: Number(returnRatePct.toFixed(1)),
       topDestination: PENDING_CHAIN_LOOKUP,
-      primaryAsset: beginning.primaryAsset,
-      outflowTime: `${history.find((item) => item.supplyUsd === minSupply)?.snapshotDate || latestDate}T00:00:00.000Z`,
+      primaryAsset: primary?.asset || beginning.primaryAsset,
+      outflowTime: `${primary?.outflowDate || latestDate}T00:00:00.000Z`,
       status,
-      source: "top-account-csv"
+      source: "top-account-csv",
+      outflowBasis: "supply_amount_delta",
+      priceEffectUsd: Math.round(withdrawals.reduce((sum, item) => sum + item.priceEffectUsd, 0))
     };
-  }).sort((a, b) => b.unreturnedOutflowUsd - a.unreturnedOutflowUsd)
+  }).filter((item) => item.grossWithdrawUsd > 0)
+    .sort((a, b) => b.unreturnedOutflowUsd - a.unreturnedOutflowUsd)
     .slice(0, 20)
     .map((item, index) => ({ rank: index + 1, ...item }));
 }
@@ -435,7 +486,7 @@ async function enrichTopAccountCsv({ snapshot, facts, config, paths }) {
   for (const days of [7, 30, 90]) {
     const key = periodKey(days);
     const periodStart = selectWindowDates(dates, latestDate, days)[0];
-    const periodTopLost = top20Lost(topFacts.userPositions, latestDate, days);
+    const periodTopLost = top20Lost(topFacts.userPositions, topFacts.userAssetPositions, latestDate, days);
     periodViews[key] = {
       ...(periodViews[key] || {}),
       period: key,

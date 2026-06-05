@@ -101,15 +101,27 @@ async function run() {
     const dailyCsv = await prepareDailyCsvSources(paths, targetDate);
     paths = dailyCsv.paths;
     const source = await loadSource(paths);
+    const configuredInternalAddresses = await store.readInternalAddresses(source.snapshot?.settings?.internalAddresses || [])
+      .catch(() => source.snapshot?.settings?.internalAddresses || []);
+    const sourceWithSettings = {
+      ...source,
+      snapshot: {
+        ...source.snapshot,
+        settings: {
+          ...(source.snapshot?.settings || {}),
+          internalAddresses: configuredInternalAddresses
+        }
+      }
+    };
     const lendInfo = await enrichLendInfoCsv({
-      snapshot: source.snapshot,
+      snapshot: sourceWithSettings.snapshot,
       config,
       paths
     });
     const external = await enrichExternalData(lendInfo.snapshot, config, paths);
     const topAccount = await enrichTopAccountCsv({
       snapshot: external.snapshot,
-      facts: source.facts,
+      facts: sourceWithSettings.facts,
       config,
       paths
     });

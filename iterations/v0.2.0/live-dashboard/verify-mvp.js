@@ -183,7 +183,7 @@ function runSqliteChecks(dbPath) {
     check("sqlite latest snapshot has 90d period", persisted.period === "90d");
     check("sqlite latest snapshot uses production data mode", persisted.status?.mode === "SQLITE_DAILY_SNAPSHOT");
     check("sqlite latest snapshot top20 current has 20 rows", persisted.capitalOutflow?.top20Current?.length === 20);
-    check("sqlite latest snapshot top20 lost has 20 rows", persisted.capitalOutflow?.top20Lost?.length === 20);
+    check("sqlite latest snapshot top20 lost has rows after filters", persisted.capitalOutflow?.top20Lost?.length > 0 && persisted.capitalOutflow?.top20Lost?.length <= 20);
     check("sqlite data quality marks sqlite store", persisted.dataQuality?.some((item) => item.source === "SQLite Application Store"));
     check("sqlite data quality marks lend info csv when configured", !persisted.dataQuality?.some((item) => item.source === "Lend Info CSV") || persisted.dataQuality.some((item) => item.source === "Lend Info CSV" && item.status === "complete"));
     check("sqlite asset-level metrics are non-mock when lend info is loaded", !persisted.dataQuality?.some((item) => item.source === "Lend Info CSV" && item.status === "complete") || persisted.borrowDemand?.assets?.every((item) => item.source === "lend-info-csv"));
@@ -194,7 +194,7 @@ function runSqliteChecks(dbPath) {
   const factAssetMetrics = JSON.parse(execFileSync("sqlite3", ["-json", absolutePath, `SELECT asset, borrow_usd, borrow_amount, utilization, borrow_apy, supply_apy FROM fact_asset_daily_metrics WHERE snapshot_date=${latestDateSql} ORDER BY asset;`], { encoding: "utf8" }) || "[]");
   check("sqlite fact_top_holder_daily has 20 rows", factTopCurrent.length === 20);
   check("sqlite fact_top_holder_daily sorted by supply", isDescending(factTopCurrent, "supply_usd"));
-  check("sqlite fact_top_lost_holder_daily has 20 rows", factTopLost.length === 20);
+  check("sqlite fact_top_lost_holder_daily has rows after filters", factTopLost.length > 0 && factTopLost.length <= 20);
   check("sqlite fact_top_lost_holder_daily sorted by unreturned outflow", isDescending(factTopLost, "unreturned_outflow_usd"));
   check("sqlite fact_asset_daily_metrics has 7 assets", factAssetMetrics.length === 7);
   check("sqlite fact_asset_daily_metrics covers asset scope", factAssetMetrics.map((item) => item.asset).sort().join(",") === config.assets.map((item) => item.symbol).sort().join(","));
