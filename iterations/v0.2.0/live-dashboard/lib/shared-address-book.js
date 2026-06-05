@@ -24,6 +24,10 @@ function isJTokenUserProfileLabel(value) {
   return /\bj[a-z0-9]*\s+(holder|participant)\b/i.test(String(value || ""));
 }
 
+function isSystemSinkLabel(value) {
+  return /\b(blackhole|burn|burner|dead|zero\s+address|sink)\b|黑洞|销毁/i.test(String(value || ""));
+}
+
 function categoryFromEntry(entry, label) {
   const rolesText = [
     label,
@@ -40,6 +44,9 @@ function categoryFromEntry(entry, label) {
     ...(entry.markets || [])
   ].filter(Boolean).join(" ").toLowerCase();
 
+  if (isSystemSinkLabel(text)) {
+    return "Blackhole / Burn";
+  }
   if (isJTokenUserProfileLabel(rolesText)) {
     return "JustLend User";
   }
@@ -133,6 +140,7 @@ async function loadSharedAddressBook(root, filePath) {
 
 module.exports = {
   buildAddressBookIndex,
+  isSystemSinkLabel,
   isJTokenUserProfileLabel,
   loadSharedAddressBook,
   normalizeAddress

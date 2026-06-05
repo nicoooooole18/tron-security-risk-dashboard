@@ -1,5 +1,5 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
-const { isJTokenUserProfileLabel, loadSharedAddressBook } = require("./shared-address-book");
+const { isJTokenUserProfileLabel, isSystemSinkLabel, loadSharedAddressBook } = require("./shared-address-book");
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const CEX_KEYWORDS = ["htx", "binance", "okx", "bybit", "kucoin", "gate", "poloniex"];
 const PROTOCOL_TAG_PATTERNS = [
@@ -49,7 +49,14 @@ function protocolAddressSet(config) {
 function classifyDestination(address) {
   const normalized = normalizeAddress(address);
   if (!normalized) return { destination: "Unknown", category: "Unknown", labelSource: "unknown", labelConfidence: 0 };
-  return { destination: normalized, category: "Wallet / Contract", labelSource: "unknown", labelConfidence: 0, address: normalized };
+  return {
+    destination: normalized,
+    category: "Unlabeled Hop",
+    labelSource: "unknown",
+    labelConfidence: 0,
+    address: normalized,
+    flowEntityEligible: false
+  };
 }
 
 function tagFrom(row, side) {
@@ -63,6 +70,15 @@ function classifyTronScanTag(row) {
   if (tag) {
     const normalizedTag = tag.trim();
     const lower = normalizedTag.toLowerCase();
+    if (isSystemSinkLabel(normalizedTag)) {
+      return {
+        destination: normalizedTag,
+        category: "Blackhole / Burn",
+        labelSource: "tronscan",
+        labelConfidence: 0.75,
+        flowEntityEligible: false
+      };
+    }
     if (CEX_KEYWORDS.some((item) => lower.includes(item))) {
       return { destination: normalizedTag, category: "CEX", labelSource: "tronscan", labelConfidence: 0.85 };
     }
@@ -171,7 +187,7 @@ function isAddressBookUserProfileDestination(value, category, labelSource) {
 
 function addressBookUserProfileDestination(match, address) {
   return {
-    destination: "地址库用户",
+    destination: "疑似用户钱包",
     category: "User Wallet",
     address,
     labelSource: "address_book_profile",
@@ -181,10 +197,22 @@ function addressBookUserProfileDestination(match, address) {
   };
 }
 
+function isSystemSinkDestination(value, category, labelSource) {
+  return category === "Blackhole / Burn" || labelSource === "address_book_sink" || isSystemSinkLabel(value);
+}
+
 function overviewEligibleDestination(destination) {
   if (!destination || destination.flowEntityEligible === false) return false;
   if (destination.labelSource === "address_book_profile") return false;
-  return !["Unknown", "Wallet / Contract", "Address Book", "JustLend Address Book", "JustLend User", "User Wallet", "N/A", "待查询"].includes(destination.category);
+  if (isSystemSinkDestination(destination.destination, destination.category, destination.labelSource)) return false;
+  return !["Unknown", "Wallet / Contract", "Unlabeled Hop", "Address Book", "JustLend Address Book", "JustLend User", "User Wallet", "N/A", "待查询"].includes(destination.category);
+}
+
+function attributionForDestination(destination, usedInOverview) {
+  if (usedInOverview) return "strong";
+  if (isSystemSinkDestination(destination?.destination, destination?.category, destination?.labelSource)) return "system_sink";
+  if (destination?.category === "Unlabeled Hop" || destination?.labelSource === "unknown") return "unlabeled_hop";
+  return "profile";
 }
 
 function normalizeProfileDestinationFields(item) {
@@ -195,10 +223,10 @@ function normalizeProfileDestinationFields(item) {
   const profileLabel = item.profileLabel || item.destinationProfileLabel || item.strongDestinationProfileLabel || item.outflowDestinationProfileLabel || destination;
   return {
     ...item,
-    destination: item.destination ? "地址库用户" : item.destination,
-    topDestination: item.topDestination ? "地址库用户" : item.topDestination,
-    strongDestination: item.strongDestination ? "地址库用户" : item.strongDestination,
-    outflowDestination: item.outflowDestination ? "地址库用户" : item.outflowDestination,
+    destination: item.destination ? "疑似用户钱包" : item.destination,
+    topDestination: item.topDestination ? "疑似用户钱包" : item.topDestination,
+    strongDestination: item.strongDestination ? "疑似用户钱包" : item.strongDestination,
+    outflowDestination: item.outflowDestination ? "疑似用户钱包" : item.outflowDestination,
     category: item.category ? "User Wallet" : item.category,
     destinationCategory: item.destinationCategory ? "User Wallet" : item.destinationCategory,
     outflowDestinationCategory: item.outflowDestinationCategory ? "User Wallet" : item.outflowDestinationCategory,
@@ -225,6 +253,16 @@ function addressBookLabel(address, context) {
   context.labelStats.addressBookHits += 1;
   if (match.profileOnly || isAddressBookUserProfileDestination(match.label, match.category, "address_book")) {
     return addressBookUserProfileDestination(match, normalized);
+  }
+  if (isSystemSinkDestination(match.label, match.category, "address_book")) {
+    return {
+      destination: match.label || "黑洞/销毁地址",
+      category: "Blackhole / Burn",
+      address: normalized,
+      labelSource: "address_book_sink",
+      labelConfidence: Math.min(Number(match.confidence || 0.7), 0.6),
+      flowEntityEligible: false
+    };
   }
   return {
     destination: match.label,
@@ -474,11 +512,18 @@ function backfillTopLostDestinations(capitalOutflow) {
 
     const roundTrip = roundTripByAddress.get(normalized);
     if (roundTrip) {
+      const roundTripDestination = {
+        destination: roundTrip.strongDestination || roundTrip.outflowDestination,
+        category: roundTrip.destinationCategory || roundTrip.outflowDestinationCategory,
+        labelSource: roundTrip.strongDestinationLabelSource || roundTrip.outflowDestinationLabelSource
+      };
       const roundTripAttribution = isAddressBookUserProfileDestination(
-        roundTrip.strongDestination || roundTrip.outflowDestination,
-        roundTrip.destinationCategory || roundTrip.outflowDestinationCategory,
-        roundTrip.strongDestinationLabelSource || roundTrip.outflowDestinationLabelSource
-      ) ? "profile" : roundTrip.source === "chain-enriched" ? "strong" : item.destinationAttribution;
+        roundTripDestination.destination,
+        roundTripDestination.category,
+        roundTripDestination.labelSource
+      ) ? "profile" : roundTrip.source === "chain-enriched"
+        ? attributionForDestination(roundTripDestination, overviewEligibleDestination(roundTripDestination))
+        : item.destinationAttribution;
       return {
         ...item,
         topDestination: roundTrip.strongDestination || roundTrip.outflowDestination,
@@ -538,6 +583,7 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths,
         continue;
       }
       const usedInOverview = overviewEligibleDestination(destination);
+      const attribution = attributionForDestination(destination, usedInOverview);
       attributionDetails.push({
         pathId: `${snapshotDate}-${lostItem.address}-hop1`,
         hop: 1,
@@ -546,7 +592,7 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths,
         destination: destination.destination,
         category: destination.category,
         confidence: usedInOverview ? 0.8 : 0.35,
-        attribution: usedInOverview ? "strong" : "profile",
+        attribution,
         usedInOverview,
         eventTime: hop1.time,
         txHash: hop1.txHash,
@@ -566,6 +612,7 @@ async function enrichCapitalOutflow(capitalOutflow, snapshotDate, config, paths,
         existingRoundTrip.strongDestinationLabelSource = destination.labelSource;
         existingRoundTrip.strongDestinationLabelConfidence = destination.labelConfidence;
         existingRoundTrip.strongDestinationProfileLabel = destination.profileLabel;
+        existingRoundTrip.destinationAttribution = attribution;
         existingRoundTrip.source = "chain-enriched";
       }
 

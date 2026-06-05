@@ -178,6 +178,14 @@ function pill(text, type = "muted") {
   return `<span class="pill ${type}">${escapeHtml(text)}</span>`;
 }
 
+function isTronAddress(value) {
+  return /^T[1-9A-HJ-NP-Za-km-z]{25,40}$/.test(String(value || ""));
+}
+
+function tooltipText(html, title) {
+  return `<span title="${escapeHtml(title)}">${html}</span>`;
+}
+
 function stripHtml(value) {
   const template = document.createElement("template");
   template.innerHTML = String(value ?? "");
@@ -198,7 +206,7 @@ function hydrateTableCellTitles() {
   });
 }
 
-function destinationDisplay(destination, category, attribution) {
+function destinationDisplay(destination, category, attribution, meta = {}) {
   const value = String(destination || "").trim();
   if (!value || value === "Pending chain lookup" || value === "待链上归因") {
     return pill("待链上归因", "amber");
@@ -214,6 +222,32 @@ function destinationDisplay(destination, category, attribution) {
   }
   if (value === "Unknown") {
     return pill("Unknown（无标签）", "muted");
+  }
+  if (attribution === "system_sink" || category === "Blackhole / Burn") {
+    return tooltipText(
+      `${pill("黑洞/销毁地址", "muted")} <span class="muted-text">${escapeHtml(shortAddress(meta.destinationAddress || value))}</span>`,
+      "黑洞/销毁地址只表示资金进入不可花费或系统接收地址，不等同于外部目的地流失，也不进入强归因统计。"
+    );
+  }
+  if (attribution === "unlabeled_hop" || category === "Unlabeled Hop" || isTronAddress(value)) {
+    const address = meta.destinationAddress || value;
+    return tooltipText(
+      `${pill("一跳地址未识别", "muted")} <span class="muted-text">${escapeHtml(shortAddress(address))}</span>`,
+      `仅确认一跳接收地址，未确认实体归属；可能是同一用户钱包、中转地址或外部平台地址。${address}`
+    );
+  }
+  if (category === "User Wallet") {
+    const profile = meta.destinationProfileLabel || meta.profileLabel || "";
+    return tooltipText(
+      `${pill("疑似用户钱包", "muted")}${profile ? ` <span class="muted-text">${escapeHtml(profile)}</span>` : ""}`,
+      `地址库画像标签，不代表外部资金目的地；可能是同一用户钱包或仅曾参与 JustLend。${meta.destinationAddress || ""}`
+    );
+  }
+  if (attribution === "profile") {
+    return tooltipText(
+      `${pill("非目的地标签", "muted")} <span class="muted-text">${escapeHtml(value)}</span>`,
+      "该标签只用于辅助识别地址类型，不足以作为外部资金目的地结论，也不进入强归因统计。"
+    );
   }
   if (attribution === "weak") {
     return `${escapeHtml(value)} ${pill("弱归因", "amber")}`;
@@ -558,7 +592,7 @@ const outflowConfigs = {
         formatUsd(item.returnedOutflowUsd),
         formatUsd(item.unreturnedOutflowUsd),
         `${item.returnRatePct.toFixed(1)}%`,
-        destinationDisplay(item.topDestination, item.destinationCategory, item.destinationAttribution || item.attribution)
+        destinationDisplay(item.topDestination, item.destinationCategory, item.destinationAttribution || item.attribution, item)
       ]);
     }
   },
@@ -571,8 +605,8 @@ const outflowConfigs = {
         addressCell(item.address),
         formatDateTime(item.outflowTime),
         `${formatUsd(item.outflowUsd)} ${item.outflowAsset}`,
-        destinationDisplay(item.strongDestination, item.destinationCategory, "strong"),
-        item.weakDestination ? destinationDisplay(item.weakDestination, null, "weak") : "--",
+        destinationDisplay(item.strongDestination, item.destinationCategory, item.destinationAttribution || "strong", item),
+        item.weakDestination ? destinationDisplay(item.weakDestination, null, "weak", item) : "--",
         item.returnTime ? formatDateTime(item.returnTime) : "--",
         item.returnUsd ? `${formatUsd(item.returnUsd)} ${item.returnAsset}` : "--",
         item.returnMarket || "--",
@@ -587,7 +621,7 @@ const outflowConfigs = {
     head: ["Destination", "Category", "Amount", "Share", "Wallets", "Attribution"],
     rows(data) {
       return data.capitalOutflow.destinations.map((item) => [
-        destinationDisplay(item.destination, item.category, item.attribution),
+        destinationDisplay(item.destination, item.category, item.attribution, item),
         item.category === "Unknown" && (item.destination === "Pending chain lookup" || item.destination === "待链上归因") ? "待查询" : item.category,
         formatUsd(item.amountUsd),
         `${item.sharePct.toFixed(1)}%`,
@@ -605,7 +639,7 @@ const outflowConfigs = {
         `Hop ${item.hop}`,
         addressCell(item.address),
         formatUsd(item.amountUsd),
-        destinationDisplay(item.destination, item.category, item.attribution),
+        destinationDisplay(item.destination, item.category, item.attribution, item),
         item.category,
         `${Math.round(item.confidence * 100)}%`,
         item.usedInOverview ? pill("Yes", "green") : pill("No", "muted")

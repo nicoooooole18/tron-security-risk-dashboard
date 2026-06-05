@@ -661,7 +661,7 @@ function normalizeCapitalOutflowSnapshot(snapshot) {
   const normalizedRoundTrips = (snapshot.capitalOutflow.roundTrips || []).map(normalizeProfileDestinationFields);
   const normalizedDestinations = (snapshot.capitalOutflow.destinations || [])
     .map(normalizeProfileDestinationFields)
-    .filter((item) => item.attribution !== "profile" && item.category !== "User Wallet");
+    .filter(isDestinationRankingEligible);
   const capitalOutflow = {
     ...snapshot.capitalOutflow,
     attributionDetails: normalizedAttributionDetails,
@@ -675,6 +675,11 @@ function normalizeCapitalOutflowSnapshot(snapshot) {
     }).map(normalizeProfileDestinationFields)
   };
   return { ...snapshot, capitalOutflow };
+}
+
+function isDestinationRankingEligible(item) {
+  return item?.attribution === "strong"
+    && !["User Wallet", "Unlabeled Hop", "Blackhole / Burn"].includes(item.category);
 }
 
 function internalAddressSet(internalAddresses, flag) {
@@ -697,6 +702,7 @@ function rebuildDestinationsFromAttribution(attributionDetails) {
   for (const item of attributionDetails || []) {
     const amountUsd = Number(item.amountUsd || 0);
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) continue;
+    if (!isDestinationRankingEligible(item)) continue;
     const destination = item.destination || item.topDestination || "待链上归因";
     const category = item.category || item.destinationCategory || "Unknown";
     const attribution = item.attribution || item.destinationAttribution || "unknown";

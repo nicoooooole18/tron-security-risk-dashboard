@@ -97,7 +97,9 @@ function runStaticChecks() {
   check("chain attribution label priority exists", chainSource.includes("addressBookLabel(address, context)") && chainSource.includes("tronScanLabel(row, context)") && chainSource.includes("arkhamLabel(address, context)"));
   check("protocol-internal destinations are skipped", chainSource.includes("isProtocolInternalDestination") && chainSource.includes("protocolInternalSkipped"));
   check("jtoken address book labels are not cex", jTokenCexMisclassified.length === 0);
-  check("jtoken address book profile labels are not strong flow entities", chainSource.includes("address_book_profile") && chainSource.includes("overviewEligibleDestination") && chainSource.includes("usedInOverview ? \"strong\" : \"profile\"") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeProfileDestinationFields"));
+  check("jtoken address book profile labels are not strong flow entities", chainSource.includes("address_book_profile") && chainSource.includes("overviewEligibleDestination") && chainSource.includes("function attributionForDestination") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeProfileDestinationFields"));
+  check("non-conclusive destinations are downgraded", chainSource.includes("Blackhole / Burn") && chainSource.includes("Unlabeled Hop") && chainSource.includes("\"system_sink\"") && chainSource.includes("\"unlabeled_hop\"") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("isDestinationRankingEligible"));
+  check("destination display explains profile sink and unlabeled hop", appJs.includes("疑似用户钱包") && appJs.includes("黑洞/销毁地址") && appJs.includes("一跳地址未识别") && appJs.includes("不等同于外部目的地流失"));
   check("hop2 attribution is detail-only", snapshot.capitalOutflow.attributionDetails.some((item) => item.hop === 2 && item.usedInOverview === false));
   check("overview attribution uses hop1 only", snapshot.capitalOutflow.attributionDetails.filter((item) => item.usedInOverview).every((item) => item.hop === 1));
   check("threshold defaults include 8 rules", config.thresholds.length === 8);
