@@ -50,7 +50,8 @@ JustLend 需要一个资金流向分析看板，用于在 TVL、Supply、Borrow 
 2. 用户查看 Top20 Lost 列表。
 3. 系统按所选周期未回流资金排序。
 4. 用户查看 Round Trip Detail 判断资金是否已回流。
-5. 用户查看 Attribution Detail 判断资金是否有可信的一跳强归因。
+5. 用户查看一跳归因判断资金是否有可信的一跳强归因。
+6. 用户查看二跳分析判断未识别一跳地址后续 7D 内是否出现弱线索。
 
 ### 3.3 数据 / 管理员调整判断阈值
 
@@ -151,7 +152,8 @@ Top20 Current
 Top20 Lost
 Round Trip Detail
 Destination Ranking
-Attribution Detail
+一跳归因
+二跳分析
 ```
 
 | Tab | 展示规则 |
@@ -160,7 +162,8 @@ Attribution Detail
 | Top20 Lost | 排除内部地址后，按所选周期 `unreturned_outflow_usd` 排名前 20 |
 | Round Trip Detail | 展示 returned / partially_returned / not_returned |
 | Destination Ranking | 只统计可进入 Overview 的 Hop 1 强归因目的地 |
-| Attribution Detail | 展示 Hop 1 / Hop 2、标签来源、置信度和是否进入 Overview |
+| 一跳归因 | 展示 Hop 1 直接去向、标签来源、置信度和是否进入 Overview |
+| 二跳分析 | 展示 Hop 1 地址后续 7D 内的 Hop 2 弱线索、时间间隔、金额匹配比例和证据 |
 
 ### 5.6 Settings / Data Config
 
@@ -227,6 +230,10 @@ BR-023：Borrow Demand 判断不能只看 `borrow_usd`；只有 `borrow_usd` 和
 BR-024：若 `borrow_usd` 下降但 `borrow_amount` 稳定或上升，应判断为价格影响。
 
 BR-025：阈值修改后只影响当前视图判断，不重新拉取链上数据，不改写历史异常列表。
+
+BR-026：一跳归因只展示 Hop 1 直接去向；二跳分析单独展示 Hop 1 到 Hop 2 的弱线索，二者不得混用为同一结论。
+
+BR-027：二跳分析即使命中 CEX、协议或 TRON Eco 标签，也只能作为弱线索，不得进入 Overview 主判断和 Destination Ranking 强归因统计。
 
 BR-026：阈值和内部地址修改必须填写修改原因并记录修改日志。
 

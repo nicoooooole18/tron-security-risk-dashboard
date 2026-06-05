@@ -561,6 +561,37 @@ function renderBorrow(data) {
   }).join("");
 }
 
+function hoursBetween(from, to) {
+  const start = new Date(from).getTime();
+  const end = new Date(to).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return "--";
+  return `${((end - start) / (60 * 60 * 1000)).toFixed(1)}h`;
+}
+
+function buildHop2AnalysisRows(data) {
+  const details = data.capitalOutflow.attributionDetails || [];
+  const hop1ByAddress = new Map(details
+    .filter((item) => item.hop === 1)
+    .map((item) => [item.address, item]));
+  return details
+    .filter((item) => item.hop === 2)
+    .map((hop2) => {
+      const hop1 = hop1ByAddress.get(hop2.address) || {};
+      const amountMatchPct = hop1.amountUsd > 0
+        ? Math.min(999, (Number(hop2.amountUsd || 0) / Number(hop1.amountUsd || 1)) * 100)
+        : null;
+      return {
+        sourceAddress: hop2.address,
+        outflowAmountUsd: hop1.amountUsd || hop2.amountUsd,
+        hop1,
+        hop2,
+        timeDelta: hoursBetween(hop1.eventTime, hop2.eventTime),
+        amountMatchPct,
+        txHash: hop2.txHash || ""
+      };
+    });
+}
+
 const outflowConfigs = {
   current: {
     title: "Top20 Current",
@@ -631,18 +662,37 @@ const outflowConfigs = {
     }
   },
   attribution: {
-    title: "Attribution Detail",
-    copy: "Hop 2 弱归因仅在详情页辅助展示，不进入 Overview 主结论。",
-    head: ["Hop", "Address", "Amount", "Destination", "Category", "Confidence", "Used In Overview"],
+    title: "一跳归因",
+    copy: "展示 Top20 Lost 的 Hop 1 直接去向、归因等级和是否进入 Overview；二跳线索在“二跳分析”单独查看。",
+    head: ["Address", "Amount", "Hop 1 Destination", "Category", "Attribution", "Confidence", "Used In Overview"],
     rows(data) {
-      return data.capitalOutflow.attributionDetails.map((item) => [
-        `Hop ${item.hop}`,
+      return data.capitalOutflow.attributionDetails.filter((item) => item.hop === 1).map((item) => [
         addressCell(item.address),
         formatUsd(item.amountUsd),
         destinationDisplay(item.destination, item.category, item.attribution, item),
         item.category,
+        pill(item.attribution, item.attribution === "strong" ? "green" : item.attribution === "weak" ? "amber" : "muted"),
         `${Math.round(item.confidence * 100)}%`,
         item.usedInOverview ? pill("Yes", "green") : pill("No", "muted")
+      ]);
+    }
+  },
+  hop2: {
+    title: "二跳分析",
+    copy: "追踪一跳地址后 7D 内的后续去向，只作为弱线索，不进入 Overview 和 Destination Ranking。",
+    head: ["Source Address", "Outflow Amount", "Hop 1", "Hop 1 Type", "Hop 2", "Hop 2 Type", "Time Delta", "Amount Match", "Attribution", "Evidence"],
+    rows(data) {
+      return buildHop2AnalysisRows(data).map((item) => [
+        addressCell(item.sourceAddress),
+        formatUsd(item.outflowAmountUsd),
+        destinationDisplay(item.hop1.destination, item.hop1.category, item.hop1.attribution, item.hop1),
+        item.hop1.attribution || "--",
+        destinationDisplay(item.hop2.destination, item.hop2.category, item.hop2.attribution, item.hop2),
+        item.hop2.category || "--",
+        item.timeDelta,
+        item.amountMatchPct === null ? "--" : `${item.amountMatchPct.toFixed(1)}%`,
+        pill("weak", "amber"),
+        item.txHash ? `<span class="address" title="${escapeHtml(item.txHash)}">${escapeHtml(item.txHash.slice(0, 12))}...</span>` : "--"
       ]);
     }
   }
@@ -1022,7 +1072,8 @@ function currentCsvDataset() {
       lost: "top-lost",
       roundtrip: "round-trip",
       destinations: "destinations",
-      attribution: "attribution-detail"
+      attribution: "attribution-detail",
+      hop2: "hop2-analysis"
     }[activeOutflowTab] || "top-current";
   }
   return null;

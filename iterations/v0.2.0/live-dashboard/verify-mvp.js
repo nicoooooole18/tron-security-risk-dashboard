@@ -100,6 +100,7 @@ function runStaticChecks() {
   check("jtoken address book profile labels are not strong flow entities", chainSource.includes("address_book_profile") && chainSource.includes("overviewEligibleDestination") && chainSource.includes("function attributionForDestination") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("normalizeProfileDestinationFields"));
   check("non-conclusive destinations are downgraded", chainSource.includes("Blackhole / Burn") && chainSource.includes("Unlabeled Hop") && chainSource.includes("\"system_sink\"") && chainSource.includes("\"unlabeled_hop\"") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("isDestinationRankingEligible"));
   check("destination display explains profile sink and unlabeled hop", appJs.includes("疑似用户钱包") && appJs.includes("黑洞/销毁地址") && appJs.includes("一跳地址未识别") && appJs.includes("不等同于外部目的地流失"));
+  check("hop2 analysis has dedicated tab and api", indexHtml.includes("data-tab=\"hop2\"") && indexHtml.includes("一跳归因") && appJs.includes("function buildHop2AnalysisRows") && appJs.includes("item.hop === 1") && appJs.includes("hop2-analysis") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("/api/v1/capital-outflow/hop2-analysis"));
   check("hop2 attribution is detail-only", snapshot.capitalOutflow.attributionDetails.some((item) => item.hop === 2 && item.usedInOverview === false));
   check("overview attribution uses hop1 only", snapshot.capitalOutflow.attributionDetails.filter((item) => item.usedInOverview).every((item) => item.hop === 1));
   check("threshold defaults include 8 rules", config.thresholds.length === 8);
@@ -204,7 +205,7 @@ function runSqliteChecks(dbPath) {
 }
 
 async function runApiChecks(base) {
-  const [overview, overview7d, snapshot90d, snapshot7d, snapshot30d, overview30d, market7d, market90d, topCurrent30d, topLost7d, topCurrent, topLost, roundTrip, borrowCsv, topLostCsv] = await Promise.all([
+  const [overview, overview7d, snapshot90d, snapshot7d, snapshot30d, overview30d, market7d, market90d, topCurrent30d, topLost7d, topCurrent, topLost, roundTrip, hop2Analysis, borrowCsv, topLostCsv, hop2Csv] = await Promise.all([
     fetchJson(base, "/api/v1/overview?period=90d"),
     fetchJson(base, "/api/v1/overview?period=7d"),
     fetchJson(base, "/api/snapshot?period=90d"),
@@ -218,8 +219,10 @@ async function runApiChecks(base) {
     fetchJson(base, "/api/v1/capital-outflow/top-current?period=90d"),
     fetchJson(base, "/api/v1/capital-outflow/top-lost?period=90d"),
     fetchJson(base, "/api/v1/capital-outflow/round-trip?period=90d"),
+    fetchJson(base, "/api/v1/capital-outflow/hop2-analysis?period=90d"),
     fetchText(base, "/api/v1/export.csv?dataset=borrow-demand&period=90d"),
-    fetchText(base, "/api/v1/export.csv?dataset=top-lost&period=90d")
+    fetchText(base, "/api/v1/export.csv?dataset=top-lost&period=90d"),
+    fetchText(base, "/api/v1/export.csv?dataset=hop2-analysis&period=90d")
   ]);
 
   check("api overview returns anomaly signals", Array.isArray(overview.anomalySignals) && overview.anomalySignals.length > 0);
@@ -240,10 +243,12 @@ async function runApiChecks(base) {
     check("api top lists exclude runtime internal addresses", visibleTopAddresses.every((address) => !excluded.has(address)));
   }
   check("api round trip returns time away", roundTrip.items?.every((item) => Number.isFinite(item.timeAwayHours)));
+  check("api hop2 analysis returns weak detail-only rows", Array.isArray(hop2Analysis.items) && hop2Analysis.items.every((item) => item.attribution === "weak" && item.usedInOverview === false));
   check("api public snapshot does not expose settings", snapshot90d.settings === undefined);
   check("api public snapshot includes threshold config for view calculations", snapshot90d.config?.thresholds?.length === 8);
   check("api borrow demand csv exports", borrowCsv.includes("asset,supply_usd") && borrowCsv.includes("USDT"));
   check("api top lost csv exports", topLostCsv.includes("rank,address") && topLostCsv.includes("unreturned_outflow_usd"));
+  check("api hop2 analysis csv exports", hop2Csv.includes("source_address") && hop2Csv.includes("hop2_attribution"));
 
   const unauthSettings = await fetch(`${base}/api/v1/settings/thresholds`);
   check("api settings read requires admin login", unauthSettings.status === 401);

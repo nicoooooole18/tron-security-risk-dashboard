@@ -177,7 +177,7 @@ External refresh is off by default. Set `EXTERNAL_FETCH_ENABLED=true` to try DeF
 - Overview with 90D core conclusion and main anomaly signals.
 - Market Comparison using JustLend vs competitor TVL median.
 - Borrow Demand with `borrow_usd`, `borrow_amount`, utilization, and APY checks.
-- Capital Outflow with Top20 Current, Top20 Lost, Round Trip, Destination Ranking, Attribution Detail.
+- Capital Outflow with Top20 Current, Top20 Lost, Round Trip, Destination Ranking, 一跳归因, and 二跳分析.
 - Capital Outflow summary explicitly keeps `net_outflow_usd` as an auxiliary metric, not a loss decision rule.
 - Round Trip Detail includes row-level time away plus returned / partially returned / not returned status.
 - Settings / Data Config with Thresholds, Internal Address, Asset Scope, Data Sources, and Attribution Rules tabs.
@@ -210,6 +210,7 @@ PRD v1 endpoints implemented against the latest SQLite Daily Snapshot, with mock
 - `GET /api/v1/capital-outflow/round-trip?period=90d`
 - `GET /api/v1/capital-outflow/destinations?period=90d`
 - `GET /api/v1/capital-outflow/attribution-detail?period=90d`
+- `GET /api/v1/capital-outflow/hop2-analysis?period=90d`
 - `GET /api/v1/settings/internal-addresses`
 - `POST /api/v1/settings/internal-addresses`
 - `POST /api/v1/settings/internal-addresses/import`

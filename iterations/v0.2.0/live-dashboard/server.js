@@ -968,7 +968,59 @@ function exportRows(dataset, snapshot, thresholds) {
       match_reason: item.matchReason || ""
     }));
   }
+  if (dataset === "hop2-analysis") {
+    return buildHop2AnalysisRows(outflow).map((item) => ({
+      ...prefix,
+      source_address: item.sourceAddress,
+      outflow_amount_usd: item.outflowAmountUsd,
+      hop1_destination: item.hop1?.destination || "",
+      hop1_destination_address: item.hop1?.destinationAddress || "",
+      hop1_category: item.hop1?.category || "",
+      hop1_attribution: item.hop1?.attribution || "",
+      hop1_event_time: item.hop1?.eventTime || "",
+      hop1_tx_hash: item.hop1?.txHash || "",
+      hop2_destination: item.hop2?.destination || "",
+      hop2_destination_address: item.hop2?.destinationAddress || "",
+      hop2_category: item.hop2?.category || "",
+      hop2_attribution: item.hop2?.attribution || "",
+      hop2_event_time: item.hop2?.eventTime || "",
+      hop2_tx_hash: item.hop2?.txHash || "",
+      time_delta_hours: item.timeDeltaHours,
+      amount_match_pct: item.amountMatchPct,
+      used_in_overview: false
+    }));
+  }
   return null;
+}
+
+function buildHop2AnalysisRows(outflow) {
+  const details = outflow?.attributionDetails || [];
+  const hop1ByAddress = new Map(details
+    .filter((item) => item.hop === 1)
+    .map((item) => [item.address, item]));
+  return details
+    .filter((item) => item.hop === 2)
+    .map((hop2) => {
+      const hop1 = hop1ByAddress.get(hop2.address) || null;
+      const hop1Time = new Date(hop1?.eventTime || "").getTime();
+      const hop2Time = new Date(hop2.eventTime || "").getTime();
+      const timeDeltaHours = Number.isFinite(hop1Time) && Number.isFinite(hop2Time)
+        ? Number(((hop2Time - hop1Time) / (60 * 60 * 1000)).toFixed(1))
+        : null;
+      const amountMatchPct = hop1?.amountUsd > 0
+        ? Number(Math.min(999, (Number(hop2.amountUsd || 0) / Number(hop1.amountUsd || 1)) * 100).toFixed(1))
+        : null;
+      return {
+        sourceAddress: hop2.address,
+        outflowAmountUsd: hop1?.amountUsd || hop2.amountUsd,
+        hop1,
+        hop2,
+        timeDeltaHours,
+        amountMatchPct,
+        attribution: "weak",
+        usedInOverview: false
+      };
+    });
 }
 
 async function serveV1Api(req, res, url) {
@@ -1052,6 +1104,11 @@ async function serveV1Api(req, res, url) {
 
   if (route === "/api/v1/capital-outflow/attribution-detail") {
     sendJson(res, 200, withWindow({ items: viewSnapshot.capitalOutflow.attributionDetails }, viewSnapshot, period));
+    return true;
+  }
+
+  if (route === "/api/v1/capital-outflow/hop2-analysis") {
+    sendJson(res, 200, withWindow({ items: buildHop2AnalysisRows(viewSnapshot.capitalOutflow) }, viewSnapshot, period));
     return true;
   }
 
