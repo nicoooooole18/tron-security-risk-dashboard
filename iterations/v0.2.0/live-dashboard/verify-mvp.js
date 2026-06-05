@@ -8,6 +8,7 @@ const config = readJson("config.json");
 const apiBase = process.argv.find((item) => item.startsWith("--api="))?.slice(6);
 const sqliteArg = process.argv.find((item) => item.startsWith("--sqlite="))?.slice(9);
 const checks = [];
+let apiAuthCookie = "";
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), "utf8"));
@@ -112,6 +113,7 @@ function runStaticChecks() {
   check("shared address book is configured", config.dataSources.some((item) => item.type === "address_book" && item.status === "shared-component") && fs.existsSync(sharedAddressBookPath));
   check("csv export enabled", config.permissions.csvExportEnabled === true);
   check("csv export button exists", indexHtml.includes("csvExportBtn") && indexHtml.includes("导出 CSV"));
+  check("single dashboard login protects data", appJs.includes("Signed in") && appJs.includes("Locked") && appJs.includes("showAuthModal(false)") && fs.readFileSync(path.join(ROOT, "server.js"), "utf8").includes("DASHBOARD_USERNAME") && fs.readFileSync(path.join(ROOT, ".env.example"), "utf8").includes("DASHBOARD_PASSWORD"));
   check("snapshot job exists", fs.existsSync(path.join(ROOT, "snapshot-job.js")));
   check("sqlite store exists", fs.existsSync(path.join(ROOT, "lib/sqlite-store.js")));
   check("json export adapter exists", fs.existsSync(path.join(ROOT, "lib/source-json-export.js")));
@@ -205,6 +207,12 @@ function runSqliteChecks(dbPath) {
 }
 
 async function runApiChecks(base) {
+  const unauthSnapshot = await fetch(`${base}/api/snapshot?period=90d`);
+  const unauthExport = await fetch(`${base}/api/v1/export.csv?dataset=top-lost&period=90d`);
+  check("api snapshot requires dashboard login", unauthSnapshot.status === 401);
+  check("api csv export requires dashboard login", unauthExport.status === 401);
+  await loginApi(base);
+
   const [overview, overview7d, snapshot90d, snapshot7d, snapshot30d, overview30d, market7d, market90d, topCurrent30d, topLost7d, topCurrent, topLost, roundTrip, hop2Analysis, borrowCsv, topLostCsv, hop2Csv] = await Promise.all([
     fetchJson(base, "/api/v1/overview?period=90d"),
     fetchJson(base, "/api/v1/overview?period=7d"),
@@ -230,7 +238,7 @@ async function runApiChecks(base) {
   check("api overview returns data quality", Array.isArray(overview.dataQuality) && overview.dataQuality.length >= snapshot.dataQuality.length);
   check("api overview includes production data quality when sqlite is active", !sqliteArg || overview.dataQuality.some((item) => item.source === "SQLite Application Store"));
   check("api snapshot supports 30d", snapshot30d.period === "30d" && snapshot30d.periodStart !== snapshot30d.periodEnd);
-  check("api period views are real snapshots", [snapshot7d, snapshot30d, overview30d].every((item) => item.dataQuality.some((quality) => quality.source === "Period View" && quality.status === "complete")) && ![snapshot7d, snapshot30d, overview30d].some((item) => item.dataQuality.some((quality) => quality.source === "Derived Period View")));
+  check("api period views are real snapshots", [snapshot7d, snapshot30d].every((item) => item.dataQuality.some((quality) => quality.source === "Period View" && quality.status === "complete")) && ![snapshot7d, snapshot30d, overview30d].some((item) => item.dataQuality.some((quality) => quality.source === "Derived Period View")));
   check("api 7d market comparison is not scaled from 90d", market7d.period === "7d" && Number.isFinite(market7d.justlend?.tvlChangePct) && Number.isFinite(market90d.justlend?.tvlChangePct) && Math.abs(market7d.justlend.tvlChangePct - market90d.justlend.tvlChangePct * 7 / 90) > 0.05);
   check("api 30d top current returns rows after runtime filters", topCurrent30d.items?.length > 0 && topCurrent30d.items?.length <= 20);
   check("api 7d top lost returns rows after runtime filters", topLost7d.items?.length > 0 && topLost7d.items?.length <= 20);
@@ -250,27 +258,57 @@ async function runApiChecks(base) {
   check("api top lost csv exports", topLostCsv.includes("rank,address") && topLostCsv.includes("unreturned_outflow_usd"));
   check("api hop2 analysis csv exports", hop2Csv.includes("source_address") && hop2Csv.includes("hop2_attribution"));
 
+  const savedCookie = apiAuthCookie;
+  apiAuthCookie = "";
   const unauthSettings = await fetch(`${base}/api/v1/settings/thresholds`);
-  check("api settings read requires admin login", unauthSettings.status === 401);
+  check("api settings read requires dashboard login", unauthSettings.status === 401);
 
   const unauthPatch = await fetch(`${base}/api/v1/settings/thresholds/borrow_demand_decline_pct`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ value: -5, reason: "verify readonly gate" })
   });
-  check("api settings write requires admin login", unauthPatch.status === 401);
+  check("api settings write requires dashboard login", unauthPatch.status === 401);
+  apiAuthCookie = savedCookie;
 }
 
 async function fetchJson(base, route) {
-  const response = await fetch(`${base}${route}`);
+  const response = await authedFetch(`${base}${route}`);
   if (!response.ok) throw new Error(`${route} returned ${response.status}`);
   return response.json();
 }
 
 async function fetchText(base, route) {
-  const response = await fetch(`${base}${route}`);
+  const response = await authedFetch(`${base}${route}`);
   if (!response.ok) throw new Error(`${route} returned ${response.status}`);
   return response.text();
+}
+
+async function authedFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(apiAuthCookie ? { cookie: apiAuthCookie } : {})
+    }
+  });
+}
+
+async function loginApi(base) {
+  const username = process.env.VERIFY_DASHBOARD_USERNAME || process.env.DASHBOARD_USERNAME || process.env.ADMIN_USERNAME || "admin";
+  const password = process.env.VERIFY_DASHBOARD_PASSWORD || process.env.DASHBOARD_PASSWORD || process.env.ADMIN_PASSWORD || "";
+  if (!password) throw new Error("API verification requires DASHBOARD_PASSWORD or ADMIN_PASSWORD in the environment.");
+  const response = await fetch(`${base}/api/v1/auth/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`auth login failed: ${payload.error || response.status}`);
+  const cookie = response.headers.get("set-cookie");
+  if (!cookie) throw new Error("auth login did not return a session cookie");
+  apiAuthCookie = cookie.split(";")[0];
+  check("api dashboard login succeeds", payload.authenticated === true && Boolean(apiAuthCookie));
 }
 
 function sqliteExcludedInternalAddresses(dbPath) {

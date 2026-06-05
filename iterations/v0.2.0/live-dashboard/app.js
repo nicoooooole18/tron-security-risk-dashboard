@@ -94,7 +94,7 @@ function isAdmin() {
 }
 
 function updateAuthChrome() {
-  els.roleBadge.textContent = isAdmin() ? "Admin" : "Public";
+  els.roleBadge.textContent = isAdmin() ? "Signed in" : "Locked";
   els.roleBadge.classList.toggle("admin", isAdmin());
   els.roleBadge.classList.toggle("readonly", !isAdmin());
 }
@@ -740,11 +740,11 @@ function renderSettings(data) {
   const config = data.config;
   const disabledAttr = isAdmin() ? "" : "disabled";
   updateAuthChrome();
-  els.thresholdRolePill.textContent = isAdmin() ? "Admin" : "Login Required";
+  els.thresholdRolePill.textContent = isAdmin() ? "Signed in" : "Login Required";
   els.thresholdRolePill.className = `pill ${isAdmin() ? "green" : "muted"}`;
   els.permissionNote.textContent = isAdmin()
-    ? "当前角色可调整阈值，修改写入 SQLite，并立即影响当前视图。"
-    : "Settings 需要 admin 登录后查看和修改。公开看板不需要登录。";
+    ? "当前账号可查看看板、导出 CSV、调整阈值和内部地址；修改写入 SQLite，并立即影响当前视图。"
+    : "看板和 Settings 均需要登录后查看。";
 
   els.thresholdRows.innerHTML = Object.values(thresholds).map((item) => `
     <div class="threshold-row" data-threshold="${escapeHtml(item.key)}">
@@ -758,7 +758,7 @@ function renderSettings(data) {
       </label>
       <label>
         修改原因
-        <input type="text" placeholder="${isAdmin() ? "必填" : "只读不可修改"}" data-threshold-reason="${escapeHtml(item.key)}" ${item.enabled && isAdmin() ? "" : "disabled"} />
+        <input type="text" placeholder="${isAdmin() ? "必填" : "未登录不可修改"}" data-threshold-reason="${escapeHtml(item.key)}" ${item.enabled && isAdmin() ? "" : "disabled"} />
       </label>
     </div>
   `).join("");
@@ -998,8 +998,8 @@ async function refreshAuthSession() {
   return authState;
 }
 
-function showAuthModal() {
-  pendingSettingsOpen = true;
+function showAuthModal(forSettings = false) {
+  pendingSettingsOpen = Boolean(forSettings);
   els.authError.textContent = "";
   els.authPassword.value = "";
   els.authModal.hidden = false;
@@ -1099,7 +1099,7 @@ function periodizedSubtitle(page) {
 async function setPage(page) {
   if (page === "settings") {
     if (!isAdmin()) {
-      showAuthModal();
+      showAuthModal(true);
       return;
     }
     if (!settingsLoaded) {
@@ -1140,6 +1140,10 @@ function setSettingsTab(tab) {
 }
 
 async function loadSnapshot(period = activePeriod) {
+  if (!isAdmin()) {
+    showAuthModal(false);
+    throw new Error("dashboard login required");
+  }
   activePeriod = period;
   const [snapshotResponse, overviewResponse] = await Promise.all([
     fetch(`/api/snapshot?period=${encodeURIComponent(period)}`, { cache: "no-store" }),
@@ -1217,10 +1221,12 @@ els.authForm?.addEventListener("submit", async (event) => {
     };
     updateAuthChrome();
     hideAuthModal();
-    showToast("Admin 已登录");
+    showToast("已登录");
     if (pendingSettingsOpen) {
       pendingSettingsOpen = false;
       await setPage("settings");
+    } else {
+      await loadSnapshot(activePeriod);
     }
   } catch (error) {
     els.authError.textContent = error.message;
@@ -1240,7 +1246,7 @@ els.internalAddressForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     if (!isAdmin()) {
-      showToast("只读角色不能修改配置");
+      showToast("未登录不能修改配置");
       return;
     }
     const reason = els.internalReasonInput.value.trim();
@@ -1268,7 +1274,7 @@ els.internalImportForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     if (!isAdmin()) {
-      showToast("只读角色不能修改配置");
+      showToast("未登录不能修改配置");
       return;
     }
     const reason = els.internalImportReason.value.trim();
@@ -1286,12 +1292,17 @@ els.internalImportForm.addEventListener("submit", async (event) => {
   }
 });
 
-loadSnapshot().catch((error) => {
-  els.headline.textContent = "数据读取失败";
-  els.dataMode.textContent = error.message;
-  showToast("数据读取失败");
-});
-
-refreshAuthSession().catch(() => {
-  updateAuthChrome();
-});
+refreshAuthSession()
+  .then((session) => {
+    if (session.authenticated) return loadSnapshot();
+    els.headline.textContent = "请先登录";
+    els.dataMode.textContent = "LOCKED";
+    showAuthModal(false);
+    return null;
+  })
+  .catch((error) => {
+    els.headline.textContent = "请先登录";
+    els.dataMode.textContent = error.message;
+    updateAuthChrome();
+    showAuthModal(false);
+  });

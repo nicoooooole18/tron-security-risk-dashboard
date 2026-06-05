@@ -13,10 +13,10 @@ const CONFIG_PATH = path.join(ROOT, "config.json");
 const SNAPSHOT_PATH = path.join(ROOT, "data/daily-snapshot.json");
 const PRODUCTION_PATHS = productionPaths();
 const STORE = new SQLiteStore(PRODUCTION_PATHS.sqliteDbPath);
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+const DASHBOARD_USERNAME = process.env.DASHBOARD_USERNAME || process.env.ADMIN_USERNAME || "admin";
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || process.env.ADMIN_PASSWORD || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
-const AUTH_COOKIE = "jl_admin_session";
+const AUTH_COOKIE = "jl_dashboard_session";
 const SESSION_TTL_MS = Number(process.env.ADMIN_SESSION_TTL_HOURS || 12) * 60 * 60 * 1000;
 
 let runtimeThresholds = null;
@@ -120,7 +120,7 @@ function clearSessionCookie() {
   return `${AUTH_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
 }
 
-function getAdminSession(req) {
+function getDashboardSession(req) {
   if (!SESSION_SECRET) return null;
   const token = parseCookies(req)[AUTH_COOKIE];
   if (!token) return null;
@@ -131,17 +131,17 @@ function getAdminSession(req) {
   if (!constantTimeEqual(signature, authSignature(payload))) return null;
   const expiresAt = Number(expiresAtText);
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
-  if (username !== ADMIN_USERNAME) return null;
+  if (username !== DASHBOARD_USERNAME) return null;
   return { username, expiresAt };
 }
 
-function isAdminAuthenticated(req) {
-  return Boolean(getAdminSession(req));
+function isDashboardAuthenticated(req) {
+  return Boolean(getDashboardSession(req));
 }
 
-function requireAdmin(req, res) {
-  if (!isAdminAuthenticated(req)) {
-    sendJson(res, 401, { error: "admin login required" });
+function requireDashboardLogin(req, res) {
+  if (!isDashboardAuthenticated(req)) {
+    sendJson(res, 401, { error: "dashboard login required" });
     return false;
   }
   return true;
@@ -149,7 +149,7 @@ function requireAdmin(req, res) {
 
 async function serveAuthApi(req, res, url) {
   if (url.pathname === "/api/v1/auth/session" && req.method === "GET") {
-    const session = getAdminSession(req);
+    const session = getDashboardSession(req);
     sendJson(res, 200, {
       authenticated: Boolean(session),
       username: session?.username || null
@@ -158,19 +158,19 @@ async function serveAuthApi(req, res, url) {
   }
 
   if (url.pathname === "/api/v1/auth/login" && req.method === "POST") {
-    if (!ADMIN_PASSWORD || !SESSION_SECRET) {
-      sendJson(res, 503, { error: "admin password is not configured" });
+    if (!DASHBOARD_PASSWORD || !SESSION_SECRET) {
+      sendJson(res, 503, { error: "dashboard password is not configured" });
       return true;
     }
     const body = await readRequestBody(req);
     const username = String(body.username || "");
     const password = String(body.password || "");
-    if (!constantTimeEqual(username, ADMIN_USERNAME) || !constantTimeEqual(password, ADMIN_PASSWORD)) {
-      sendJson(res, 401, { error: "invalid admin credentials" });
+    if (!constantTimeEqual(username, DASHBOARD_USERNAME) || !constantTimeEqual(password, DASHBOARD_PASSWORD)) {
+      sendJson(res, 401, { error: "invalid dashboard credentials" });
       return true;
     }
-    sendJsonWithHeaders(res, 200, { authenticated: true, username: ADMIN_USERNAME }, {
-      "set-cookie": createSessionCookie(ADMIN_USERNAME)
+    sendJsonWithHeaders(res, 200, { authenticated: true, username: DASHBOARD_USERNAME }, {
+      "set-cookie": createSessionCookie(DASHBOARD_USERNAME)
     });
     return true;
   }
@@ -1113,13 +1113,13 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/internal-addresses" && req.method === "GET") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     sendJson(res, 200, { items: internalAddresses });
     return true;
   }
 
   if (route === "/api/v1/settings/internal-addresses" && req.method === "POST") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     const body = await readRequestBody(req);
     if (!requireReason(body, res)) return true;
     const item = normalizeInternalAddressEntry(body);
@@ -1152,7 +1152,7 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/internal-addresses/import" && req.method === "POST") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     const body = await readRequestBody(req);
     if (!requireReason(body, res)) return true;
     const entries = parseInternalAddressImport(body);
@@ -1192,7 +1192,7 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route.startsWith("/api/v1/settings/internal-addresses/") && req.method === "PATCH") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     const address = decodeURIComponent(route.split("/").pop());
     const body = await readRequestBody(req);
     if (!requireReason(body, res)) return true;
@@ -1224,20 +1224,20 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/internal-addresses/change-log") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     const persistedLog = await STORE.readInternalAddressChangeLog().catch(() => []);
     sendJson(res, 200, { items: [...persistedLog, ...runtimeInternalAddressChangeLog] });
     return true;
   }
 
   if (route === "/api/v1/settings/thresholds" && req.method === "GET") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     sendJson(res, 200, { items: thresholds });
     return true;
   }
 
   if (route.startsWith("/api/v1/settings/thresholds/") && req.method === "PATCH") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     const key = decodeURIComponent(route.split("/").pop());
     const body = await readRequestBody(req);
     if (!body.reason || !String(body.reason).trim()) {
@@ -1269,7 +1269,7 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/thresholds/change-log") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     const persistedLog = await STORE.readThresholdChangeLog().catch(() => []);
     sendJson(res, 200, {
       items: [
@@ -1291,19 +1291,19 @@ async function serveV1Api(req, res, url) {
   }
 
   if (route === "/api/v1/settings/data-sources") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     sendJson(res, 200, { items: config.dataSources });
     return true;
   }
 
   if (route === "/api/v1/settings/asset-scope") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     sendJson(res, 200, { items: config.assets });
     return true;
   }
 
   if (route === "/api/v1/settings/attribution-rules") {
-    if (!requireAdmin(req, res)) return true;
+    if (!requireDashboardLogin(req, res)) return true;
     sendJson(res, 200, config.attributionRules);
     return true;
   }
@@ -1340,23 +1340,26 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
-    if (url.pathname === "/api/config") {
-      sendJson(res, 200, await readJson(CONFIG_PATH));
-      return;
-    }
-
-    if (url.pathname === "/api/snapshot") {
-      sendJson(res, 200, await getSnapshot(url.searchParams.get("period")));
-      return;
-    }
-
     if (url.pathname.startsWith("/api/v1/auth/")) {
       const handled = await serveAuthApi(req, res, url);
       if (!handled) sendJson(res, 404, { error: "Auth route not found" });
       return;
     }
 
+    if (url.pathname === "/api/config") {
+      if (!requireDashboardLogin(req, res)) return;
+      sendJson(res, 200, await readJson(CONFIG_PATH));
+      return;
+    }
+
+    if (url.pathname === "/api/snapshot") {
+      if (!requireDashboardLogin(req, res)) return;
+      sendJson(res, 200, await getSnapshot(url.searchParams.get("period")));
+      return;
+    }
+
     if (url.pathname.startsWith("/api/v1/")) {
+      if (!requireDashboardLogin(req, res)) return;
       const handled = await serveV1Api(req, res, url);
       if (!handled) sendJson(res, 404, { error: "API route not found" });
       return;

@@ -25,13 +25,13 @@ Open:
 http://127.0.0.1:8790
 ```
 
-Public analytical view:
+Open the dashboard:
 
 ```text
 http://127.0.0.1:8790/
 ```
 
-Settings / Data Config prompts for the admin password configured by environment variables.
+The dashboard, data APIs, CSV export, and Settings / Data Config require the single dashboard account configured by environment variables.
 
 ## Production Data Mode
 
@@ -188,7 +188,7 @@ External refresh is off by default. Set `EXTERNAL_FETCH_ENABLED=true` to try DeF
 - Hop / Round Trip chain paths can be enriched from TronScan or TronGrid for Top20 Lost only.
 - Borrow Demand asset metrics are persisted to `fact_asset_daily_metrics`.
 - Threshold changes update the current view and are recorded in the SQLite threshold change log when the store is available.
-- Admin login protects Settings / Data Config and every Settings read/write API. Public analytical pages remain viewable without login.
+- Dashboard login protects every analytical page, data API, CSV export, and Settings / Data Config. Static HTML/JS can load, but data is not returned until login succeeds.
 
 ## API
 
@@ -230,7 +230,7 @@ Auth endpoints:
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 
-Settings endpoints require an admin session cookie. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `SESSION_SECRET` through environment variables. Unauthenticated Settings requests return `401`.
+All dashboard data endpoints require a session cookie. Configure `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD`, and `SESSION_SECRET` through environment variables. `ADMIN_USERNAME` and `ADMIN_PASSWORD` remain as backward-compatible fallbacks when `DASHBOARD_*` is unset. Unauthenticated data, CSV, and Settings requests return `401`.
 
 Settings writes persist to SQLite when the store is available. Runtime memory remains as a fallback.
 

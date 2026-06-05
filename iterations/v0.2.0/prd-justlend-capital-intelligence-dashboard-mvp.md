@@ -56,7 +56,7 @@ JustLend 需要一个资金流向分析看板，用于在 TVL、Supply、Borrow 
 ### 3.3 数据 / 管理员调整判断阈值
 
 1. 用户点击 Settings / Data Config。
-2. 系统要求 Admin 登录。
+2. 系统要求 Dashboard 登录。
 3. 管理员进入 Thresholds。
 4. 管理员调整阈值并填写修改原因。
 5. 系统立即影响当前视图判断，但不改写历史异常列表。
@@ -101,7 +101,7 @@ JustLend 需要一个资金流向分析看板，用于在 TVL、Supply、Borrow 
 | 区域 | 内容 |
 |---|---|
 | 左侧导航 | Overview、Market Comparison、Borrow Demand、Capital Outflow、Settings / Data Config |
-| 顶部操作区 | Admin、导出 CSV、视图周期、Data Through、Snapshot Built |
+| 顶部操作区 | 登录状态、导出 CSV、视图周期、Data Through、Snapshot Built |
 | 视图周期 | 90D / 30D / 7D |
 
 周期切换后，Overview、Market Comparison、Borrow Demand、Capital Outflow 的 KPI、趋势、表格和异常信号必须跟随当前周期变化。
@@ -237,9 +237,9 @@ BR-027：二跳分析即使命中 CEX、协议或 TRON Eco 标签，也只能作
 
 BR-026：阈值和内部地址修改必须填写修改原因并记录修改日志。
 
-BR-027：Settings / Data Config 和 Settings API 必须要求 Admin 登录。
+BR-027：所有看板数据 API、CSV 导出、Settings / Data Config 和 Settings API 必须要求 Dashboard 登录。
 
-BR-028：分析页对未登录用户可读，CSV 导出仅允许导出分析视图，不得导出 Settings、内部地址配置、阈值修改日志。
+BR-028：未登录用户只能看到登录入口，不得读取看板数据、链上路径、Top20 地址、CSV 导出、Settings、内部地址配置和阈值修改日志。
 
 ## 7. 数据口径与 Data Quality
 
@@ -290,8 +290,8 @@ BR-028：分析页对未登录用户可读，CSV 导出仅允许导出分析视�
 | 已回流 | 已回流 | Returned |
 | 无流出 | 无流出 | No outflow |
 | 导出按钮 | 导出 CSV | Export CSV |
-| Admin 登录 | 请输入管理员密码 | Enter admin password |
-| Settings 未登录 | Settings 需要 Admin 登录后查看和修改。 | Admin login is required to view and edit Settings. |
+| Dashboard 登录 | 请输入看板账号和密码 | Enter dashboard username and password |
+| 未登录 | 看板数据、链上路径和 CSV 导出需要登录后查看。 | Dashboard data, chain paths, and CSV export require login. |
 | 竞品 TVL 中位数说明 | Aave、Morpho、Spark、Compound、Venus 在所选周期内 TVL Change 的中位数，不是 Market Share。 | Median TVL Change of Aave, Morpho, Spark, Compound, and Venus in the selected period; not Market Share. |
 | 相对差值说明 | 相对差值 = JustLend TVL Change - 竞品 TVL Change 中位数。 | Relative difference = JustLend TVL Change - competitor median TVL Change. |
 | Data Through 说明 | 当前快照实际覆盖到的最后一个完整 UTC 日。 | Last complete UTC date covered by the current snapshot. |
@@ -309,7 +309,8 @@ BR-028：分析页对未登录用户可读，CSV 导出仅允许导出分析视�
 | 只发现 CEX-HTX 转入记录 | 该地址曾从 CEX-HTX 收款 | 不作为流出目的地 | 不展示为“流向 HTX” |
 | Borrow 数据缺失 | 竞品 Borrow 源不可用 | Borrow 中位数不参与计算 | 显示 TODO / Data unavailable |
 | Arkham 未启用 | 未配置 Arkham API key 或开关关闭 | 不请求 Arkham | Data Quality 显示 Arkham disabled |
-| 非管理员访问 Settings | 未登录访问 Settings | 阻止查看和修改 | 显示 Admin 登录提示 |
+| 未登录访问看板数据 | 未登录请求数据 API 或 CSV | 返回 401 | 前端显示 Dashboard 登录提示 |
+| 未登录访问 Settings | 未登录访问 Settings | 阻止查看和修改 | 显示 Dashboard 登录提示 |
 | CSV 导出无数据 | 当前视图数据为空 | 导出空结果或提示无数据 | 按页面状态展示空态 |
 
 ## 10. 埋点与指标
@@ -357,7 +358,7 @@ BR-028：分析页对未登录用户可读，CSV 导出仅允许导出分析视�
 | 协议内部地址 | jToken / market 不得作为外部资金流出强归因 |
 | 地址画像标签 | `j* holder / participant` 不得作为外部目的地强归因 |
 | Data Quality | 展示地址库、TronScan、Arkham 命中率和协议内部目的地跳过数量 |
-| 权限 | 分析页公开只读；Settings 需要 Admin 登录 |
+| 权限 | 看板数据、CSV 导出和 Settings 均需要 Dashboard 登录 |
 | CSV 导出 | 支持分析视图导出，不导出 Settings 和审计数据 |
 | UI 文案 | 本 PRD「UI 文案规格」中英文文案均可在页面或 tooltip 中对应 |
 

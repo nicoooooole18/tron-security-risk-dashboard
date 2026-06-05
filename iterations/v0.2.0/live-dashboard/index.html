@@ -37,7 +37,7 @@
           <p id="pageSubtitle">90D 资金变化、主要异常信号和大户未回流摘要。</p>
         </div>
         <div class="topbar-meta">
-          <span class="role-badge readonly" id="roleBadge">Public</span>
+          <span class="role-badge readonly" id="roleBadge">Locked</span>
           <button class="btn secondary" id="csvExportBtn" type="button">导出 CSV</button>
           <label class="select-label">
             视图周期
@@ -217,7 +217,7 @@
                 <h2>Thresholds</h2>
                 <p>修改后当前视图立即重算；必须填写修改原因。</p>
               </div>
-              <span class="pill green" id="thresholdRolePill">Admin</span>
+              <span class="pill green" id="thresholdRolePill">Signed in</span>
             </div>
             <div class="permission-note" id="permissionNote">当前角色可调整阈值，修改写入 SQLite，并立即影响当前视图。</div>
             <div id="thresholdRows" class="threshold-list"></div>
@@ -338,9 +338,9 @@
   <div class="auth-modal" id="authModal" hidden>
     <form class="auth-card" id="authForm">
       <div>
-        <span class="section-kicker">Admin Login</span>
-        <h2>进入数据与口径配置</h2>
-        <p>公开看板无需登录；修改阈值和内部地址前需要 admin 密码。</p>
+        <span class="section-kicker">Dashboard Login</span>
+        <h2>进入 JustLend 资金流向看板</h2>
+        <p>看板数据、链上路径和 CSV 导出需要登录后查看。</p>
       </div>
       <label>
         账号
