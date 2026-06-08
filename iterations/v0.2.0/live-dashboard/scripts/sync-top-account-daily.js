@@ -52,7 +52,7 @@ async function run() {
   const accessToken = env("LABC_ACCESS_TOKEN");
   const outputDir = env("LOCAL_SOURCE_CSV_DIR", path.join(__dirname, "../data/source-csv"));
   const upload = env("UPLOAD_TO_VPS", "false") === "true";
-  const vpsTarget = env("VPS_SOURCE_CSV_TARGET", "openclaw@43.134.57.52:/home/openclaw/project/justlend-capital-data/source/");
+  const vpsTarget = env("VPS_SOURCE_CSV_TARGET", "nn@43.134.57.52:/home/nn/project/justlend-capital-data/source/");
   const sshKey = env("VPS_SSH_KEY", "/Users/lanyu/OpenClaw/openclaw2.pem");
   const sshPort = env("VPS_SSH_PORT", "6673");
 
@@ -73,13 +73,10 @@ async function run() {
   await fs.writeFile(outputFile, `\uFEFF${rowsToCsv(targetRows)}\n`, "utf8");
 
   if (upload) {
-    await execFileAsync("scp", [
-      "-i", sshKey,
-      "-P", sshPort,
-      "-o", "IdentitiesOnly=yes",
-      outputFile,
-      vpsTarget
-    ]);
+    const args = ["-P", sshPort];
+    if (sshKey) args.push("-i", sshKey);
+    args.push(outputFile, vpsTarget);
+    await execFileAsync("scp", args);
   }
 
   console.log(JSON.stringify({

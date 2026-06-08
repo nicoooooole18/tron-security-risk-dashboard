@@ -46,35 +46,55 @@ async function runCommand(command, args, options = {}) {
 }
 
 async function runRemote(command) {
-  const sshKey = env("VPS_SSH_KEY", "/Users/lanyu/OpenClaw/openclaw2.pem");
+  const sshKey = env("VPS_SSH_KEY", "");
   const sshPort = env("VPS_SSH_PORT", "6673");
-  const sshUser = env("VPS_SSH_USER", "openclaw");
+  const sshUser = env("VPS_SSH_USER", "nn");
   const sshHost = env("VPS_SSH_HOST", "43.134.57.52");
-  await runCommand("ssh", [
-    "-i", sshKey,
-    "-p", sshPort,
-    "-o", "IdentitiesOnly=yes",
-    `${sshUser}@${sshHost}`,
-    command
-  ]);
+  const args = ["-p", sshPort];
+  if (sshKey) args.push("-i", sshKey);
+  args.push(`${sshUser}@${sshHost}`, command);
+  await runCommand("ssh", args);
 }
 
 async function verifyPublicApi(targetDate) {
   const publicUrl = env("PUBLIC_DASHBOARD_URL", "http://43.134.57.52").replace(/\/$/, "");
-  const response = await fetch(`${publicUrl}/api/snapshot?period=90d`);
-  if (!response.ok) throw new Error(`Public snapshot API returned HTTP ${response.status}`);
-  const snapshot = await response.json();
-  if (snapshot.lastCompleteUtcDate !== targetDate) {
-    throw new Error(
-      `Public snapshot dataThrough mismatch: expected ${targetDate}, got ${snapshot.lastCompleteUtcDate || "empty"}`
-    );
+  const username = env("DASHBOARD_USERNAME", "");
+  const password = env("DASHBOARD_PASSWORD", "");
+  let lastError = null;
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    try {
+      const headers = {};
+      if (username && password) {
+        const loginResponse = await fetch(`${publicUrl}/api/v1/auth/login`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        if (!loginResponse.ok) throw new Error(`Public login API returned HTTP ${loginResponse.status}`);
+        const cookie = loginResponse.headers.get("set-cookie");
+        if (cookie) headers.cookie = cookie.split(";")[0];
+      }
+      const response = await fetch(`${publicUrl}/api/snapshot?period=90d`, { headers });
+      if (!response.ok) throw new Error(`Public snapshot API returned HTTP ${response.status}`);
+      const snapshot = await response.json();
+      if (snapshot.lastCompleteUtcDate !== targetDate) {
+        throw new Error(
+          `Public snapshot dataThrough mismatch: expected ${targetDate}, got ${snapshot.lastCompleteUtcDate || "empty"}`
+        );
+      }
+      console.log(JSON.stringify({
+        status: "verified",
+        publicUrl,
+        lastCompleteUtcDate: snapshot.lastCompleteUtcDate,
+        generatedAt: snapshot.generatedAt
+      }, null, 2));
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 6) await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
   }
-  console.log(JSON.stringify({
-    status: "verified",
-    publicUrl,
-    lastCompleteUtcDate: snapshot.lastCompleteUtcDate,
-    generatedAt: snapshot.generatedAt
-  }, null, 2));
+  throw lastError;
 }
 
 async function run() {
@@ -83,7 +103,7 @@ async function run() {
   const targetDate = env("TARGET_DATE", latestCompleteUtcDate());
   const dashboardDir = env(
     "VPS_DASHBOARD_DIR",
-    "/home/openclaw/project/justlend-capital-dashboard/iterations/v0.2.0/live-dashboard"
+    "/home/nn/project/justlend-capital-dashboard/iterations/v0.2.0/live-dashboard"
   );
   const restartService = env("RESTART_VPS_SERVICE", "true") === "true";
   const verifyApi = env("VERIFY_PUBLIC_API", "true") === "true";
