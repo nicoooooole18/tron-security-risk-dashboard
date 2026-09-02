@@ -1122,17 +1122,26 @@ async function getTrc20Transfers({ tokenConfig, relatedAddress, limit = 50, star
 async function getRecentInflowTransfers({ tokenConfig, relatedAddress, sinceTs, pageSize = 200, maxPages = 30 }) {
   const transfers = [];
   let scannedRows = 0;
+  let pagesScanned = 0;
+  let nextStart = 0;
+  let lastPageSize = 0;
   let reachedWindowStart = false;
+  let exhausted = false;
 
   for (let page = 0; page < maxPages; page += 1) {
     const rows = await getTrc20Transfers({
       tokenConfig,
       relatedAddress,
       limit: pageSize,
-      start: page * pageSize
+      start: nextStart
     });
+    pagesScanned += 1;
+    lastPageSize = rows.length;
     scannedRows += rows.length;
-    if (!rows.length) break;
+    if (!rows.length) {
+      exhausted = true;
+      break;
+    }
 
     for (const row of rows) {
       const blockTs = Number(row.blockTs || 0);
@@ -1145,15 +1154,21 @@ async function getRecentInflowTransfers({ tokenConfig, relatedAddress, sinceTs, 
       }
     }
 
+    nextStart += rows.length;
     const oldestTs = Math.min(...rows.map((row) => Number(row.blockTs || Date.now())));
-    if (reachedWindowStart || rows.length < pageSize || oldestTs < sinceTs) break;
+    if (oldestTs < sinceTs) reachedWindowStart = true;
+    if (reachedWindowStart) break;
   }
 
   return {
     transfers,
     scannedRows,
+    pagesScanned,
+    nextStart,
+    lastPageSize,
     reachedWindowStart,
-    limitReached: !reachedWindowStart && scannedRows >= pageSize * maxPages
+    exhausted,
+    limitReached: !reachedWindowStart && !exhausted && pagesScanned >= maxPages
   };
 }
 
@@ -1371,7 +1386,11 @@ async function buildSnapshot() {
       inflowLookbackDays: inflowWindow.lookbackDays,
       inflowScan: {
         scannedRows: transferScan.scannedRows,
+        pagesScanned: transferScan.pagesScanned,
+        nextStart: transferScan.nextStart,
+        lastPageSize: transferScan.lastPageSize,
         reachedWindowStart: transferScan.reachedWindowStart,
+        exhausted: transferScan.exhausted,
         limitReached: transferScan.limitReached
       }
     });

@@ -29,7 +29,7 @@ PORT=8787
 - 地址风险监控：
   - 协议地址监控：默认 tab，检查 JustLend 自身地址。
   - 用户地址监控：检查 JustLend 用户地址库与 USDT / USDC 黑名单交集。
-- 链上流入事件：按 30 天窗口分页读取 watched address 的 USDT 流入，默认展示最近 100 条，支持仅看命中。
+- 链上流入事件：按 30 天窗口分页读取已启用 `trackTransfers=true` 的 watched address USDT 流入，默认展示最近 100 条，支持按日期和命中状态筛选。
 - HTX SP 路径命中：仅展示链上证据完整的 HTX -> 钱包 / 平台 -> JustLend 命中路径。
 - 配置状态：页面底部按钮打开弹窗，查看 HTX seed、平台中转 seed、TronGrid Key 状态、监控地址数和 HTX 地址标签明细。
 
@@ -53,7 +53,7 @@ PORT=8787
 - `/api/snapshot` 返回最近一次缓存快照。
 - 刷新按钮只触发后台刷新，不阻塞页面。
 - 默认每 300 秒后台刷新一次，可通过 `dashboard.snapshotRefreshSeconds` 或 `SNAPSHOT_REFRESH_SECONDS` 调整。
-- 流入窗口默认 30 天，可通过 `dashboard.inflowLookbackDays` 或 `INFLOW_LOOKBACK_DAYS` 调整；页面展示上限默认 100 条，可通过 `dashboard.eventDisplayLimit` 或 `EVENT_DISPLAY_LIMIT` 调整。
+- 流入窗口默认 30 天，可通过 `dashboard.inflowLookbackDays` 或 `INFLOW_LOOKBACK_DAYS` 调整；分页按接口实际返回条数推进 offset，页面展示上限默认 100 条，可通过 `dashboard.eventDisplayLimit` 或 `EVENT_DISPLAY_LIMIT` 调整。
 - 运行时快照写入 `data/live-snapshot-cache.json`，该文件已忽略，不提交。
 
 ## 配置说明
@@ -68,7 +68,7 @@ PORT=8787
 - `riskSources.intermediatePlatformAddresses`：手工补充其他平台中转地址。
 - `dashboard.riskThresholdUsd`：大额观察阈值，只做辅助标签。
 - `dashboard.inflowLookbackDays`：链上流入统计窗口，当前为 30 天。
-- `dashboard.inflowPageSize` / `dashboard.inflowMaxPages`：TronScan 分页扫描保护上限。
+- `dashboard.inflowPageSize` / `dashboard.inflowMaxPages`：TronScan 分页扫描保护上限；如果接口实际返回条数小于请求条数，系统按实际返回条数继续翻页，直到到达窗口起点、空页或页数上限。
 - `dashboard.eventDisplayLimit`：链上流入事件表默认展示上限，当前为 100 条。
 
 ## 安全说明

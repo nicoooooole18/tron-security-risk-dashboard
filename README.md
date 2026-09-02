@@ -16,7 +16,7 @@ iterations/v0.1.0/live-dashboard
 - 用户地址监控：维护 JustLend 地址库，从多个 jToken Transfer 事件增量发现用户/参与地址。
 - 第三方黑名单：读取 TRON USDT `getBlackListStatus(address)` 与 USDC `isBlacklisted(address)`。
 - HTX SP 识别：复用既有 CEX 地址库，识别 HTX -> 钱包 -> JustLend、HTX -> 平台 -> 钱包 -> JustLend 风险路径。
-- 30 天流入覆盖：链上流入事件上方固定展示最近 30 天每日覆盖，包含 0 流入日期；点击日期可筛选下方事件明细。
+- 30 天流入覆盖：链上流入事件上方固定展示最近 30 天每日覆盖，包含 0 流入日期；当前仅统计启用 `trackTransfers=true` 的协议地址，点击日期可筛选下方事件明细。
 - 后台快照缓存：页面读取最近一次缓存快照，后台定时刷新，避免前端刷新阻塞链上全量扫描。
 - 风险下线友好：HTX 专题作为第三方冻结风险分支，可在风险解除后从配置中下线。
 
@@ -59,6 +59,6 @@ node server.js
 
 - 协议地址：当前覆盖 31 个 JustLend 协议地址，包括核心合约、治理/Oracle 合约与 jToken market。
 - 用户地址库：当前由多个 jToken 的链上 Transfer 事件增量维护，作为共享组件落地为 `shared/address-book/data/justlend-address-book.json`。
-- 链上流入：默认覆盖最近 30 天；每日覆盖按扫描窗口聚合，事件明细受展示上限控制，用于排查具体交易。
+- 链上流入：默认覆盖最近 30 天；每日覆盖按扫描窗口聚合，分页按接口实际返回条数推进 offset，事件明细受展示上限控制，用于排查具体交易。
 - 快照缓存：运行时快照写入 `data/live-snapshot-cache.json`，该文件不提交。
 - CEX 地址库：HTX 和其他平台地址优先复用既有 CEX 地址库，手工 seed 作为补充。

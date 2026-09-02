@@ -371,8 +371,8 @@ function render(snapshot) {
   els.clearDateFilterBtn.classList.toggle("hidden", !selectedEventDate);
   els.clearDateFilterBtn.textContent = selectedEventDate ? `全部日期 · 当前 ${selectedEventDate}` : "全部日期";
   els.eventWindowText.textContent = scanMeta.inflowLookbackDays
-    ? `覆盖最近 ${scanMeta.inflowLookbackDays} 天；上方每日覆盖包含无流入日期，下方明细展示最近 ${snapshot.events.length} 条，可按日期或命中状态筛选。${scanMeta.inflowLimitReached ? "已达到分页扫描上限，建议提高上限或接入后台任务。" : ""}`
-    : "按近期窗口读取 watched address 流入。";
+    ? `覆盖最近 ${scanMeta.inflowLookbackDays} 天；仅统计已启用流入扫描的协议地址，上方每日覆盖包含无流入日期，下方明细展示最近 ${snapshot.events.length} 条。${scanMeta.inflowLimitReached ? "已达到分页扫描上限，当前结果不是完整 30 天，建议提高上限或接入后台任务。" : ""}`
+    : "按近期窗口读取已启用流入扫描的协议地址。";
   els.eventCount.textContent = showOnlyHits || selectedEventDate
     ? `${visibleEvents.length} / ${snapshot.events.length} 条`
     : totalInflowEventCount > snapshot.events.length
