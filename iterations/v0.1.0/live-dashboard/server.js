@@ -51,9 +51,7 @@ const TRONGRID_API_KEY = [...new Set(TRONGRID_API_KEYS)][0] || "";
 const TRONSCAN_API_KEYS = [
   ...listFromEnv("TRONSCAN_API_KEYS"),
   process.env.TRONSCAN_API_KEY,
-  process.env.TRONSCAN_PRO_API_KEY,
-  process.env.TRON_PRO_API_KEY,
-  process.env.TRONGRID_API_KEY
+  process.env.TRONSCAN_PRO_API_KEY
 ].filter(Boolean);
 const TRONSCAN_API_KEY = [...new Set(TRONSCAN_API_KEYS)][0] || "";
 const TRONSCAN_API_KEY_HEADER = process.env.TRONSCAN_API_KEY_HEADER || "TRON-PRO-API-KEY";
@@ -1114,8 +1112,14 @@ async function scanUserBlacklistIntersection(config, blacklistTokens) {
 }
 
 function normalizeTransfer(item, tokenConfig) {
-  const decimals = Number(item.tokenInfo?.tokenDecimal ?? tokenConfig.decimals ?? 6);
-  const amountRaw = Number(item.quant ?? item.amount ?? 0);
+  const decimals = Number(
+    item.tokenInfo?.tokenDecimal ??
+    item.tokenInfo?.decimals ??
+    item.token_info?.decimals ??
+    tokenConfig.decimals ??
+    6
+  );
+  const amountRaw = Number(item.quant ?? item.amount ?? item.value ?? 0);
   const amount = amountRaw / 10 ** decimals;
   return {
     txid: item.transaction_id || item.transactionId || item.hash || "",
@@ -1124,14 +1128,36 @@ function normalizeTransfer(item, tokenConfig) {
     to: item.to_address || item.to || "",
     contract: item.contract_address || item.contractAddress || tokenConfig.contract,
     amount,
-    amountRaw: String(item.quant ?? item.amount ?? ""),
-    token: item.tokenInfo?.tokenAbbr || tokenConfig.symbol,
+    amountRaw: String(item.quant ?? item.amount ?? item.value ?? ""),
+    token: item.tokenInfo?.tokenAbbr || item.tokenInfo?.symbol || item.token_info?.symbol || tokenConfig.symbol,
     confirmed: item.confirmed,
     raw: item
   };
 }
 
+async function getTronGridAccountTrc20Transfers({ tokenConfig, relatedAddress, limit = 200, fingerprint = "" }) {
+  const url = new URL(`/v1/accounts/${relatedAddress}/transactions/trc20`, TRONGRID_API_BASE);
+  url.searchParams.set("only_confirmed", "true");
+  url.searchParams.set("order_by", "block_timestamp,desc");
+  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("contract_address", tokenConfig.contract);
+  if (fingerprint) url.searchParams.set("fingerprint", fingerprint);
+
+  const json = await fetchJson(url.toString());
+  const rows = Array.isArray(json.data) ? json.data : [];
+  return {
+    rows: rows.map((item) => normalizeTransfer(item, tokenConfig)),
+    fingerprint: json.meta?.fingerprint || "",
+    provider: "trongrid_account_trc20"
+  };
+}
+
 async function getTrc20Transfers({ tokenConfig, relatedAddress, limit = 50, start = 0 }) {
+  if (TRONGRID_API_KEY && start === 0) {
+    const result = await getTronGridAccountTrc20Transfers({ tokenConfig, relatedAddress, limit });
+    return result.rows;
+  }
+
   const url = new URL("https://apilist.tronscanapi.com/api/token_trc20/transfers");
   url.searchParams.set("limit", String(limit));
   url.searchParams.set("start", String(start));
@@ -1157,14 +1183,29 @@ async function getRecentInflowTransfers({ tokenConfig, relatedAddress, sinceTs, 
   let lastPageSize = 0;
   let reachedWindowStart = false;
   let exhausted = false;
+  let provider = TRONGRID_API_KEY ? "trongrid_account_trc20" : "tronscan_token_transfers";
+  let fingerprint = "";
 
   for (let page = 0; page < maxPages; page += 1) {
-    const rows = await getTrc20Transfers({
-      tokenConfig,
-      relatedAddress,
-      limit: pageSize,
-      start: nextStart
-    });
+    const pageResult = TRONGRID_API_KEY
+      ? await getTronGridAccountTrc20Transfers({
+        tokenConfig,
+        relatedAddress,
+        limit: pageSize,
+        fingerprint
+      })
+      : {
+        rows: await getTrc20Transfers({
+          tokenConfig,
+          relatedAddress,
+          limit: pageSize,
+          start: nextStart
+        }),
+        fingerprint: "",
+        provider: "tronscan_token_transfers"
+      };
+    const rows = pageResult.rows;
+    provider = pageResult.provider;
     pagesScanned += 1;
     lastPageSize = rows.length;
     scannedRows += rows.length;
@@ -1185,13 +1226,19 @@ async function getRecentInflowTransfers({ tokenConfig, relatedAddress, sinceTs, 
     }
 
     nextStart += rows.length;
+    fingerprint = pageResult.fingerprint || "";
     const oldestTs = Math.min(...rows.map((row) => Number(row.blockTs || Date.now())));
     if (oldestTs < sinceTs) reachedWindowStart = true;
     if (reachedWindowStart) break;
+    if (TRONGRID_API_KEY && !fingerprint) {
+      exhausted = true;
+      break;
+    }
   }
 
   return {
     transfers,
+    provider,
     scannedRows,
     pagesScanned,
     nextStart,
@@ -1415,6 +1462,7 @@ async function buildSnapshot() {
       recentInflowAmount: transfers.reduce((sum, transfer) => sum + transfer.amount, 0),
       inflowLookbackDays: inflowWindow.lookbackDays,
       inflowScan: {
+        provider: transferScan.provider,
         scannedRows: transferScan.scannedRows,
         pagesScanned: transferScan.pagesScanned,
         nextStart: transferScan.nextStart,
