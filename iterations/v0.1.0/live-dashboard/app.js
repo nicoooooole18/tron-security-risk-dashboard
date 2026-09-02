@@ -11,8 +11,10 @@ const els = {
   addressRows: document.getElementById("addressRows"),
   eventRows: document.getElementById("eventRows"),
   userRows: document.getElementById("userRows"),
+  htxSpRows: document.getElementById("htxSpRows"),
   watchedCount: document.getElementById("watchedCount"),
   eventCount: document.getElementById("eventCount"),
+  htxSpCount: document.getElementById("htxSpCount"),
   userIntersectionCount: document.getElementById("userIntersectionCount"),
   userPoolNotice: document.getElementById("userPoolNotice"),
   protocolTab: document.getElementById("protocolTab"),
@@ -24,6 +26,8 @@ const els = {
   configTronGrid: document.getElementById("configTronGrid"),
   configThreshold: document.getElementById("configThreshold"),
   configWatched: document.getElementById("configWatched"),
+  configHtxLabelCount: document.getElementById("configHtxLabelCount"),
+  configHtxRows: document.getElementById("configHtxRows"),
   configNotice: document.getElementById("configNotice"),
   configOpenBtn: document.getElementById("configOpenBtn"),
   configCloseBtn: document.getElementById("configCloseBtn"),
@@ -66,6 +70,16 @@ function formatAmount(value) {
 function shortAddress(address) {
   if (!address) return "--";
   return `${address.slice(0, 6)}...${address.slice(-6)}`;
+}
+
+function shortTxid(txid) {
+  if (!txid) return "--";
+  return `${txid.slice(0, 10)}...`;
+}
+
+function txLink(txid, label = shortTxid(txid)) {
+  if (!txid) return "--";
+  return `<a href="https://tronscan.org/#/transaction/${txid}" target="_blank" rel="noreferrer">${label}</a>`;
 }
 
 function pill(text, type = "muted") {
@@ -156,16 +170,29 @@ function setConfigAuthView(authenticated) {
 function renderAdminConfig(payload) {
   const configSummary = payload.configSummary || {};
   const addressBook = payload.addressBook || {};
+  const htxEntries = addressBook.htxEntries || [];
   const htxDetectionEnabled = payload.htxDetectionEnabled;
   els.configHtx.textContent = `${configSummary.htxSeedCount || 0} 个`;
   els.configPlatform.textContent = `${configSummary.platformSeedCount || 0} 个`;
   els.configTronGrid.textContent = configSummary.tronGridApiKeyConfigured ? "已配置" : "未配置";
   els.configThreshold.textContent = `${formatAmount(configSummary.riskThresholdUsd)} USDT`;
   els.configWatched.textContent = `${configSummary.watchedCount || 0} 个`;
+  els.configHtxLabelCount.textContent = `${htxEntries.length} 个`;
+  els.configHtxRows.innerHTML = htxEntries.length
+    ? htxEntries.map((item) => `
+      <tr>
+        <td>${item.label || "--"}<br><span class="label">${item.entity || "HTX"}</span></td>
+        <td class="address" title="${item.address}">${shortAddress(item.address)}</td>
+        <td>${item.type || "--"}</td>
+        <td>${item.confidence || "--"}</td>
+        <td>${item.source || "--"}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5">未读取到 HTX 地址标签。请检查 CEX 地址库路径或手工 seed 配置。</td></tr>`;
   if (addressBook.error) {
-    els.configNotice.textContent = `CEX 地址库读取失败：${addressBook.error}。当前仅使用 config.json 中的手工地址。`;
+    els.configNotice.textContent = `CEX 地址库读取失败：${addressBook.error}。已尝试路径：${(addressBook.attemptedPaths || [addressBook.path]).join(" / ")}。当前仅使用 config.json 中的手工地址。`;
   } else if (htxDetectionEnabled && addressBook.enabled) {
-    els.configNotice.textContent = `已复用 CEX 地址库：HTX ${addressBook.htxCount || 0} 个用于风险识别，其他平台 ${addressBook.platformCount || 0} 个仅作路径上下文；更新于 ${addressBook.updatedAt || "--"}。`;
+    els.configNotice.textContent = `已复用 CEX 地址库：HTX ${addressBook.htxCount || 0} 个用于风险识别，其他平台 ${addressBook.platformCount || 0} 个仅作路径上下文；路径 ${addressBook.path || "--"}；更新于 ${addressBook.updatedAt || "--"}。`;
   } else if (htxDetectionEnabled) {
     els.configNotice.textContent = "当前已通过 config.json 手工地址启用 HTX SP 路径识别。";
   } else {
@@ -237,6 +264,7 @@ function render(snapshot) {
   const userIntersection = snapshot.userIntersection || { results: [], hits: [], hitCount: 0, scannedCount: 0 };
   const statusLevel = snapshot.status.level;
   const visibleEvents = showOnlyHits ? snapshot.events.filter(isHitEvent) : snapshot.events;
+  const htxSpMatches = snapshot.htxSpMatches || [];
 
   els.statusTitle.textContent = statusLevel === "SYNCING"
     ? "数据同步中"
@@ -326,10 +354,34 @@ function render(snapshot) {
         <td>${formatAmount(item.amount)} ${item.token}${item.amountWatch ? `<br><span class="label">大额观察</span>` : ""}</td>
         <td class="address" title="${item.from}">${shortAddress(item.from)}</td>
         <td>${item.sp.tag}<br><span class="label">${item.reason}</span></td>
-        <td class="address">${item.txid ? `<a href="https://tronscan.org/#/transaction/${item.txid}" target="_blank" rel="noreferrer">${item.txid.slice(0, 10)}...</a>` : "--"}</td>
+        <td class="address">${txLink(item.txid)}</td>
       </tr>
     `).join("")
     : `<tr><td colspan="7">${showOnlyHits ? "当前没有命中 HTX SP 路径的流入。" : "当前未读取到 watched address 的近期 USDT 流入。"}</td></tr>`;
+
+  els.htxSpCount.textContent = `${htxSpMatches.length} 条`;
+  els.htxSpCount.className = `pill ${htxSpMatches.length ? "amber" : "green"}`;
+  els.htxSpRows.innerHTML = htxSpMatches.length
+    ? htxSpMatches.map((item) => `
+      <tr>
+        <td>${riskPill(item.level)}<br><span class="label">${item.path}</span></td>
+        <td>${item.sourceLabel || "--"}<br><span class="address">${shortAddress(item.htxAddress)}</span></td>
+        <td>
+          <span class="address" title="${item.walletAddress}">${shortAddress(item.walletAddress)}</span>
+          ${item.platformLabel ? `<br><span class="label">${item.platformLabel} ${shortAddress(item.platformAddress)}</span>` : ""}
+        </td>
+        <td>${item.market}<br><span class="label">${item.watchedName}</span></td>
+        <td>${formatAmount(item.amount)} ${item.token}</td>
+        <td>${item.delay || "--"}</td>
+        <td class="address">
+          HTX: ${txLink(item.htxOutTxid)}<br>
+          ${item.platformOutTxid ? `平台: ${txLink(item.platformOutTxid)}<br>` : ""}
+          JustLend: ${txLink(item.justlendTxid)}
+        </td>
+        <td>${item.reason || "--"}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="8">当前没有发现 HTX 流出后进入 JustLend 的 SP-1 / SP-2 命中路径。</td></tr>`;
 
   els.notes.innerHTML = snapshot.notes.map((item) => `<li>${item}</li>`).join("");
 }

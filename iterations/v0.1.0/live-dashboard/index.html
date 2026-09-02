@@ -141,6 +141,33 @@
 
     <section class="card">
       <div class="section-head">
+        <div>
+          <h2>HTX SP 路径命中</h2>
+          <p class="section-copy">仅展示链上证据完整的 HTX -> 钱包 / 平台 -> JustLend 路径。</p>
+        </div>
+        <span class="pill" id="htxSpCount">--</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>路径</th>
+              <th>HTX 标签</th>
+              <th>中转 / 投资地址</th>
+              <th>市场</th>
+              <th>金额</th>
+              <th>间隔</th>
+              <th>证据交易</th>
+              <th>判断</th>
+            </tr>
+          </thead>
+          <tbody id="htxSpRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
         <h2>说明</h2>
         <span class="pill muted">只读</span>
       </div>
@@ -154,7 +181,7 @@
   </main>
 
   <div class="modal-backdrop" id="configModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+    <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
       <div class="modal-head">
         <div>
           <h2 id="configModalTitle">配置状态</h2>
@@ -179,6 +206,26 @@
           <div><span>协议监控地址数</span><strong id="configWatched">--</strong></div>
         </div>
         <div class="notice" id="configNotice"></div>
+        <div class="admin-subsection">
+          <div class="section-head">
+            <h3>HTX 地址标签</h3>
+            <span class="pill muted" id="configHtxLabelCount">--</span>
+          </div>
+          <div class="table-wrap compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>标签</th>
+                  <th>地址</th>
+                  <th>类型</th>
+                  <th>置信度</th>
+                  <th>来源</th>
+                </tr>
+              </thead>
+              <tbody id="configHtxRows"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>

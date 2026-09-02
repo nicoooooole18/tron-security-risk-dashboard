@@ -25,12 +25,13 @@ PORT=8787
 ## 看板结构
 
 - 顶部风险状态：展示当前是否存在冻结命中、用户黑名单交集或 HTX SP 风险路径。
-- 指标卡片：USDT 黑名单、USDC 黑名单、近期高风险流入、HTX SP 识别。
+- 指标卡片：Tether 黑名单、Circle 黑名单、近期高风险流入、HTX SP 识别。
 - 地址风险监控：
   - 协议地址监控：默认 tab，检查 JustLend 自身地址。
   - 用户地址监控：检查 JustLend 用户地址库与 USDT / USDC 黑名单交集。
 - 链上流入事件：展示 watched address 的近期 USDT 流入，支持仅看命中。
-- 配置状态：页面底部按钮打开弹窗，查看 HTX seed、平台中转 seed、TronGrid Key 状态和监控地址数。
+- HTX SP 路径命中：仅展示链上证据完整的 HTX -> 钱包 / 平台 -> JustLend 命中路径。
+- 配置状态：页面底部按钮打开弹窗，查看 HTX seed、平台中转 seed、TronGrid Key 状态、监控地址数和 HTX 地址标签明细。
 
 ## 当前接入
 
@@ -60,7 +61,7 @@ PORT=8787
 - `userAddressPool.addressBookPath`：JustLend 用户地址库路径，默认指向仓库共享组件。
 - `userAddressPool.autoJTokenSources`：从 watched jToken market 自动派生用户地址发现来源。
 - `userAddressPool.scanLimit`：每轮用户黑名单扫描地址数。
-- `cexAddressBookPath`：既有 CEX 地址库路径。
+- `cexAddressBookPath`：既有 CEX 地址库路径；VPS 会兜底尝试 `/home/nn/project/tron-monitor-dashboard/data/cex-address-book.json`。
 - `riskSources.useCexAddressBook`：是否启用既有 CEX 地址库。
 - `riskSources.htxSeedAddresses`：手工补充 HTX / Huobi seed 地址。
 - `riskSources.intermediatePlatformAddresses`：手工补充其他平台中转地址。

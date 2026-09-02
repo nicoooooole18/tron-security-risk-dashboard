@@ -185,6 +185,10 @@ function snapshotRefreshMs(config) {
   return Math.max(60, seconds) * 1000;
 }
 
+function uniqueList(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
 async function readSnapshotCache() {
   try {
     return JSON.parse(await fs.readFile(SNAPSHOT_CACHE_PATH, "utf8"));
@@ -266,6 +270,7 @@ async function buildPendingSnapshot(config) {
       recentInflowCount: 0,
       recentInflowAmount: 0
     })),
+    htxSpMatches: [],
     events: [],
     notes: config.notes || []
   };
@@ -412,6 +417,16 @@ function resolveRootPath(filePath) {
   return path.isAbsolute(filePath) ? filePath : path.join(ROOT, filePath);
 }
 
+function cexAddressBookCandidates(config) {
+  return uniqueList([
+    process.env.CEX_ADDRESS_BOOK_PATH,
+    config.cexAddressBookPath,
+    "/home/nn/project/tron-monitor-dashboard/data/cex-address-book.json",
+    "/home/openclaw/project/tron-monitor-dashboard/data/cex-address-book.json",
+    "/Users/lanyu/CodexWorkspace/Explore/tron-monitor-dashboard/data/cex-address-book.json"
+  ]).map((item) => resolveRootPath(item));
+}
+
 async function readJustLendAddressBook(filePath) {
   const resolved = resolveRootPath(filePath);
   if (!resolved) return { path: "", entries: [], error: null };
@@ -474,30 +489,49 @@ function mergeAddressBookEntry(existing, discovered, nowIso) {
 }
 
 async function readCexAddressBook(config) {
-  const bookPath = process.env.CEX_ADDRESS_BOOK_PATH || config.cexAddressBookPath;
   const enabled = config.riskSources?.useCexAddressBook !== false;
-  if (!enabled || !bookPath) {
-    return { enabled, path: bookPath || "", updatedAt: null, entries: [], error: null };
+  const candidates = cexAddressBookCandidates(config);
+  if (!enabled || !candidates.length) {
+    return { enabled, path: "", attemptedPaths: candidates, updatedAt: null, entries: [], error: null };
   }
 
-  try {
-    const parsed = JSON.parse(await fs.readFile(bookPath, "utf8"));
-    return {
-      enabled,
-      path: bookPath,
-      updatedAt: parsed.updatedAt || null,
-      entries: Array.isArray(parsed.entries) ? parsed.entries : [],
-      error: null
-    };
-  } catch (error) {
-    return {
-      enabled,
-      path: bookPath,
-      updatedAt: null,
-      entries: [],
-      error: error.message
-    };
+  let lastError = null;
+  for (const bookPath of candidates) {
+    try {
+      const parsed = JSON.parse(await fs.readFile(bookPath, "utf8"));
+      return {
+        enabled,
+        path: bookPath,
+        attemptedPaths: candidates,
+        updatedAt: parsed.updatedAt || null,
+        entries: Array.isArray(parsed.entries) ? parsed.entries : [],
+        error: null
+      };
+    } catch (error) {
+      lastError = error;
+      if (error.code !== "ENOENT") break;
+    }
   }
+
+  return {
+    enabled,
+    path: candidates[0] || "",
+    attemptedPaths: candidates,
+    updatedAt: null,
+    entries: [],
+    error: lastError?.message || "CEX address book not found"
+  }
+}
+
+function publicIntelEntry(entry) {
+  return {
+    address: entry.address,
+    entity: entry.entity,
+    label: entry.label,
+    type: entry.type,
+    confidence: entry.confidence,
+    source: entry.source
+  };
 }
 
 async function buildAddressIntel(config) {
@@ -528,10 +562,13 @@ async function buildAddressIntel(config) {
       path: book.path,
       updatedAt: book.updatedAt,
       error: book.error,
+      attemptedPaths: book.attemptedPaths,
       totalEntryCount: book.entries.length,
       usableEntryCount: book.entries.filter(isUsableCexEntry).length,
       htxCount: htxMap.size,
-      platformCount: platformMap.size
+      platformCount: platformMap.size,
+      htxEntries: [...htxMap.values()].map(publicIntelEntry),
+      platformEntries: [...platformMap.values()].map(publicIntelEntry)
     },
     htxSeeds: new Set(htxMap.keys()),
     platformSeeds: new Set([...platformMap.keys()].filter((address) => !htxMap.has(address))),
@@ -984,6 +1021,49 @@ function hasChronologicalOrder(firstTs, secondTs) {
   return Number(firstTs) <= Number(secondTs);
 }
 
+function isHtxSpTag(tag) {
+  return ["HTX_SP0_direct", "HTX_SP1_wallet_inflow", "HTX_SP2_platform_proven"].includes(String(tag || ""));
+}
+
+function htxSpPathLabel(tag) {
+  if (tag === "HTX_SP0_direct") return "SP-0 direct";
+  if (tag === "HTX_SP1_wallet_inflow") return "SP-1 wallet";
+  if (tag === "HTX_SP2_platform_proven") return "SP-2 platform";
+  return tag || "--";
+}
+
+function timeDiffText(startTs, endTs) {
+  if (!startTs || !endTs) return "--";
+  const diffMs = Math.max(0, Number(endTs) - Number(startTs));
+  if (!Number.isFinite(diffMs)) return "--";
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 60) return `${minutes}m`;
+  return `${(minutes / 60).toFixed(1)}h`;
+}
+
+function htxSpMatchFromEvent(event) {
+  const sp = event.sp || {};
+  return {
+    tag: sp.tag,
+    path: htxSpPathLabel(sp.tag),
+    level: event.level,
+    sourceLabel: sp.sourceLabel || "--",
+    htxAddress: sp.htxAddress || (sp.tag === "HTX_SP0_direct" ? event.from : ""),
+    platformLabel: sp.platformLabel || "",
+    platformAddress: sp.platformAddress || "",
+    walletAddress: event.from,
+    market: event.market,
+    watchedName: event.watchedName,
+    amount: event.amount,
+    token: event.token,
+    justlendTxid: event.txid,
+    htxOutTxid: sp.htxOutTxid || sp.evidenceTxid || "",
+    platformOutTxid: sp.platformOutTxid || sp.bridgeTxid || "",
+    delay: timeDiffText(sp.htxOutBlockTs || sp.evidenceBlockTs, event.blockTs),
+    reason: event.reason
+  };
+}
+
 async function classifyTransfer({ transfer, tokenConfig, upstreamTransfers, addressIntel }) {
   const htxSeeds = addressIntel.htxSeeds;
   const platformSeeds = addressIntel.platformSeeds;
@@ -1005,7 +1085,8 @@ async function classifyTransfer({ transfer, tokenConfig, upstreamTransfers, addr
       tag: "HTX_SP0_direct",
       level: "P1",
       reason: `资金直接来自 ${fromEntry?.label || "HTX seed 地址"}。`,
-      sourceLabel: fromEntry?.label || "HTX seed"
+      sourceLabel: fromEntry?.label || "HTX seed",
+      htxAddress: from
     };
   }
 
@@ -1020,7 +1101,11 @@ async function classifyTransfer({ transfer, tokenConfig, upstreamTransfers, addr
       level: "P1",
       reason: `${source?.label || "HTX seed 地址"} 先进入 TRON 钱包，再进入 JustLend watched address。`,
       sourceLabel: source?.label || "HTX seed",
-      evidenceTxid: inboundFromHtx.txid
+      htxAddress: normalizeAddress(inboundFromHtx.from),
+      htxOutTxid: inboundFromHtx.txid,
+      htxOutBlockTs: inboundFromHtx.blockTs,
+      evidenceTxid: inboundFromHtx.txid,
+      evidenceBlockTs: inboundFromHtx.blockTs
     };
   }
 
@@ -1055,6 +1140,13 @@ async function classifyTransfer({ transfer, tokenConfig, upstreamTransfers, addr
         level: "P1",
         reason: `${htxSource?.label || "HTX seed 地址"} 先进入 ${source?.label || "平台地址"}，再出金到钱包并进入 JustLend。`,
         sourceLabel: htxSource?.label || "HTX seed",
+        htxAddress: normalizeAddress(htxToPlatform.from),
+        platformLabel: source?.label || "platform",
+        platformAddress,
+        htxOutTxid: htxToPlatform.txid,
+        htxOutBlockTs: htxToPlatform.blockTs,
+        platformOutTxid: inboundFromPlatform.txid,
+        platformOutBlockTs: inboundFromPlatform.blockTs,
         evidenceTxid: htxToPlatform.txid,
         bridgeTxid: inboundFromPlatform.txid
       };
@@ -1066,6 +1158,10 @@ async function classifyTransfer({ transfer, tokenConfig, upstreamTransfers, addr
       level: "CLEAR",
       reason: `${source?.label || "平台地址"} 出金到钱包后进入 JustLend；未发现 HTX -> 平台的链上证据，按 HTX 风险未命中处理。`,
       sourceLabel: source?.label || "platform",
+      platformLabel: source?.label || "platform",
+      platformAddress,
+      platformOutTxid: inboundFromPlatform.txid,
+      platformOutBlockTs: inboundFromPlatform.blockTs,
       evidenceTxid: inboundFromPlatform.txid
     };
   }
@@ -1152,6 +1248,9 @@ async function buildSnapshot() {
 
   const userIntersection = await scanUserBlacklistIntersection(config, blacklistTokens);
   const p1Events = eventResults.filter((item) => item.level === "P1");
+  const htxSpMatches = eventResults
+    .filter((item) => isHtxSpTag(item.sp?.tag))
+    .map(htxSpMatchFromEvent);
   const userHitCount = userIntersection.hitCount;
   const watchEvents = eventResults.filter((item) => item.amountWatch);
   const frozenAddresses = addressResults.filter((item) => {
@@ -1192,6 +1291,7 @@ async function buildSnapshot() {
     addressBook: addressIntel.addressBook,
     userIntersection,
     addresses: addressResults,
+    htxSpMatches,
     events: eventResults.sort((a, b) => Number(b.blockTs || 0) - Number(a.blockTs || 0)),
     notes: config.notes
   };
