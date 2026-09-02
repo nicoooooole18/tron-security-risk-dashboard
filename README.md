@@ -39,6 +39,7 @@ http://localhost:8787
 
 ```env
 TRON_PRO_API_KEY=your_trongrid_key
+TRONSCAN_API_KEY=your_tronscan_key
 HOST=0.0.0.0
 PORT=8787
 ```
@@ -59,6 +60,6 @@ node server.js
 
 - 协议地址：当前覆盖 31 个 JustLend 协议地址，包括核心合约、治理/Oracle 合约与 jToken market。
 - 用户地址库：当前由多个 jToken 的链上 Transfer 事件增量维护，作为共享组件落地为 `shared/address-book/data/justlend-address-book.json`。
-- 链上流入：默认覆盖最近 30 天；每日覆盖按扫描窗口聚合，分页按接口实际返回条数推进 offset，事件明细受展示上限控制，用于排查具体交易。
+- 链上流入：默认覆盖最近 30 天；每日覆盖按扫描窗口聚合，分页按接口实际返回条数推进 offset，Tronscan 请求支持 API key 和 429 退避重试，事件明细受展示上限控制，用于排查具体交易。
 - 快照缓存：运行时快照写入 `data/live-snapshot-cache.json`，该文件不提交。
 - CEX 地址库：HTX 和其他平台地址优先复用既有 CEX 地址库，手工 seed 作为补充。

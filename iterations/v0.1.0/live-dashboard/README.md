@@ -18,6 +18,7 @@ VPS 部署时建议配置：
 
 ```env
 TRON_PRO_API_KEY=your_trongrid_key
+TRONSCAN_API_KEY=your_tronscan_key
 HOST=0.0.0.0
 PORT=8787
 ```
@@ -54,6 +55,7 @@ PORT=8787
 - 刷新按钮只触发后台刷新，不阻塞页面。
 - 默认每 300 秒后台刷新一次，可通过 `dashboard.snapshotRefreshSeconds` 或 `SNAPSHOT_REFRESH_SECONDS` 调整。
 - 流入窗口默认 30 天，可通过 `dashboard.inflowLookbackDays` 或 `INFLOW_LOOKBACK_DAYS` 调整；分页按接口实际返回条数推进 offset，页面展示上限默认 100 条，可通过 `dashboard.eventDisplayLimit` 或 `EVENT_DISPLAY_LIMIT` 调整。
+- Tronscan 请求支持 `TRONSCAN_API_KEY`，未配置时会复用 `TRON_PRO_API_KEY`；遇到 429 会按 `RATE_LIMIT_RETRY_MS` 退避重试。
 - 运行时快照写入 `data/live-snapshot-cache.json`，该文件已忽略，不提交。
 
 ## 配置说明
@@ -70,6 +72,8 @@ PORT=8787
 - `dashboard.inflowLookbackDays`：链上流入统计窗口，当前为 30 天。
 - `dashboard.inflowPageSize` / `dashboard.inflowMaxPages`：TronScan 分页扫描保护上限；如果接口实际返回条数小于请求条数，系统按实际返回条数继续翻页，直到到达窗口起点、空页或页数上限。
 - `dashboard.eventDisplayLimit`：链上流入事件表默认展示上限，当前为 100 条。
+- `TRONSCAN_API_KEY` / `TRONSCAN_API_KEY_HEADER`：Tronscan API Key 与请求头名称；未配置时复用 `TRON_PRO_API_KEY`，默认请求头为 `TRON-PRO-API-KEY`。
+- `TRONSCAN_REQUEST_DELAY_MS` / `RATE_LIMIT_RETRY_MS`：Tronscan 请求节流与 429 退避间隔。
 
 ## 安全说明
 

@@ -48,8 +48,19 @@ const TRONGRID_API_KEYS = [
   process.env.TRONGRID_API_KEY
 ].filter(Boolean);
 const TRONGRID_API_KEY = [...new Set(TRONGRID_API_KEYS)][0] || "";
+const TRONSCAN_API_KEYS = [
+  ...listFromEnv("TRONSCAN_API_KEYS"),
+  process.env.TRONSCAN_API_KEY,
+  process.env.TRONSCAN_PRO_API_KEY,
+  process.env.TRON_PRO_API_KEY,
+  process.env.TRONGRID_API_KEY
+].filter(Boolean);
+const TRONSCAN_API_KEY = [...new Set(TRONSCAN_API_KEYS)][0] || "";
+const TRONSCAN_API_KEY_HEADER = process.env.TRONSCAN_API_KEY_HEADER || "TRON-PRO-API-KEY";
 const TRONGRID_REQUEST_DELAY_MS = Number(process.env.TRONGRID_REQUEST_DELAY_MS || 250);
 const TRONSCAN_REQUEST_DELAY_MS = Number(process.env.TRONSCAN_REQUEST_DELAY_MS || 350);
+const FETCH_RETRY_COUNT = Math.max(0, Number(process.env.FETCH_RETRY_COUNT || 2));
+const RATE_LIMIT_RETRY_MS = Math.max(500, Number(process.env.RATE_LIMIT_RETRY_MS || 2500));
 const BLACKLIST_CACHE_TTL_MS = Number(process.env.BLACKLIST_CACHE_TTL_MS || 10 * 60 * 1000);
 const BLACKLIST_UNKNOWN_CACHE_TTL_MS = Number(process.env.BLACKLIST_UNKNOWN_CACHE_TTL_MS || 30 * 1000);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
@@ -735,6 +746,11 @@ function tronGridHeaders(url) {
   return { "TRON-PRO-API-KEY": TRONGRID_API_KEY };
 }
 
+function tronScanHeaders(url) {
+  if (!TRONSCAN_API_KEY || !isTronScanUrl(url)) return {};
+  return { [TRONSCAN_API_KEY_HEADER]: TRONSCAN_API_KEY };
+}
+
 async function throttleTronGrid(url) {
   if (!isTronGridUrl(url) || !TRONGRID_REQUEST_DELAY_MS) return;
   const now = Date.now();
@@ -752,27 +768,41 @@ async function throttleTronScan(url) {
 }
 
 async function fetchJson(url, options = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 12000);
-  try {
+  const retries = Number.isFinite(options.retries) ? options.retries : FETCH_RETRY_COUNT;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 12000);
     await throttleTronGrid(url);
     await throttleTronScan(url);
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "accept": "application/json",
-        ...tronGridHeaders(url),
-        ...(options.headers || {})
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          "accept": "application/json",
+          ...tronGridHeaders(url),
+          ...tronScanHeaders(url),
+          ...(options.headers || {})
+        }
+      });
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}`);
+        error.status = response.status;
+        throw error;
       }
-    });
-    if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+      if (error.status !== 429 || attempt >= retries) throw error;
+      await wait(RATE_LIMIT_RETRY_MS * (attempt + 1));
+    } finally {
+      clearTimeout(timeout);
     }
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
   }
+
+  throw lastError || new Error("Request failed");
 }
 
 async function triggerConstantContract({ contract, functionSelector, parameter }) {
