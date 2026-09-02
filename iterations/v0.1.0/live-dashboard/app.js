@@ -12,6 +12,7 @@ const els = {
   eventRows: document.getElementById("eventRows"),
   userRows: document.getElementById("userRows"),
   htxSpRows: document.getElementById("htxSpRows"),
+  eventWindowText: document.getElementById("eventWindowText"),
   watchedCount: document.getElementById("watchedCount"),
   eventCount: document.getElementById("eventCount"),
   htxSpCount: document.getElementById("htxSpCount"),
@@ -26,6 +27,7 @@ const els = {
   configTronGrid: document.getElementById("configTronGrid"),
   configThreshold: document.getElementById("configThreshold"),
   configWatched: document.getElementById("configWatched"),
+  configInflowWindow: document.getElementById("configInflowWindow"),
   configHtxLabelCount: document.getElementById("configHtxLabelCount"),
   configHtxRows: document.getElementById("configHtxRows"),
   configNotice: document.getElementById("configNotice"),
@@ -113,7 +115,9 @@ function blacklistIssuerLabel(symbol) {
 function inflowText(item) {
   if (!item.transferScanEnabled) return "未扫描";
   if (item.transferError) return "读取失败";
-  return `${item.recentInflowCount} 笔 / ${formatAmount(item.recentInflowAmount)} ${item.asset}`;
+  const windowText = item.inflowLookbackDays ? `${item.inflowLookbackDays}天` : "近期";
+  const limitText = item.inflowScan?.limitReached ? " · 达到扫描上限" : "";
+  return `${windowText}: ${item.recentInflowCount} 笔 / ${formatAmount(item.recentInflowAmount)} ${item.asset}${limitText}`;
 }
 
 function discoveryText(discovery = []) {
@@ -177,6 +181,7 @@ function renderAdminConfig(payload) {
   els.configTronGrid.textContent = configSummary.tronGridApiKeyConfigured ? "已配置" : "未配置";
   els.configThreshold.textContent = `${formatAmount(configSummary.riskThresholdUsd)} USDT`;
   els.configWatched.textContent = `${configSummary.watchedCount || 0} 个`;
+  els.configInflowWindow.textContent = `${configSummary.inflowLookbackDays || "--"} 天 / ${configSummary.eventDisplayLimit || "--"} 条`;
   els.configHtxLabelCount.textContent = `${htxEntries.length} 个`;
   els.configHtxRows.innerHTML = htxEntries.length
     ? htxEntries.map((item) => `
@@ -265,6 +270,8 @@ function render(snapshot) {
   const statusLevel = snapshot.status.level;
   const visibleEvents = showOnlyHits ? snapshot.events.filter(isHitEvent) : snapshot.events;
   const htxSpMatches = snapshot.htxSpMatches || [];
+  const scanMeta = snapshot.scanMeta || {};
+  const totalInflowEventCount = snapshot.status.totalInflowEventCount || snapshot.events.length;
 
   els.statusTitle.textContent = statusLevel === "SYNCING"
     ? "数据同步中"
@@ -342,9 +349,14 @@ function render(snapshot) {
 
   els.hitOnlyToggle.classList.toggle("active", showOnlyHits);
   els.hitOnlyToggle.setAttribute("aria-pressed", String(showOnlyHits));
+  els.eventWindowText.textContent = scanMeta.inflowLookbackDays
+    ? `覆盖最近 ${scanMeta.inflowLookbackDays} 天；当前表格展示最近 ${snapshot.events.length} 条，SP 识别基于这些展示事件。${scanMeta.inflowLimitReached ? "已达到分页扫描上限，建议提高上限或接入后台任务。" : ""}`
+    : "按近期窗口读取 watched address 流入。";
   els.eventCount.textContent = showOnlyHits
     ? `${visibleEvents.length} / ${snapshot.events.length} 条`
-    : `${snapshot.events.length} 条`;
+    : totalInflowEventCount > snapshot.events.length
+      ? `${snapshot.events.length} / ${totalInflowEventCount} 条`
+      : `${snapshot.events.length} 条`;
   els.eventRows.innerHTML = visibleEvents.length
     ? visibleEvents.map((item) => `
       <tr>

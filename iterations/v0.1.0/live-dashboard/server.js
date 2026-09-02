@@ -49,6 +49,7 @@ const TRONGRID_API_KEYS = [
 ].filter(Boolean);
 const TRONGRID_API_KEY = [...new Set(TRONGRID_API_KEYS)][0] || "";
 const TRONGRID_REQUEST_DELAY_MS = Number(process.env.TRONGRID_REQUEST_DELAY_MS || 250);
+const TRONSCAN_REQUEST_DELAY_MS = Number(process.env.TRONSCAN_REQUEST_DELAY_MS || 350);
 const BLACKLIST_CACHE_TTL_MS = Number(process.env.BLACKLIST_CACHE_TTL_MS || 10 * 60 * 1000);
 const BLACKLIST_UNKNOWN_CACHE_TTL_MS = Number(process.env.BLACKLIST_UNKNOWN_CACHE_TTL_MS || 30 * 1000);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
@@ -57,6 +58,7 @@ const ADMIN_COOKIE_NAME = "freezeRiskAdmin";
 const ADMIN_SESSION_TTL_MS = Number(process.env.ADMIN_SESSION_TTL_MS || 12 * 60 * 60 * 1000);
 const blacklistStatusCache = new Map();
 let nextTronGridRequestAt = 0;
+let nextTronScanRequestAt = 0;
 let snapshotCache = null;
 let snapshotRefreshPromise = null;
 let snapshotRefreshTimer = null;
@@ -189,6 +191,18 @@ function uniqueList(items) {
   return [...new Set(items.filter(Boolean))];
 }
 
+function getInflowWindow(config) {
+  const lookbackDays = Number(process.env.INFLOW_LOOKBACK_DAYS || config.dashboard?.inflowLookbackDays || 30);
+  const safeLookbackDays = Math.max(1, lookbackDays);
+  const untilTs = Date.now();
+  const sinceTs = untilTs - safeLookbackDays * 24 * 60 * 60 * 1000;
+  return { lookbackDays: safeLookbackDays, sinceTs, untilTs };
+}
+
+function getEventDisplayLimit(config) {
+  return Math.max(20, Number(process.env.EVENT_DISPLAY_LIMIT || config.dashboard?.eventDisplayLimit || 100));
+}
+
 async function readSnapshotCache() {
   try {
     return JSON.parse(await fs.readFile(SNAPSHOT_CACHE_PATH, "utf8"));
@@ -221,6 +235,8 @@ function decorateSnapshot(snapshot, config, { servedFromCache }) {
 async function buildPendingSnapshot(config) {
   const addressIntel = await buildAddressIntel(config);
   const watched = (config.watchedAddresses || []).filter((item) => item.enabled);
+  const inflowWindow = getInflowWindow(config);
+  const eventDisplayLimit = getEventDisplayLimit(config);
   return {
     generatedAt: new Date().toISOString(),
     configSummary: {
@@ -228,7 +244,9 @@ async function buildPendingSnapshot(config) {
       htxSeedCount: addressIntel.htxSeeds.size,
       platformSeedCount: addressIntel.platformSeeds.size,
       riskThresholdUsd: config.dashboard.riskThresholdUsd,
-      tronGridApiKeyConfigured: Boolean(TRONGRID_API_KEY)
+      tronGridApiKeyConfigured: Boolean(TRONGRID_API_KEY),
+      inflowLookbackDays: inflowWindow.lookbackDays,
+      eventDisplayLimit
     },
     status: {
       level: "SYNCING",
@@ -243,6 +261,13 @@ async function buildPendingSnapshot(config) {
     tokenStatus: {
       USDT: { frozenCount: 0, unknownCount: watched.length },
       USDC: { frozenCount: 0, unknownCount: watched.length }
+    },
+    scanMeta: {
+      inflowLookbackDays: inflowWindow.lookbackDays,
+      inflowSince: new Date(inflowWindow.sinceTs).toISOString(),
+      inflowUntil: new Date(inflowWindow.untilTs).toISOString(),
+      eventDisplayLimit,
+      inflowLimitReached: false
     },
     addressBook: addressIntel.addressBook,
     userIntersection: {
@@ -636,6 +661,14 @@ function isTronGridUrl(url) {
   }
 }
 
+function isTronScanUrl(url) {
+  try {
+    return new URL(url).hostname === "apilist.tronscanapi.com";
+  } catch {
+    return false;
+  }
+}
+
 function tronGridHeaders(url) {
   if (!TRONGRID_API_KEY || !isTronGridUrl(url)) return {};
   return { "TRON-PRO-API-KEY": TRONGRID_API_KEY };
@@ -649,11 +682,20 @@ async function throttleTronGrid(url) {
   if (waitMs) await wait(waitMs);
 }
 
+async function throttleTronScan(url) {
+  if (!isTronScanUrl(url) || !TRONSCAN_REQUEST_DELAY_MS) return;
+  const now = Date.now();
+  const waitMs = Math.max(0, nextTronScanRequestAt - now);
+  nextTronScanRequestAt = Math.max(now, nextTronScanRequestAt) + TRONSCAN_REQUEST_DELAY_MS;
+  if (waitMs) await wait(waitMs);
+}
+
 async function fetchJson(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 12000);
   try {
     await throttleTronGrid(url);
+    await throttleTronScan(url);
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
@@ -998,10 +1040,10 @@ function normalizeTransfer(item, tokenConfig) {
   };
 }
 
-async function getTrc20Transfers({ tokenConfig, relatedAddress, limit = 50 }) {
+async function getTrc20Transfers({ tokenConfig, relatedAddress, limit = 50, start = 0 }) {
   const url = new URL("https://apilist.tronscanapi.com/api/token_trc20/transfers");
   url.searchParams.set("limit", String(limit));
-  url.searchParams.set("start", "0");
+  url.searchParams.set("start", String(start));
   url.searchParams.set("sort", "-timestamp");
   url.searchParams.set("count", "true");
   url.searchParams.set("contract_address", tokenConfig.contract);
@@ -1014,6 +1056,44 @@ async function getTrc20Transfers({ tokenConfig, relatedAddress, limit = 50 }) {
       ? json.data
       : [];
   return rows.map((item) => normalizeTransfer(item, tokenConfig));
+}
+
+async function getRecentInflowTransfers({ tokenConfig, relatedAddress, sinceTs, pageSize = 200, maxPages = 30 }) {
+  const transfers = [];
+  let scannedRows = 0;
+  let reachedWindowStart = false;
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const rows = await getTrc20Transfers({
+      tokenConfig,
+      relatedAddress,
+      limit: pageSize,
+      start: page * pageSize
+    });
+    scannedRows += rows.length;
+    if (!rows.length) break;
+
+    for (const row of rows) {
+      const blockTs = Number(row.blockTs || 0);
+      if (blockTs && blockTs < sinceTs) {
+        reachedWindowStart = true;
+        continue;
+      }
+      if (normalizeAddress(row.to) === normalizeAddress(relatedAddress)) {
+        transfers.push(row);
+      }
+    }
+
+    const oldestTs = Math.min(...rows.map((row) => Number(row.blockTs || Date.now())));
+    if (reachedWindowStart || rows.length < pageSize || oldestTs < sinceTs) break;
+  }
+
+  return {
+    transfers,
+    scannedRows,
+    reachedWindowStart,
+    limitReached: !reachedWindowStart && scannedRows >= pageSize * maxPages
+  };
 }
 
 function hasChronologicalOrder(firstTs, secondTs) {
@@ -1182,9 +1262,14 @@ async function buildSnapshot() {
     .map((symbol) => config.tokens[symbol])
     .filter(Boolean);
   const watched = config.watchedAddresses.filter((item) => item.enabled);
+  const inflowWindow = getInflowWindow(config);
+  const inflowPageSize = Math.max(50, Number(process.env.INFLOW_PAGE_SIZE || config.dashboard?.inflowPageSize || 200));
+  const inflowMaxPages = Math.max(1, Number(process.env.INFLOW_MAX_PAGES || config.dashboard?.inflowMaxPages || 30));
+  const eventDisplayLimit = getEventDisplayLimit(config);
 
   const addressResults = [];
   const eventResults = [];
+  let inflowLimitReached = false;
 
   for (const item of watched) {
     const blacklists = {};
@@ -1196,10 +1281,18 @@ async function buildSnapshot() {
     const transferScanEnabled = item.trackTransfers !== false;
     let transfers = [];
     let transferError = null;
+    let transferScan = { scannedRows: 0, reachedWindowStart: false, limitReached: false };
     if (transferScanEnabled) {
       try {
-        const related = await getTrc20Transfers({ tokenConfig: usdt, relatedAddress: item.address, limit: 50 });
-        transfers = related.filter((transfer) => normalizeAddress(transfer.to) === normalizeAddress(item.address));
+        transferScan = await getRecentInflowTransfers({
+          tokenConfig: usdt,
+          relatedAddress: item.address,
+          sinceTs: inflowWindow.sinceTs,
+          pageSize: inflowPageSize,
+          maxPages: inflowMaxPages
+        });
+        transfers = transferScan.transfers;
+        if (transferScan.limitReached) inflowLimitReached = true;
       } catch (error) {
         transferError = error.message;
       }
@@ -1212,10 +1305,16 @@ async function buildSnapshot() {
       transferScanEnabled,
       transferError,
       recentInflowCount: transfers.length,
-      recentInflowAmount: transfers.reduce((sum, transfer) => sum + transfer.amount, 0)
+      recentInflowAmount: transfers.reduce((sum, transfer) => sum + transfer.amount, 0),
+      inflowLookbackDays: inflowWindow.lookbackDays,
+      inflowScan: {
+        scannedRows: transferScan.scannedRows,
+        reachedWindowStart: transferScan.reachedWindowStart,
+        limitReached: transferScan.limitReached
+      }
     });
 
-    for (const transfer of transfers.slice(0, 20)) {
+    for (const transfer of transfers.slice(0, eventDisplayLimit)) {
       let upstreamTransfers = [];
       try {
         upstreamTransfers = await getTrc20Transfers({ tokenConfig: usdt, relatedAddress: transfer.from, limit: 30 });
@@ -1253,6 +1352,7 @@ async function buildSnapshot() {
     .map(htxSpMatchFromEvent);
   const userHitCount = userIntersection.hitCount;
   const watchEvents = eventResults.filter((item) => item.amountWatch);
+  const totalInflowEventCount = addressResults.reduce((sum, item) => sum + Number(item.recentInflowCount || 0), 0);
   const frozenAddresses = addressResults.filter((item) => {
     return Object.values(item.blacklists || {}).some((blacklist) => blacklist.status === "blacklisted");
   });
@@ -1266,7 +1366,9 @@ async function buildSnapshot() {
       htxSeedCount: addressIntel.htxSeeds.size,
       platformSeedCount: addressIntel.platformSeeds.size,
       riskThresholdUsd: config.dashboard.riskThresholdUsd,
-      tronGridApiKeyConfigured: Boolean(TRONGRID_API_KEY)
+      tronGridApiKeyConfigured: Boolean(TRONGRID_API_KEY),
+      inflowLookbackDays: inflowWindow.lookbackDays,
+      eventDisplayLimit
     },
     status: {
       level: frozenAddresses.length ? "P0" : userHitCount || p1Events.length ? "P1" : "CLEAR",
@@ -1276,7 +1378,17 @@ async function buildSnapshot() {
       userUnknownCount: userIntersection.unknownCount,
       watchCount: watchEvents.length,
       eventCount: eventResults.length,
+      totalInflowEventCount,
       htxDetectionEnabled: addressIntel.htxSeeds.size > 0
+    },
+    scanMeta: {
+      inflowLookbackDays: inflowWindow.lookbackDays,
+      inflowSince: new Date(inflowWindow.sinceTs).toISOString(),
+      inflowUntil: new Date(inflowWindow.untilTs).toISOString(),
+      inflowPageSize,
+      inflowMaxPages,
+      eventDisplayLimit,
+      inflowLimitReached
     },
     tokenStatus: {
       USDT: {

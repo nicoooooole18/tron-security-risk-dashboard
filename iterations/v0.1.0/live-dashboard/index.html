@@ -115,7 +115,10 @@
 
     <section class="card">
       <div class="section-head">
-        <h2>链上流入事件</h2>
+        <div>
+          <h2>链上流入事件</h2>
+          <p class="section-copy" id="eventWindowText">按近期窗口读取 watched address 流入。</p>
+        </div>
         <div class="section-tools">
           <button id="hitOnlyToggle" class="btn toggle" type="button" aria-pressed="false">仅看命中</button>
           <span class="pill" id="eventCount">--</span>
@@ -204,6 +207,7 @@
           <div><span>TronGrid Key</span><strong id="configTronGrid">--</strong></div>
           <div><span>风险阈值</span><strong id="configThreshold">--</strong></div>
           <div><span>协议监控地址数</span><strong id="configWatched">--</strong></div>
+          <div><span>流入窗口</span><strong id="configInflowWindow">--</strong></div>
         </div>
         <div class="notice" id="configNotice"></div>
         <div class="admin-subsection">
