@@ -207,6 +207,69 @@ p { color: var(--muted); line-height: 1.6; }
   font-size: 13px;
 }
 
+.coverage-strip {
+  margin-bottom: 14px;
+}
+
+.coverage-head,
+.coverage-day {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.3fr 0.8fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.coverage-head {
+  padding: 0 10px 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.coverage-day {
+  min-height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: left;
+}
+
+.coverage-day strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.coverage-day.has-flow {
+  border-color: rgba(31, 94, 255, 0.24);
+  background: var(--blue-bg);
+}
+
+.coverage-day.hit {
+  border-color: rgba(201, 122, 9, 0.28);
+  background: var(--amber-bg);
+}
+
+.coverage-day.active {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.coverage-empty {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .tabs {
   display: inline-flex;
   gap: 4px;
@@ -434,4 +497,8 @@ tr:last-child td { border-bottom: 0; }
   .config-footer { align-items: stretch; flex-direction: column; }
   .metrics,
   .layout { grid-template-columns: 1fr; }
+  .section-head { align-items: flex-start; flex-direction: column; }
+  .section-tools { flex-wrap: wrap; }
+  .coverage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .coverage-head { display: none; }
 }

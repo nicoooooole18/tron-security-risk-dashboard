@@ -203,6 +203,62 @@ function getEventDisplayLimit(config) {
   return Math.max(20, Number(process.env.EVENT_DISPLAY_LIMIT || config.dashboard?.eventDisplayLimit || 100));
 }
 
+function dateKeyInTimeZone(timestamp, timeZone = "Asia/Shanghai") {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(Number(timestamp)));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function buildDailyCoverage({ events, classifiedEvents, inflowWindow, timeZone = "Asia/Shanghai" }) {
+  const byDate = new Map();
+  for (let index = inflowWindow.lookbackDays - 1; index >= 0; index -= 1) {
+    const date = dateKeyInTimeZone(inflowWindow.untilTs - index * 24 * 60 * 60 * 1000, timeZone);
+    if (!byDate.has(date)) {
+      byDate.set(date, {
+        date,
+        inflowCount: 0,
+        inflowAmount: 0,
+        htxSpHitCount: 0,
+        p1Count: 0,
+        topMarket: "--"
+      });
+    }
+  }
+
+  const marketCountsByDate = new Map();
+  for (const event of events) {
+    const date = event.date || dateKeyInTimeZone(event.blockTs, timeZone);
+    const row = byDate.get(date);
+    if (!row) continue;
+    row.inflowCount += 1;
+    row.inflowAmount += Number(event.amount || 0);
+    const marketCounts = marketCountsByDate.get(date) || new Map();
+    marketCounts.set(event.market, (marketCounts.get(event.market) || 0) + 1);
+    marketCountsByDate.set(date, marketCounts);
+  }
+
+  for (const event of classifiedEvents) {
+    const date = event.date || dateKeyInTimeZone(event.blockTs, timeZone);
+    const row = byDate.get(date);
+    if (!row) continue;
+    if (event.level === "P1") row.p1Count += 1;
+    if (isHtxSpTag(event.sp?.tag)) row.htxSpHitCount += 1;
+  }
+
+  for (const [date, marketCounts] of marketCountsByDate.entries()) {
+    const sorted = [...marketCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const row = byDate.get(date);
+    if (row && sorted.length) row.topMarket = sorted[0][0];
+  }
+
+  return [...byDate.values()];
+}
+
 async function readSnapshotCache() {
   try {
     return JSON.parse(await fs.readFile(SNAPSHOT_CACHE_PATH, "utf8"));
@@ -269,6 +325,11 @@ async function buildPendingSnapshot(config) {
       eventDisplayLimit,
       inflowLimitReached: false
     },
+    dailyCoverage: buildDailyCoverage({
+      events: [],
+      classifiedEvents: [],
+      inflowWindow
+    }),
     addressBook: addressIntel.addressBook,
     userIntersection: {
       enabled: true,
@@ -1269,6 +1330,7 @@ async function buildSnapshot() {
 
   const addressResults = [];
   const eventResults = [];
+  const allInflowEvents = [];
   let inflowLimitReached = false;
 
   for (const item of watched) {
@@ -1314,6 +1376,23 @@ async function buildSnapshot() {
       }
     });
 
+    for (const transfer of transfers) {
+      allInflowEvents.push({
+        watchedAddress: item.address,
+        watchedName: item.name,
+        market: item.market,
+        asset: item.asset,
+        txid: transfer.txid,
+        blockTs: transfer.blockTs,
+        date: dateKeyInTimeZone(transfer.blockTs),
+        from: transfer.from,
+        to: transfer.to,
+        amount: transfer.amount,
+        amountWatch: transfer.amount >= config.dashboard.riskThresholdUsd,
+        token: transfer.token
+      });
+    }
+
     for (const transfer of transfers.slice(0, eventDisplayLimit)) {
       let upstreamTransfers = [];
       try {
@@ -1333,6 +1412,7 @@ async function buildSnapshot() {
         asset: item.asset,
         txid: transfer.txid,
         blockTs: transfer.blockTs,
+        date: dateKeyInTimeZone(transfer.blockTs),
         from: transfer.from,
         to: transfer.to,
         amount: transfer.amount,
@@ -1352,7 +1432,12 @@ async function buildSnapshot() {
     .map(htxSpMatchFromEvent);
   const userHitCount = userIntersection.hitCount;
   const watchEvents = eventResults.filter((item) => item.amountWatch);
-  const totalInflowEventCount = addressResults.reduce((sum, item) => sum + Number(item.recentInflowCount || 0), 0);
+  const totalInflowEventCount = allInflowEvents.length;
+  const dailyCoverage = buildDailyCoverage({
+    events: allInflowEvents,
+    classifiedEvents: eventResults,
+    inflowWindow
+  });
   const frozenAddresses = addressResults.filter((item) => {
     return Object.values(item.blacklists || {}).some((blacklist) => blacklist.status === "blacklisted");
   });
@@ -1400,6 +1485,7 @@ async function buildSnapshot() {
         unknownCount: addressResults.filter((item) => item.blacklists?.USDC?.status === "unknown").length
       }
     },
+    dailyCoverage,
     addressBook: addressIntel.addressBook,
     userIntersection,
     addresses: addressResults,

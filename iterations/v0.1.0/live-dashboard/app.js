@@ -13,6 +13,7 @@ const els = {
   userRows: document.getElementById("userRows"),
   htxSpRows: document.getElementById("htxSpRows"),
   eventWindowText: document.getElementById("eventWindowText"),
+  dailyCoverageRows: document.getElementById("dailyCoverageRows"),
   watchedCount: document.getElementById("watchedCount"),
   eventCount: document.getElementById("eventCount"),
   htxSpCount: document.getElementById("htxSpCount"),
@@ -42,11 +43,13 @@ const els = {
   notes: document.getElementById("notes"),
   refreshBtn: document.getElementById("refreshBtn"),
   hitOnlyToggle: document.getElementById("hitOnlyToggle"),
+  clearDateFilterBtn: document.getElementById("clearDateFilterBtn"),
   toast: document.getElementById("toast")
 };
 
 let currentSnapshot = null;
 let showOnlyHits = false;
+let selectedEventDate = "";
 let activeAddressTab = "protocol";
 let adminAuthenticated = false;
 
@@ -82,6 +85,11 @@ function shortTxid(txid) {
 function txLink(txid, label = shortTxid(txid)) {
   if (!txid) return "--";
   return `<a href="https://tronscan.org/#/transaction/${txid}" target="_blank" rel="noreferrer">${label}</a>`;
+}
+
+function compactDate(date) {
+  if (!date) return "--";
+  return date.slice(5);
 }
 
 function pill(text, type = "muted") {
@@ -145,6 +153,16 @@ function tokenMetricClass(tokenStatus = {}) {
 
 function isHitEvent(item) {
   return item.level === "P1" || String(item.sp?.tag || "").startsWith("HTX_");
+}
+
+function eventMatchesSelectedDate(item) {
+  return !selectedEventDate || item.date === selectedEventDate;
+}
+
+function visibleEventRows(snapshot) {
+  return (snapshot.events || [])
+    .filter(eventMatchesSelectedDate)
+    .filter((item) => !showOnlyHits || isHitEvent(item));
 }
 
 function setAddressTab(tab) {
@@ -268,10 +286,11 @@ function render(snapshot) {
   const p1Events = snapshot.events.filter((item) => item.level === "P1");
   const userIntersection = snapshot.userIntersection || { results: [], hits: [], hitCount: 0, scannedCount: 0 };
   const statusLevel = snapshot.status.level;
-  const visibleEvents = showOnlyHits ? snapshot.events.filter(isHitEvent) : snapshot.events;
+  const visibleEvents = visibleEventRows(snapshot);
   const htxSpMatches = snapshot.htxSpMatches || [];
   const scanMeta = snapshot.scanMeta || {};
   const totalInflowEventCount = snapshot.status.totalInflowEventCount || snapshot.events.length;
+  const dailyCoverage = snapshot.dailyCoverage || [];
 
   els.statusTitle.textContent = statusLevel === "SYNCING"
     ? "数据同步中"
@@ -349,14 +368,26 @@ function render(snapshot) {
 
   els.hitOnlyToggle.classList.toggle("active", showOnlyHits);
   els.hitOnlyToggle.setAttribute("aria-pressed", String(showOnlyHits));
+  els.clearDateFilterBtn.classList.toggle("hidden", !selectedEventDate);
+  els.clearDateFilterBtn.textContent = selectedEventDate ? `全部日期 · 当前 ${selectedEventDate}` : "全部日期";
   els.eventWindowText.textContent = scanMeta.inflowLookbackDays
-    ? `覆盖最近 ${scanMeta.inflowLookbackDays} 天；当前表格展示最近 ${snapshot.events.length} 条，SP 识别基于这些展示事件。${scanMeta.inflowLimitReached ? "已达到分页扫描上限，建议提高上限或接入后台任务。" : ""}`
+    ? `覆盖最近 ${scanMeta.inflowLookbackDays} 天；上方每日覆盖包含无流入日期，下方明细展示最近 ${snapshot.events.length} 条，可按日期或命中状态筛选。${scanMeta.inflowLimitReached ? "已达到分页扫描上限，建议提高上限或接入后台任务。" : ""}`
     : "按近期窗口读取 watched address 流入。";
-  els.eventCount.textContent = showOnlyHits
+  els.eventCount.textContent = showOnlyHits || selectedEventDate
     ? `${visibleEvents.length} / ${snapshot.events.length} 条`
     : totalInflowEventCount > snapshot.events.length
       ? `${snapshot.events.length} / ${totalInflowEventCount} 条`
       : `${snapshot.events.length} 条`;
+  els.dailyCoverageRows.innerHTML = dailyCoverage.length
+    ? dailyCoverage.map((item) => `
+      <button class="coverage-day ${item.date === selectedEventDate ? "active" : ""} ${item.htxSpHitCount ? "hit" : item.inflowCount ? "has-flow" : ""}" type="button" data-date="${item.date}">
+        <span>${compactDate(item.date)}</span>
+        <strong>${item.inflowCount}</strong>
+        <span>${formatAmount(item.inflowAmount)} USDT</span>
+        <span>${item.htxSpHitCount}</span>
+      </button>
+    `).join("")
+    : `<div class="coverage-empty">等待 30 天覆盖数据。</div>`;
   els.eventRows.innerHTML = visibleEvents.length
     ? visibleEvents.map((item) => `
       <tr>
@@ -369,7 +400,7 @@ function render(snapshot) {
         <td class="address">${txLink(item.txid)}</td>
       </tr>
     `).join("")
-    : `<tr><td colspan="7">${showOnlyHits ? "当前没有命中 HTX SP 路径的流入。" : "当前未读取到 watched address 的近期 USDT 流入。"}</td></tr>`;
+    : `<tr><td colspan="7">${selectedEventDate ? `${selectedEventDate} 没有符合筛选条件的流入明细。` : showOnlyHits ? "当前没有命中 HTX SP 路径的流入。" : "当前未读取到 watched address 的近期 USDT 流入。"}</td></tr>`;
 
   els.htxSpCount.textContent = `${htxSpMatches.length} 条`;
   els.htxSpCount.className = `pill ${htxSpMatches.length ? "amber" : "green"}`;
@@ -421,6 +452,18 @@ async function loadSnapshot(forceRefresh = false) {
 
 els.hitOnlyToggle.addEventListener("click", () => {
   showOnlyHits = !showOnlyHits;
+  if (currentSnapshot) render(currentSnapshot);
+});
+
+els.dailyCoverageRows.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-date]");
+  if (!button) return;
+  selectedEventDate = selectedEventDate === button.dataset.date ? "" : button.dataset.date;
+  if (currentSnapshot) render(currentSnapshot);
+});
+
+els.clearDateFilterBtn.addEventListener("click", () => {
+  selectedEventDate = "";
   if (currentSnapshot) render(currentSnapshot);
 });
 

@@ -120,9 +120,19 @@
           <p class="section-copy" id="eventWindowText">按近期窗口读取 watched address 流入。</p>
         </div>
         <div class="section-tools">
+          <button id="clearDateFilterBtn" class="btn toggle hidden" type="button">全部日期</button>
           <button id="hitOnlyToggle" class="btn toggle" type="button" aria-pressed="false">仅看命中</button>
           <span class="pill" id="eventCount">--</span>
         </div>
+      </div>
+      <div class="coverage-strip">
+        <div class="coverage-head">
+          <span>日期</span>
+          <span>流入笔数</span>
+          <span>流入金额</span>
+          <span>HTX SP</span>
+        </div>
+        <div class="coverage-grid" id="dailyCoverageRows"></div>
       </div>
       <div class="table-wrap">
         <table>
