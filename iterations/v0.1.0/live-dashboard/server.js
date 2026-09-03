@@ -1127,12 +1127,18 @@ function normalizeTransfer(item, tokenConfig) {
     from: item.from_address || item.from || "",
     to: item.to_address || item.to || "",
     contract: item.contract_address || item.contractAddress || tokenConfig.contract,
+    type: item.type || item.event_name || item.eventName || "",
     amount,
     amountRaw: String(item.quant ?? item.amount ?? item.value ?? ""),
     token: item.tokenInfo?.tokenAbbr || item.tokenInfo?.symbol || item.token_info?.symbol || tokenConfig.symbol,
     confirmed: item.confirmed,
     raw: item
   };
+}
+
+function isTokenTransferEvent(row) {
+  const type = String(row.type || row.raw?.type || "").toLowerCase();
+  return !type || type === "transfer";
 }
 
 async function getTronGridAccountTrc20Transfers({ tokenConfig, relatedAddress, limit = 200, fingerprint = "" }) {
@@ -1155,7 +1161,7 @@ async function getTronGridAccountTrc20Transfers({ tokenConfig, relatedAddress, l
 async function getTrc20Transfers({ tokenConfig, relatedAddress, limit = 50, start = 0 }) {
   if (TRONGRID_API_KEY && start === 0) {
     const result = await getTronGridAccountTrc20Transfers({ tokenConfig, relatedAddress, limit });
-    return result.rows;
+    return result.rows.filter(isTokenTransferEvent);
   }
 
   const url = new URL("https://apilist.tronscanapi.com/api/token_trc20/transfers");
@@ -1220,7 +1226,7 @@ async function getRecentInflowTransfers({ tokenConfig, relatedAddress, sinceTs, 
         reachedWindowStart = true;
         continue;
       }
-      if (normalizeAddress(row.to) === normalizeAddress(relatedAddress)) {
+      if (isTokenTransferEvent(row) && normalizeAddress(row.to) === normalizeAddress(relatedAddress)) {
         transfers.push(row);
       }
     }

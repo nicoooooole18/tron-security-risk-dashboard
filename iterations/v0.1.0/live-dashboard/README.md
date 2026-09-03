@@ -55,7 +55,7 @@ PORT=8787
 - 刷新按钮只触发后台刷新，不阻塞页面。
 - 默认每 300 秒后台刷新一次，可通过 `dashboard.snapshotRefreshSeconds` 或 `SNAPSHOT_REFRESH_SECONDS` 调整。
 - 流入窗口默认 30 天，可通过 `dashboard.inflowLookbackDays` 或 `INFLOW_LOOKBACK_DAYS` 调整；分页按接口实际返回条数推进 offset，页面展示上限默认 100 条，可通过 `dashboard.eventDisplayLimit` 或 `EVENT_DISPLAY_LIMIT` 调整。
-- 链上流入扫描优先使用 TronGrid account TRC20 fingerprint 分页；没有 TronGrid key 时回退 Tronscan offset 分页。Tronscan 请求支持 `TRONSCAN_API_KEY`，遇到 429 会按 `RATE_LIMIT_RETRY_MS` 退避重试。
+- 链上流入扫描优先使用 TronGrid account TRC20 fingerprint 分页；没有 TronGrid key 时回退 Tronscan offset 分页；只统计 `Transfer`，排除 `Approval` 授权记录。Tronscan 请求支持 `TRONSCAN_API_KEY`，遇到 429 会按 `RATE_LIMIT_RETRY_MS` 退避重试。
 - 运行时快照写入 `data/live-snapshot-cache.json`，该文件已忽略，不提交。
 
 ## 配置说明
