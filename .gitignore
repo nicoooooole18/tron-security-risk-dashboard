@@ -5,3 +5,4 @@
 *.sqlite-wal
 *.sqlite-shm
 iterations/v0.1.0/live-dashboard/data/live-snapshot-cache.json
+iterations/v0.1.0/live-dashboard/data/xinbi-*.json*

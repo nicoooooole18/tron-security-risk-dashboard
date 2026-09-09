@@ -347,7 +347,14 @@
     "autoJTokenSources": {
       "enabled": true,
       "includeLegacyMarkets": true,
-      "includeAssets": ["TRX", "USDD", "USDT", "wstUSDT", "sTRX", "USDCOLD"],
+      "includeAssets": [
+        "TRX",
+        "USDD",
+        "USDT",
+        "wstUSDT",
+        "sTRX",
+        "USDCOLD"
+      ],
       "transferLimit": 30,
       "maxCandidates": 6
     },
@@ -367,7 +374,182 @@
   "riskSources": {
     "useCexAddressBook": true,
     "htxSeedAddresses": [],
-    "intermediatePlatformAddresses": []
+    "intermediatePlatformAddresses": [],
+    "xinbi": {
+      "enabled": true,
+      "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+      "sourceImage": "https://pbs.twimg.com/media/HRs6en3bIAAINIA.jpg?name=orig",
+      "reportedAt": "2026-09-08T14:40:52Z",
+      "reportedSeedCount": 10,
+      "lookbackDays": 30,
+      "refreshSeconds": 300,
+      "maxAddresses": 2000,
+      "addressesPerCycle": 40,
+      "pagesPerAddress": 2,
+      "pageSize": 200,
+      "maxStoredTransfers": 100000,
+      "largeUsdtAmount": 100000,
+      "aggregateWindowHours": 24,
+      "aggregateMinTransfers": 5,
+      "rapidWindowHours": 1,
+      "dustUsdtAmount": 1,
+      "operationLimit": 30,
+      "seeds": [
+        {
+          "address": "TWPma8xH48AEN93x2krdukV9e1j6sPsBeS",
+          "label": "新币担保 · MistTrack 1",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TXka5xc6mEkcoVXR7F2TFDKernyLt3XyW4",
+          "label": "新币担保 · MistTrack 2",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TQhT3QWAbFiy6GEYuBrbK97uP3XVmTpRD8",
+          "label": "新币担保 · MistTrack 3",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TK3n8pGHvDTcK53mpfeDAMzdwjb22qvFU3",
+          "label": "新币担保 · MistTrack 4",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TGSGw4aUeAMNCfD8WqLRLe8ErQiJ1vqghj",
+          "label": "新币担保 · MistTrack 5",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TXHX2NUvcgft4zs6MkkUtdNVERPTavHDWN",
+          "label": "新币担保 · MistTrack 6",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "THH9JJNbLDN7qs1CyTxJQEjhC9y5FnZUhU",
+          "label": "新币担保 · MistTrack 7",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TG83Fk56S2mycAUMYHZyZp9wMg6DCf4bUn",
+          "label": "新币担保 · MistTrack 8",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TF7LUSoZQyDFxTFzCL11saBHAqMAyPh8dK",
+          "label": "新币担保 · MistTrack 9",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TBNjCi1d5Ns6ec5aMp28LpfKcX7xTpykAN",
+          "label": "新币担保 · MistTrack 10",
+          "attribution": "MistTrack 公开归属，非独立所有权认定"
+        }
+      ],
+      "extraTokens": [
+        {
+          "symbol": "USDD",
+          "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+          "decimals": 18
+        },
+        {
+          "symbol": "wstUSDT",
+          "contract": "TGkxzkDKyMeq2T7edKnyjZoFypyzjkkssq",
+          "decimals": 18
+        },
+        {
+          "symbol": "sTRX",
+          "contract": "TU3kjFuhtEo42tsCBtfYUAZxoqQ4yuSLQ5",
+          "decimals": 18
+        },
+        {
+          "symbol": "SUN",
+          "contract": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+          "decimals": 18
+        },
+        {
+          "symbol": "BTT",
+          "contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
+          "decimals": 18
+        },
+        {
+          "symbol": "NFT",
+          "contract": "TFczxzPhnThNSqr5by8tvxsdCFRRz6cPNq",
+          "decimals": 6
+        },
+        {
+          "symbol": "JST",
+          "contract": "TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9",
+          "decimals": 18
+        },
+        {
+          "symbol": "WIN",
+          "contract": "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7",
+          "decimals": 6
+        },
+        {
+          "symbol": "HTX",
+          "contract": "TUPM7K8REVzD2UdV4R5fe5M8XbnR2DdoJ6",
+          "decimals": 18
+        },
+        {
+          "symbol": "USD1",
+          "contract": "TPFqcBAaaUMCSVRCqPaQ9QnzKhmuoLR6Rc",
+          "decimals": 18
+        },
+        {
+          "symbol": "TUSD",
+          "contract": "TUpMhErZL2fhh4sVNULAbNKLokS4GjC1F4",
+          "decimals": 18
+        },
+        {
+          "symbol": "WBTC",
+          "contract": "TYhWwKpw43ENFWBTGpzLHn3882f2au7SMi",
+          "decimals": 8
+        },
+        {
+          "symbol": "BTC",
+          "contract": "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9",
+          "decimals": 8
+        },
+        {
+          "symbol": "ETH",
+          "contract": "THb4CqiFdwNHsWsQCs4JhzwjMWys4aqCbF",
+          "decimals": 18
+        },
+        {
+          "symbol": "ETHB",
+          "contract": "TRFe3hT5oYhjSZ6f3ji5FJ7YCfrkWnHRvh",
+          "decimals": 18
+        },
+        {
+          "symbol": "USDDOLD",
+          "contract": "TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn",
+          "decimals": 18
+        },
+        {
+          "symbol": "USDJ",
+          "contract": "TMwFHYXLJaRUPeW6421aqXL4ZEzPRFGkGT",
+          "decimals": 18
+        },
+        {
+          "symbol": "WBTT",
+          "contract": "TKfjV9RNKJJCqPvBtK8L7Knykh7DNWvnYt",
+          "decimals": 6
+        },
+        {
+          "symbol": "BUSDOLD",
+          "contract": "TMz2SWatiAtZVVcH2ebpsbVtYwUPT9EdjH",
+          "decimals": 18
+        },
+        {
+          "symbol": "SUNOLD",
+          "contract": "TKkeiboTkxXKJpbmVFbv4a8ov5rAfRDMf9",
+          "decimals": 18
+        }
+      ],
+      "assetSource": "https://openapi.just.network/lend/jtoken"
+    }
   },
   "notes": [
     "HTX seed 地址优先复用 tron-monitor-dashboard 的 CEX 地址库，config.json 中的手工地址作为补充覆盖。",

@@ -3,6 +3,7 @@ const crypto = require("node:crypto");
 const fsSync = require("node:fs");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { createXinbiMonitor } = require("./xinbi-monitor");
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, "config.json");
@@ -1667,6 +1668,9 @@ async function startSnapshotService() {
 async function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const requested = url.pathname === "/" ? "/index.html" : url.pathname;
+  if (!["/index.html", "/app.js", "/styles.css", "/xinbi-ui.js"].includes(requested)) {
+    res.writeHead(404); res.end("Not found"); return;
+  }
   const filePath = path.normalize(path.join(ROOT, requested));
   if (!filePath.startsWith(ROOT)) {
     res.writeHead(403);
@@ -1685,9 +1689,28 @@ async function serveStatic(req, res) {
   }
 }
 
+const xinbiMonitor = createXinbiMonitor({
+  root: ROOT, readConfig, fetchJson, apiBase: TRONGRID_API_BASE,
+  blacklist: getTokenBlacklistStatus,
+  readBalance: async (contract, address) => {
+    const result = await triggerConstantContract({ contract, functionSelector: "balanceOf(address)", parameter: encodeTronAddressParameter(address) });
+    const raw = result.constant_result?.[0];
+    if (!raw || !/^[0-9a-f]+$/i.test(raw)) throw new Error("balanceOf 无有效返回值");
+    return BigInt(`0x${raw}`);
+  },
+  getHubs: async config => {
+    const intel = await buildAddressIntel(config);
+    return new Set([...intel.htxSeeds, ...intel.platformSeeds, ...(config.riskSources.xinbi.publicHubAddresses || [])]);
+  },
+  hexToAddress: hexAddressToTronBase58
+});
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === "/api/xinbi" && req.method === "GET") {
+      sendJson(res, 200, xinbiMonitor.getSnapshot()); return;
+    }
     if (url.pathname === "/api/admin/login" && req.method === "POST") {
       if (!ADMIN_PASSWORD) {
         sendJson(res, 503, { error: "admin password is not configured" });
@@ -1726,6 +1749,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (url.pathname === "/api/snapshot") {
+      if (url.searchParams.get("refresh") === "1") xinbiMonitor.refresh();
       const snapshot = await getSnapshotResponse({ forceRefresh: url.searchParams.get("refresh") === "1" });
       sendJson(res, 200, sanitizeSnapshotForPublic(snapshot));
       return;
@@ -1736,9 +1760,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
+if (require.main === module) server.listen(PORT, HOST, () => {
   console.log(`JustLend live dashboard listening on http://${HOST}:${PORT}`);
   startSnapshotService().catch((error) => {
     console.error(`[snapshot] service failed: ${error.stack || error.message}`);
   });
+  xinbiMonitor.start().catch(error => console.error(`[xinbi] startup: ${error.message}`));
 });
+
+module.exports = { server, xinbiMonitor };

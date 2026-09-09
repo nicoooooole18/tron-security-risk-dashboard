@@ -298,7 +298,7 @@ function render(snapshot) {
     ? "P0 冻结命中"
     : statusLevel === "P1"
       ? "P1 待核查"
-      : "未命中";
+      : "原有监控未命中";
   els.statusDesc.textContent = statusLevel === "SYNCING"
     ? "后台正在生成 JustLend 地址库和风险快照；当前页面不会阻塞等待链上全量扫描。"
     : snapshot.status.contractFrozen
@@ -309,7 +309,7 @@ function render(snapshot) {
       ? `合约未冻结；${userIntersection.unknownCount} 个用户地址黑名单状态待重试。`
     : p1Events.length
       ? `合约未冻结；发现 ${p1Events.length} 笔 P1 高风险流入。`
-      : "合约未冻结；未发现用户黑名单交集或 HTX 相关入金路径。";
+      : "合约未冻结；未发现用户黑名单交集或 HTX 相关入金路径。新币风险请查看下方独立监控。";
   els.statusStrip.className = `status-strip ${statusLevel === "P0" ? "danger" : statusLevel === "P1" || statusLevel === "SYNCING" ? "warning" : "clear"}`;
   els.statusPill.textContent = snapshot.cache?.refreshInProgress
     ? "后台同步中"
