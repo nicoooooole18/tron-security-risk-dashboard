@@ -376,6 +376,9 @@
     "htxSeedAddresses": [],
     "intermediatePlatformAddresses": [],
     "xinbi": {
+      "investigationEnabled": true,
+      "rightsMaxHops": 4,
+      "maxRightsAccounts": 200,
       "enabled": true,
       "source": "https://x.com/MistTrack_io/status/2097334357891645946",
       "sourceImage": "https://pbs.twimg.com/media/HRs6en3bIAAINIA.jpg?name=orig",

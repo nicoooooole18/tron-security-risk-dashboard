@@ -1695,7 +1695,7 @@ const xinbiMonitor = createXinbiMonitor({
   readBalance: async (contract, address) => {
     const result = await triggerConstantContract({ contract, functionSelector: "balanceOf(address)", parameter: encodeTronAddressParameter(address) });
     const raw = result.constant_result?.[0];
-    if (!raw || !/^[0-9a-f]+$/i.test(raw)) throw new Error("balanceOf 无有效返回值");
+    if (!raw || !/^[0-9a-f]{64}$/i.test(raw)) throw new Error("balanceOf 未返回标准 uint256，余额未知");
     return BigInt(`0x${raw}`);
   },
   getHubs: async config => {

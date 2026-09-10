@@ -102,18 +102,20 @@
         <div>
           <span class="section-kicker">JustLend V1 · USDT 市场</span>
           <h2>jUSDT 入金与权益监测</h2>
-          <p class="section-copy">单独查看风险来源资金存入 jUSDT 市场，以及关联账户之间的 jUSDT 权益转移。</p>
+          <p class="section-copy">核对事件存赎证据，跟踪关联账户的 jUSDT 转移与赎回。</p>
         </div>
         <span class="pill muted">专项视图</span>
       </div>
       <div class="decision-banner" id="jusdtDecision">正在读取 jUSDT 监测结果。</div>
       <div class="xinbi-metrics jusdt-metrics" id="jusdtSummary"></div>
+      <div id="jusdtInvestigations"></div>
       <div class="section-tools xinbi-tools">
         <label>筛选
           <select id="jusdtFilter">
             <option value="all">全部 jUSDT 线索</option>
             <option value="deposit">关联入金</option>
             <option value="rights">权益转移</option>
+            <option value="redeem">赎回 / 待核赎回</option>
           </select>
         </label>
         <span id="jusdtCount"></span>

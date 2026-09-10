@@ -4,9 +4,14 @@
   const esc = value => String(value ?? "—").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const time = value => value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "—";
   const amount = value => value === null || value === undefined ? "未知" : Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 6 });
+  const rawAmount = (raw, decimals = 8) => {
+    if (!/^\d+$/.test(String(raw ?? ""))) return "未知";
+    const digits = String(raw).padStart(decimals + 1, "0");
+    return `${BigInt(digits.slice(0, -decimals)).toLocaleString("zh-CN")}.${digits.slice(-decimals)}`;
+  };
   const addr = value => /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(value || "") ? `<a class="xinbi-address" href="https://tronscan.org/#/address/${encodeURIComponent(value)}" target="_blank" rel="noopener noreferrer">${esc(value)}</a>` : esc(value);
   const tx = value => /^[0-9a-f]{64}$/i.test(value || "") ? `<a href="https://tronscan.org/#/transaction/${value}" target="_blank" rel="noopener noreferrer">${value.slice(0, 10)}…</a>` : "证据缺失";
-  const kinds = { FLOW_0: "直接流入", FLOW_1: "1 个中转地址", FLOW_2: "2 个中转地址", INTERACTION: "仅交互关联", JTOKEN_RIGHTS: "jToken 权益转移" };
+  const kinds = { FLOW_0: "直接流入", FLOW_1: "1 个中转地址", FLOW_2: "2 个中转地址", FLOW_3: "登记代理路径", INTERACTION: "仅交互关联", JTOKEN_RIGHTS: "jToken 权益转移" };
   const actions = { Mint: "存款", RepayBorrow: "还款", RepayBorrowBehalf: "代还款", LiquidateBorrow: "清算", Borrow: "借款", Redeem: "赎回" };
   let current = null;
   function operationText(event) {
@@ -40,9 +45,11 @@
     const filter = byId("jusdtFilter").value;
     const deposits = (current.events || []).filter(e => /(^|\b)jUSDT\b/i.test(e.market || ""));
     const rights = (current.rights || []).filter(e => e.token === "jUSDT");
+    const redemptions = (current.redemptions || []).filter(e => e.token === "jUSDT");
     const all = [
       ...deposits.map(e => ({ ...e, jusdtType: "deposit" })),
-      ...rights.map(e => ({ ...e, jusdtType: "rights" }))
+      ...rights.map(e => ({ ...e, jusdtType: "rights" })),
+      ...redemptions.map(e => ({ ...e, jusdtType: "redeem" }))
     ].sort((a, b) => b.blockTs - a.blockTs);
     const rows = all.filter(e => filter === "all" || e.jusdtType === filter);
     const related = new Set();
@@ -55,10 +62,11 @@
       ["关联入金", deposits.length],
       ["关联入金交易额", `${amount(depositUsdt)} USDT`],
       ["jUSDT 权益转移", `${rights.length} 笔 / ${amount(rightsAmount)} jUSDT`],
+      ["关联账户赎回", `${redemptions.filter(e => e.kind === "REDEEM").length} 笔已核 / ${redemptions.filter(e => e.kind !== "REDEEM").length} 笔待核`],
       ["相关账户", related.size]
     ].map(([k, v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("");
     const coverageLimited = Number(c.pendingAccounts || 0) > 0 || Number(c.incompleteHistoryAccounts || 0) > 0
-      || c.addressLimitReached || c.storageTruncated || c.graphTruncated;
+      || c.addressLimitReached || c.storageTruncated || c.graphTruncated || c.displayTruncated || c.rightsLimitReached || c.errors?.length || c.operationsPending;
     const decision = byId("jusdtDecision");
     if (deposits.length) {
       decision.textContent = `发现 ${deposits.length} 条风险关联资金进入 jUSDT 市场${rights.length ? `，并发现 ${rights.length} 笔后续 jUSDT 权益转移` : ""}。请从交易证据核对具体路径。${coverageLimited ? " 当前扫描仍不完整或存在截断。" : ""}`;
@@ -70,18 +78,47 @@
       decision.textContent = `已扫描范围内暂未发现风险关联的 jUSDT 入金或权益转移。${coverageLimited ? " 扫描仍不完整或存在截断，不能据此认定无风险。" : ""}`;
       decision.className = coverageLimited ? "decision-banner warning" : "decision-banner clear";
     }
+    if (current.investigations?.length) {
+      decision.textContent = `已登记新币关联 180 万 USDT 历史存赎事件：两批凭证均已赎回，不能作为当前未赎回敞口。链上复核和七地址余额见下方；滚动扫描${coverageLimited ? "仍有覆盖缺口" : "仅代表已扫描范围"}。`;
+      decision.className = "decision-banner warning";
+    }
+    if (current.runtime?.lastError || current.runtime?.stale) {
+      decision.textContent += ` 当前快照${current.runtime.lastError ? "扫描失败" : "待更新"}，请检查扫描状态。`;
+      decision.className = "decision-banner warning";
+    }
+    renderInvestigations();
     byId("jusdtCount").textContent = `当前筛选：${amount(rows.length)} 条`;
     byId("jusdtRows").innerHTML = rows.length ? rows.map(e => {
       const isDeposit = e.jusdtType === "deposit";
       const evidence = isDeposit ? (e.evidence || []) : [e];
       return `<tr><td>${esc(time(e.blockTs))}<br><span class="pill ${e.level === "P1" ? "red" : "amber"}">${esc(e.level)} ${e.level === "P1" ? "重点线索" : "一般线索"}</span></td>
-        <td>${isDeposit ? "关联资金进入 jUSDT" : "jUSDT 权益转移"}<br>${esc(operationText(e))}</td>
-        <td>${amount(e.amount)} ${esc(e.token)}</td>
+        <td>${isDeposit ? "关联资金进入 jUSDT" : e.jusdtType === "redeem" ? (e.kind === "REDEEM" ? "已核对赎回" : "待核赎回") : "jUSDT 权益转移"}<br>${esc(operationText(e))}</td>
+        <td>${rawAmount(e.amountRaw, e.decimals ?? 8)} ${esc(e.token)}${e.redeemedUnderlyingRaw != null ? `<br>赎回 ${rawAmount(e.redeemedUnderlyingRaw, 6)} USDT` : ""}</td>
         <td>${isDeposit ? addr(e.from) : `${addr(e.from)} → ${addr(e.to)}`}</td>
         <td>${evidence.map(r => `<div class="xinbi-leg">${addr(r.from)} → ${addr(r.to)}<br>${amount(r.amount)} ${esc(r.token)} · ${tx(r.txid)}</div>`).join("")}</td>
         <td>${esc(e.reason)}</td></tr>`;
     }).join("") : '<tr><td colspan="6">当前筛选下没有 jUSDT 相关线索。</td></tr>';
-    byId("jusdtCoverage").textContent = `数据来自新币专项的 30 天路径扫描；最近识别活动：${time(latest)}。当前候选地址已初扫 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0}，历史待补齐 ${c.incompleteHistoryAccounts ?? 0}。页面只展示已命中的 jUSDT 市场入金和权益 Transfer，不等同于完整持仓或赎回生命周期。`;
+    byId("jusdtCoverage").textContent = `下表为滚动扫描结果，与上方固定事件证据不相加。最近识别活动：${time(latest)}。候选初扫 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0}，历史待补 ${c.incompleteHistoryAccounts ?? 0}。权益接收方最多继续跟踪 ${c.rightsMaxHops ?? 4} 跳，当前 ${c.rightsTrackedAccounts ?? 0} 个；${c.rightsLimitReached ? "权益候选达到上限；" : ""}${c.displayTruncated ? "明细展示已截断；" : ""}不代表全量持仓、完整同源证明或全部后续赎回。`;
+  }
+  function renderInvestigations() {
+    const panel = byId("jusdtInvestigations");
+    if (!panel) return;
+    const labels = { verified: "后台已复核", pending: "等待后台复核", error: "复核失败", mismatch: "证据不一致" };
+    panel.innerHTML = (current.investigations || []).map(c => {
+      const verified = c.steps.filter(s => s.verification.status === "verified").length;
+      const problems = c.steps.filter(s => ["error", "mismatch"].includes(s.verification.status)).length;
+      return `<details open class="investigation"><summary>${esc(c.title)}</summary>
+        <p>登记历史：${amount(c.historical.depositUsdt)} USDT 存入，${amount(c.historical.redeemedUsdt)} USDT 赎回（含利息）。<strong>${esc(c.historical.status)}</strong>。</p>
+        <p class="notice">${esc(c.evidenceBasis)}。后台复核 ${verified}/${c.steps.length} 笔${problems ? `，${problems} 笔失败或不一致，请复查登记结论` : ""}。${esc(c.note)}</p>
+        <details><summary>七个调查地址与当前 jUSDT 余额</summary>
+        <div class="table-wrap"><table><thead><tr><th>地址</th><th>交易角色 / 归属</th><th>当前 jUSDT 余额</th><th>读取时间 / 状态</th></tr></thead><tbody>
+        ${c.addresses.map(a => { const b = c.balances.find(b => b.address === a.address) || {}; return `<tr><td>${esc(a.id)} · ${addr(a.address)}</td><td>${esc(a.role)}<br>${esc(a.attribution)}</td><td>${b.status === "ok" ? rawAmount(b.raw) : "未知"}</td><td>${esc(time(b.checkedAt))}<br>${esc(b.error || (b.status === "ok" ? "已读取；余额不自动视为涉案金额" : "待读取"))}</td></tr>`; }).join("")}
+        </tbody></table></div></details>
+        <details><summary>两组存款 → 权益转移 → 赎回及上游证据（${c.steps.length} 笔交易）</summary>
+        <div class="table-wrap"><table><thead><tr><th>时间 / 动作</th><th>交易</th><th>资产流转</th><th>后台复核</th></tr></thead><tbody>
+        ${c.steps.map(s => `<tr><td>${esc(time(s.blockTs))}<br>${esc(s.label)}</td><td>${tx(s.txid)}</td><td>${s.transfers.map(t => `${addr(t.from)} → ${addr(t.to)}<br>${rawAmount(t.amountRaw, t.decimals)} ${esc(t.token)}`).join("<br>")}</td><td>${esc(labels[s.verification.status] || "未知")}<br>${esc(time(s.verification.checkedAt))}${s.verification.error ? `<br>${esc(s.verification.error)}` : ""}</td></tr>`).join("")}
+        </tbody></table></div></details></details>`;
+    }).join("") || '<p class="notice">此快照尚无事件台账；等待监控版本更新。</p>';
   }
   function render(data) {
     current = data;
@@ -95,6 +132,9 @@
       if (runtime.lastError) {
         decision.textContent = `专项扫描异常：${runtime.lastError}。当前结果可能过期，请先查看扫描覆盖。`;
         decision.className = "decision-banner danger";
+      } else if (data.investigations?.length) {
+        decision.textContent = "已登记新币关联 180 万 USDT 历史存赎事件，两批凭证均已赎回。请在 jUSDT 监测中查看七地址、交易证据及后台复核状态；滚动扫描未命中不撤销历史证据。";
+        decision.className = "decision-banner warning";
       } else if (strong > 0) {
         decision.textContent = `发现 ${strong} 条新币来源资金进入 JustLend 的直接或中转路径，请优先查看交易证据。${coverageLimited ? " 当前仍存在未完成或受限扫描，命中数量可能继续变化。" : ""}`;
         decision.className = "decision-banner danger";

@@ -3,6 +3,7 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const investigation = require("./xinbi-investigation");
 const DAY = 86400000;
 const ZERO = "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
 
@@ -31,18 +32,19 @@ function normalizeRow(item, tokens) {
   const blockTs = Number(item.block_timestamp);
   if (!/^\d+$/.test(raw) || BigInt(raw) === 0n || !Number.isFinite(blockTs) || blockTs <= 0) return null;
   if (!validAddress(item.from) || !validAddress(item.to) || item.from === ZERO || item.to === ZERO) return null;
+  const index = item.event_index;
   return { txid: item.transaction_id, from: item.from, to: item.to, contract,
     token: token.symbol, decimals: token.decimals, jToken: Boolean(token.jToken),
     amountRaw: raw, amount: Number(raw) / 10 ** token.decimals, blockTs,
-    eventIndex: item.event_index ?? null };
+    eventIndex: index !== undefined && index !== null && /^\d+$/.test(String(index)) ? Number(index) : null };
 }
 
 function precedes(a, b) {
-  // Equal timestamps do not establish order, even within a transaction.
-  return a.blockTs < b.blockTs;
+  return a.blockTs < b.blockTs || (a.blockTs === b.blockTs && a.txid === b.txid
+    && Number.isInteger(a.eventIndex) && Number.isInteger(b.eventIndex) && a.eventIndex < b.eventIndex);
 }
 
-function buildFindings({ transfers, seeds, watched, hubs, config, now }) {
+function buildFindings({ transfers, seeds, watched, hubs, config, now, investigationAccounts = [] }) {
   const seedSet = new Set(seeds.map(s => s.address));
   const protocol = new Map(watched.filter(w => w.enabled).map(w => [w.address, w]));
   const incoming = new Map();
@@ -59,7 +61,8 @@ function buildFindings({ transfers, seeds, watched, hubs, config, now }) {
     graphBudget.visits++;
     if (graphBudget.visits > 200000) { graphBudget.truncated = true; return null; }
     if (seedSet.has(last.from)) return [last];
-    if (depth >= 2 || hubs.has(last.from) || protocol.has(last.from) || visited.has(last.from)) return null;
+    const maxDepth = investigationAccounts.includes(last.from) ? 3 : 2;
+    if (depth >= maxDepth || hubs.has(last.from) || protocol.has(last.from) || visited.has(last.from)) return null;
     const seen = new Set([...visited, last.from]);
     for (const prior of incoming.get(last.from) || []) {
       if (prior.contract !== last.contract || !precedes(prior, last)) continue;
@@ -95,7 +98,7 @@ function buildFindings({ transfers, seeds, watched, hubs, config, now }) {
     const key = `${event.from}:${event.contract}`;
     if (!groupedEvents.has(key)) groupedEvents.set(key, []);
     groupedEvents.get(key).push(event);
-    if (!earliestEvent.has(event.from) || event.blockTs < earliestEvent.get(event.from)) earliestEvent.set(event.from, event.blockTs);
+    if (!earliestEvent.has(event.from) || precedes(event, earliestEvent.get(event.from))) earliestEvent.set(event.from, event);
   }
   for (const group of groupedEvents.values()) {
     group.sort((a,b) => a.blockTs-b.blockTs);
@@ -112,15 +115,28 @@ function buildFindings({ transfers, seeds, watched, hubs, config, now }) {
     const sources = (incoming.get(event.from) || []).filter(r => seedSet.has(r.from)
       && precedes(r, event) && r.blockTs >= event.blockTs - config.aggregateWindowHours * 3600000);
     if (new Set(sources.map(r => r.from)).size >= 2) event.anomalies.push("多个新币 seed 汇集后入金");
-    if ((incoming.get(event.from) || []).some(r => protocol.has(r.from) && r.blockTs > event.blockTs
+    if ((incoming.get(event.from) || []).some(r => protocol.has(r.from) && r.contract === event.contract && r.blockTs > event.blockTs
       && r.blockTs - event.blockTs <= config.rapidWindowHours * 3600000)) event.anomalies.push("入金后 1h 内收到协议出金（待核用途）");
   }
-  const rights = transfers.filter(r => r.jToken && !protocol.has(r.from) && !protocol.has(r.to)
-    && (seedSet.has(r.from) || earliestEvent.get(r.from) < r.blockTs))
-    .map(r => ({ ...r, id: transferKey(r), kind: "JTOKEN_RIGHTS", level: "P2", evidence: [r], anomalies: [],
-      reason: "相关账户转出 jToken 存款权益；仅为账户关联，底层资产来源待核。" }));
+  // Track account association across rights transfers without claiming fungible-token provenance.
+  const rightsAccounts = new Map([...seedSet, ...investigationAccounts].map(a => [a, { since: 0, hops: 0 }]));
+  for (const [a, edge] of earliestEvent) if (!rightsAccounts.has(a)) rightsAccounts.set(a, { since: edge.blockTs, edge, hops: 0 });
+  const rights = [], redemptionCandidates = [];
+  for (const r of transfers.filter(r => r.jToken).sort((a,b) => a.blockTs-b.blockTs || (a.eventIndex ?? 0)-(b.eventIndex ?? 0))) {
+    const origin = rightsAccounts.get(r.from);
+    if (!origin || (origin.edge ? !precedes(origin.edge, r) : origin.since >= r.blockTs) || protocol.has(r.from) || hubs.has(r.from)) continue;
+    if (protocol.has(r.to)) {
+      redemptionCandidates.push({ ...r, id: transferKey(r), kind: "REDEEM_CANDIDATE", level: "P2", evidence: [r],
+        reason: "关联账户向市场转回 jToken，需结合 Redeem 事件确认，不能仅凭 Transfer 认定赎回。" });
+      continue;
+    }
+    rights.push({ ...r, id: transferKey(r), kind: "JTOKEN_RIGHTS", level: "P2", evidence: [r], anomalies: [],
+      reason: "关联账户转出 jToken 存款权益；接收方继续跟踪，资金归属与控制人待核。" });
+    if (!hubs.has(r.to) && origin.hops < (config.rightsMaxHops ?? 4) && !rightsAccounts.has(r.to))
+      rightsAccounts.set(r.to, { since: r.blockTs, edge: r, hops: origin.hops + 1 });
+  }
   const seedTransfers = transfers.filter(r => seedSet.has(r.from) || seedSet.has(r.to));
-  return { events, rights, graphTruncated: graphBudget.truncated,
+  return { events, rights, redemptionCandidates, graphTruncated: graphBudget.truncated,
     seedTransfers: seedTransfers.sort((a,b) => b.blockTs-a.blockTs),
     summary: { inflowCount: events.length, strongPathCount: events.filter(e => e.kind !== "INTERACTION").length,
       interactionCount: events.filter(e => e.kind === "INTERACTION").length,
@@ -151,8 +167,36 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
   function getSnapshot() {
     return { ...(snapshot || { version: 1, summary: {}, addresses: [], events: [], rights: [], seedTransfers: [],
       coverage: { status: "pending", limitations: ["首次扫描尚未完成，不能据此判断无风险。"] } }),
+    investigations: snapshot?.investigations?.length === 0 ? [] : [investigationSnapshotForState()],
       runtime: { ...status, running: Boolean(running), lastError,
         stale: !snapshot?.generatedAt || Date.now() - Date.parse(snapshot.generatedAt) > 900000 } };
+  }
+  function investigationSnapshotForState() { return investigation.investigationSnapshot(state); }
+
+  async function fetchEvents(txid) {
+    let cursor = ""; const events = [];
+    for (let page = 0; page < 5; page++) {
+      const url = new URL(`/v1/transactions/${txid}/events`, apiBase);
+      url.search = new URLSearchParams({ only_confirmed: "true", limit: "200" });
+      if (cursor) url.searchParams.set("fingerprint", cursor);
+      const response = await fetchJson(url.toString());
+      if (response.success === false || !Array.isArray(response.data)) throw new Error("transaction event response missing data");
+      for (const entry of response.data) {
+        if (entry.transaction_id && entry.transaction_id !== txid) throw new Error("transaction event hash mismatch");
+        if (entry.confirmed === false) continue;
+        const result = { ...entry.result };
+        for (const key of ["from", "to", "src", "dst", "payer", "borrower", "minter", "redeemer", "liquidator"]) {
+          if (/^(0x|41)?[0-9a-f]{40}$/i.test(result[key] || "")) result[key] = hexToAddress(result[key].replace(/^(0x|41)(?=[0-9a-f]{40}$)/i, ""));
+        }
+        result.from ??= result.src; result.to ??= result.dst;
+        events.push({ ...entry, result });
+      }
+      const next = response.meta?.fingerprint || "";
+      if (!next) return { events, partial: false };
+      if (next === cursor) throw new Error("transaction event cursor repeated");
+      cursor = next;
+    }
+    return { events, partial: true };
   }
   async function run() {
     const full = await readConfig(); const config = full.riskSources?.xinbi;
@@ -169,11 +213,18 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
     const seedSet = new Set(seeds.map(s => s.address));
     const priorityAccounts = config.priorityAccounts || [];
     if (priorityAccounts.some(a => !validAddress(a.address) || !seedSet.has(a.origin) || a.depth !== 1)) throw new Error("优先关联地址配置无效");
-    const prioritySet = new Set([...seedSet, ...priorityAccounts.map(a => a.address)]);
+    const caseAccounts = config.investigationEnabled === false ? [] : investigation.addresses;
+    const caseSet = new Set(caseAccounts.map(a => a.address));
+    const prioritySet = new Set([...seedSet, ...priorityAccounts.map(a => a.address), ...caseSet]);
     let capReached = false;
-    function addAccount(address, depth, weak = false) {
+    let rightsLimitReached = false;
+    function addAccount(address, depth, weak = false, rights = false) {
       if (protocol.has(address) || address === ZERO || !validAddress(address)) return;
       const existing = state.accounts[address];
+      if (rights && !existing?.rightsTracked && !prioritySet.has(address)
+        && Object.values(state.accounts).filter(a => a.rightsTracked).length >= (config.maxRightsAccounts ?? 200)) {
+        rightsLimitReached = true; return false;
+      }
       if (existing) {
         if (depth < existing.depth || (existing.weak && !weak)) {
           existing.depth = Math.min(depth, existing.depth);
@@ -183,19 +234,56 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
           existing.backfillDone = false;
         }
         if (!weak) existing.weak = false;
-        return;
+        return true;
       }
-      if (!prioritySet.has(address) && Object.keys(state.accounts).length >= config.maxAddresses) {
+      if (rights && Object.values(state.accounts).filter(a => a.rightsTracked).length >= (config.maxRightsAccounts ?? 200)) {
+        rightsLimitReached = true; return;
+      }
+      if (!rights && !prioritySet.has(address) && Object.keys(state.accounts).length >= config.maxAddresses) {
         capReached = true;
         // Do not let inbound-only contacts crowd out seed-origin outflow wallets.
         const victim = !weak && Object.entries(state.accounts).find(([a,v]) => v.weak && !prioritySet.has(a));
         if (victim) delete state.accounts[victim[0]]; else return;
       }
       state.accounts[address] = { depth, weak, lastScan: 0, oldest: now, backfillDone: false, cursor: "", error: null };
+      return true;
     }
     for (const s of seeds) addAccount(s.address, 0);
     for (const a of priorityAccounts) addAccount(a.address, a.depth);
+    for (const a of caseAccounts) addAccount(a.address, a.depth);
     const txMap = new Map(state.transfers.filter(r => r.blockTs >= since).map(r => [transferKey(r), r]));
+    state.investigationVerification ||= {};
+    state.investigationBalances ||= {};
+    state.investigationEvents ||= {};
+    state.operations ||= {};
+    // Fixed evidence and verified event logs are never evicted by the rolling transfer cap.
+    status.stage = "investigation";
+    if (caseAccounts.length) {
+      for (const step of investigation.steps) {
+        const previous = state.investigationVerification[step.txid];
+        if (previous?.status === "verified" && now - Date.parse(previous.checkedAt) < DAY) continue;
+        try {
+          const result = await fetchEvents(step.txid);
+          const verdict = investigation.verifyStep(step, result.events);
+          if (result.partial) throw new Error("事件分页未完成，不能确认完整证据");
+          if (result.events.some(e => e.block_timestamp && Number(e.block_timestamp) !== step.blockTs)) throw new Error("事件时间与登记证据不符");
+          state.investigationVerification[step.txid] = { ...verdict, checkedAt: new Date().toISOString() };
+          if (verdict.status === "verified") state.investigationEvents[step.txid] = result.events;
+          else delete state.investigationEvents[step.txid];
+        } catch (error) {
+          state.investigationVerification[step.txid] = { status: "error", error: error.message,
+            lastVerifiedAt: previous?.status === "verified" ? previous.checkedAt : previous?.lastVerifiedAt,
+            checkedAt: new Date().toISOString() };
+        }
+      }
+      for (const a of caseAccounts) {
+        try {
+          const raw = String(await readBalance(investigation.JUSDT, a.address));
+          if (!/^\d+$/.test(raw)) throw new Error("jUSDT 余额格式无效");
+          state.investigationBalances[a.address] = { raw, status: "ok", checkedAt: new Date().toISOString() };
+        } catch (error) { state.investigationBalances[a.address] = { raw: null, status: "error", error: error.message, checkedAt: new Date().toISOString() }; }
+      }
+    }
     status = { stage: "addresses", processed: 0, total: seeds.length, startedAt: new Date().toISOString() };
     for (const s of seeds) {
       const previous = state.seedStatus[s.address];
@@ -211,9 +299,16 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
         balanceError, checkedAt: new Date().toISOString() };
       status.processed++;
     }
-    const queue = Object.entries(state.accounts).filter(([a]) => !hubs.has(a) || seedSet.has(a))
-      .sort(([a,x],[b,y]) => (prioritySet.has(b) ? 1 : 0) - (prioritySet.has(a) ? 1 : 0) || x.lastScan-y.lastScan || Number(x.weak)-Number(y.weak) || x.depth-y.depth)
-      .slice(0, Math.max(config.addressesPerCycle, prioritySet.size + 1));
+    const candidates = Object.entries(state.accounts).filter(([a]) => !hubs.has(a) || seedSet.has(a))
+      .sort(([a,x],[b,y]) => (prioritySet.has(b) ? 1 : 0) - (prioritySet.has(a) ? 1 : 0)
+        || x.lastScan-y.lastScan || Number(x.weak)-Number(y.weak) || x.depth-y.depth);
+    const priorityQueue = candidates.filter(([a]) => prioritySet.has(a));
+    const remaining = Math.max(config.addressesPerCycle - priorityQueue.length, 2);
+    // Reserve half the rotating slots for rights receivers, while keeping
+    // ordinary candidates moving even when the rights queue is saturated.
+    const rightsQueue = candidates.filter(([a,v]) => !prioritySet.has(a) && v.rightsTracked).slice(0, Math.ceil(remaining / 2));
+    const selected = new Set([...priorityQueue, ...rightsQueue].map(([a]) => a));
+    const queue = [...priorityQueue, ...rightsQueue, ...candidates.filter(([a]) => !selected.has(a)).slice(0, remaining - rightsQueue.length)];
     status = { ...status, stage: "transfers", processed: 0, total: queue.length };
     for (const [address, account] of queue) {
       try {
@@ -237,6 +332,15 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
             if (!row || row.blockTs < since || row.blockTs > now) continue;
             txMap.set(transferKey(row), row);
             if (row.from === address && account.depth < 2 && !account.weak && !row.jToken) addAccount(row.to, account.depth + 1);
+            if (row.from === address && row.jToken && !protocol.has(row.to) && !hubs.has(row.to)
+              && (!account.weak || caseSet.has(address)) && (account.rightsHops || 0) < (config.rightsMaxHops ?? 4)) {
+              const added = addAccount(row.to, account.depth + 1, false, true);
+              const recipient = added && state.accounts[row.to];
+              if (recipient) {
+                recipient.rightsTracked = true;
+                recipient.rightsHops = Math.min(recipient.rightsHops ?? Infinity, (account.rightsHops || 0) + 1);
+              }
+            }
             if (seedSet.has(address) && row.to === address) addAccount(row.from, 1, true);
           }
           account.oldest = Math.min(account.oldest || now, ...rows.map(r => Number(r.block_timestamp) || now));
@@ -262,16 +366,28 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
     state.transfers = [...txMap.values()].sort((a,b) => b.blockTs-a.blockTs);
     const storageTruncated = state.transfers.length > config.maxStoredTransfers;
     state.transfers = state.transfers.slice(0, config.maxStoredTransfers);
-    const findings = buildFindings({ transfers: state.transfers, seeds, watched, hubs, config, now });
+    const evidenceMap = new Map(state.transfers.map(r => [transferKey(r), r]));
+    for (const [txid, entries] of Object.entries(state.investigationEvents)) {
+      if (!caseAccounts.length) break;
+      for (const e of entries.filter(e => e.event_name === "Transfer")) {
+        const row = normalizeRow({ type: "Transfer", transaction_id: txid, from: e.result.from, to: e.result.to,
+          value: e.result.value ?? e.result.amount ?? e.result.wad, token_info: { address: e.contract_address }, event_index: e.event_index,
+          block_timestamp: e.block_timestamp || investigation.steps.find(s => s.txid === txid)?.blockTs }, tokens);
+        if (row && row.blockTs >= since) {
+          evidenceMap.delete(transferKey({ ...row, eventIndex: null }));
+          evidenceMap.set(transferKey(row), row);
+        }
+      }
+    }
+    const analysisTransfers = [...evidenceMap.values()];
+    const findings = buildFindings({ transfers: analysisTransfers, seeds, watched, hubs, config, now, investigationAccounts: [...caseSet] });
     status.stage = "operations";
-    const operationsToFetch = findings.events.filter(e => !state.operations[e.txid] || state.operations[e.txid].error).slice(0, config.operationLimit);
+    const operationsToFetch = [...new Map([...findings.events, ...findings.redemptionCandidates].map(e => [e.txid, e])).values()]
+      .filter(e => !state.operations[e.txid] || state.operations[e.txid].error || state.operations[e.txid].partial).slice(0, config.operationLimit);
     for (const event of operationsToFetch) {
       try {
-        const url = new URL(`/v1/transactions/${event.txid}/events`, apiBase);
-        url.search = new URLSearchParams({ only_confirmed: "true", limit: "200" });
-        const response = await fetchJson(url.toString());
-        if (response.success === false || !Array.isArray(response.data)) throw new Error("transaction event response missing data");
-        const actions = response.data.filter(r => protocol.has(r.contract_address)
+        const result = state.investigationEvents[event.txid] ? { events: state.investigationEvents[event.txid], partial: false } : await fetchEvents(event.txid);
+        const actions = result.events.filter(r => protocol.has(r.contract_address)
           && ["Mint", "RepayBorrow", "LiquidateBorrow", "Borrow", "Redeem"].includes(r.event_name))
           .map(r => { const result = { ...r.result };
             for (const key of ["payer", "borrower", "minter", "redeemer", "liquidator"]) {
@@ -280,17 +396,25 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
             return { action: r.event_name === "RepayBorrow" && result.payer && result.borrower && result.payer !== result.borrower
               ? "RepayBorrowBehalf" : r.event_name, contract: r.contract_address, result };
           });
-        state.operations[event.txid] = { actions, partial: Boolean(response.meta?.fingerprint), checkedAt: new Date().toISOString() };
+        state.operations[event.txid] = { actions, partial: result.partial, checkedAt: new Date().toISOString() };
       } catch (error) { state.operations[event.txid] = { actions: [], error: error.message }; }
     }
     for (const e of findings.events) e.operation = state.operations[e.txid] || { actions: [], pending: true };
-    const activeTx = new Set(state.transfers.map(r => r.txid));
+    const redemptions = findings.redemptionCandidates.map(e => {
+      const operation = state.operations[e.txid] || { actions: [], pending: true };
+      const action = !operation.partial && !operation.error && operation.actions.find(a => a.action === "Redeem"
+        && a.contract === e.contract && a.result.redeemer === e.from && String(a.result.redeemTokens) === e.amountRaw);
+      return { ...e, operation, kind: action ? "REDEEM" : "REDEEM_CANDIDATE",
+        redeemedUnderlyingRaw: action?.result.redeemAmount ?? null,
+        reason: action ? "已核对市场 Redeem 事件；关联账户赎回，不等同于已证明每一份权益的原始资金来源。" : e.reason };
+    });
+    const activeTx = new Set(analysisTransfers.map(r => r.txid));
     state.operations = Object.fromEntries(Object.entries(state.operations).filter(([id]) => activeTx.has(id)));
     state.changes = state.changes.slice(-500);
     const accounts = Object.entries(state.accounts);
     const limitations = [
       "覆盖配置内 TRC20 资产及 jToken；TRX 原生转账、跨链、DEX 换币后的资金同源证明及全量历史仓位未覆盖。",
-      "路径最多经过 2 个中转地址；公共平台地址停止穿透，不将共同使用交易所认定为资金同源。",
+      "常规资金路径最多经过 2 个中转地址；登记事件补充代理合约路径和交易内事件顺序；公共平台停止穿透。",
       "入金金额为命中交易总额，不是涉案金额；小额污染及仅交互线索按 P2 待核查。",
       "同 tx / 资产 / 收发方 / 原始金额且无 log index 的重复记录保守去重，可能少计同笔交易的相同 Transfer。",
       "地址发现受数量和请求预算限制，候选账户轮询检查；归属标签来自人工核验的公开清单，不自动推断同一控制人。"
@@ -298,7 +422,9 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
     snapshot = { version: 1, enabled: true, generatedAt: new Date().toISOString(), source: config.source, sources: config.sources || [], priorityAccounts,
       reportedAt: config.reportedAt, seedCount: seeds.length, reportedSeedCount: config.reportedSeedCount,
       addresses: seeds.map(s => state.seedStatus[s.address]), changes: state.changes,
-      ...findings, events: findings.events.slice(0, 500), rights: findings.rights.slice(0, 100), seedTransfers: findings.seedTransfers.slice(0, 100),
+      ...findings, redemptionCandidates: undefined, redemptions: redemptions.slice(0, 100),
+      investigations: caseAccounts.length ? [investigationSnapshotForState()] : [],
+      events: findings.events.slice(0, 500), rights: findings.rights.slice(0, 100), seedTransfers: findings.seedTransfers.slice(0, 100),
       coverage: { status: "bounded", since: new Date(since).toISOString(), until: new Date(now).toISOString(),
         assets: [...tokens.values()].map(t => t.symbol), totalAccounts: accounts.length,
         scannedAccounts: accounts.filter(([,a]) => a.lastSuccess).length,
@@ -310,7 +436,11 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
         stoppedHubs: accounts.filter(([a]) => hubs.has(a) && !seedSet.has(a)).length,
         addressLimitReached: capReached || accounts.length >= config.maxAddresses,
         storageTruncated, graphTruncated: findings.graphTruncated,
-        operationsPending: findings.events.filter(e => e.operation.pending || e.operation.error || e.operation.partial).length,
+        rightsMaxHops: config.rightsMaxHops ?? 4,
+        rightsLimitReached,
+        rightsTrackedAccounts: accounts.filter(([,a]) => a.rightsTracked).length,
+        displayTruncated: findings.events.length > 500 || findings.rights.length > 100 || redemptions.length > 100,
+        operationsPending: [...findings.events, ...redemptions].filter(e => e.operation.pending || e.operation.error || e.operation.partial).length,
         storedTransfers: state.transfers.length, refreshSeconds: config.refreshSeconds, limitations } };
     await atomicJson(statePath, state);
     await atomicJson(path.join(root, "data/xinbi-snapshot.json"), snapshot);

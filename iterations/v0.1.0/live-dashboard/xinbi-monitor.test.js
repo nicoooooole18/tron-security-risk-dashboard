@@ -6,7 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { validAddress, normalizeRow, transferKey, buildFindings, createXinbiMonitor } = require("./xinbi-monitor");
 const full = require("./config.json");
-const config = full.riskSources.xinbi;
+const config = { ...full.riskSources.xinbi, investigationEnabled: false };
 const [S,A,B,C] = config.seeds.map(s => s.address);
 const P = full.watchedAddresses.find(w => w.name === "jUSDT market").address;
 const U = full.tokens.USDT.contract;
@@ -124,7 +124,7 @@ test("new public endpoint is read-only and runtime/config files cannot be fetche
   try{
     const response=await fetch(`${base}/api/xinbi`);const s=await response.json();
     assert.equal(response.status,200);assert.equal(s.runtime.running,false);assert.equal(s.coverage.status,'pending');
-    for(const file of ['/.env','/config.json','/server.js','/xinbi-monitor.js','/data/xinbi-monitor-state.json','/data/xinbi-snapshot.json'])
+    for(const file of ['/.env','/config.json','/server.js','/xinbi-monitor.js','/xinbi-investigation.js','/test-fixtures/xinbi-2026-09-09-events.json','/data/xinbi-monitor-state.json','/data/xinbi-snapshot.json'])
       assert.equal((await fetch(base+file)).status,404,file);
     assert.equal((await fetch(`${base}/api/config`)).status,401);
     assert.equal((await fetch(`${base}/api/xinbi`,{method:'POST'})).status,404);
