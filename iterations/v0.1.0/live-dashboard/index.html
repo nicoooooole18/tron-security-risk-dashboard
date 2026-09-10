@@ -62,8 +62,10 @@
         <div class="table-wrap"><table><thead><tr><th>地址 / 归属来源</th><th>USDT 冻结状态</th><th>当前 USDT 余额</th><th>检查时间</th></tr></thead><tbody id="xinbiAddresses"></tbody></table></div>
       </details>
       <details open><summary>JustLend 入金与权益转移</summary>
+        <p class="notice" id="xinbiScanProgress">等待扫描结果：地址初扫、转账记录和历史补扫进度将在这里显示。</p>
         <div class="section-tools xinbi-tools"><label>筛选 <select id="xinbiFilter"><option value="all">全部线索</option><option value="flow">直接 / 1 跳 / 2 跳路径</option><option value="interaction">仅交互关联</option><option value="anomaly">异常行为</option><option value="rights">jToken 权益转移</option></select></label><span id="xinbiEventCount"></span></div>
         <div class="table-wrap"><table><thead><tr><th>时间 / 等级</th><th>类型 / 操作</th><th>金额 / 市场</th><th>路径与交易证据</th><th>判断 / 异常</th></tr></thead><tbody id="xinbiEvents"></tbody></table></div>
+        <p class="section-copy">明细展示说明：本表展示命中结果，最多保留 500 条入金明细和 100 条权益转移明细；这些是展示上限，不是扫描交易量或地址覆盖量。</p>
       </details>
       <details><summary>新币地址近期资金动态</summary><p class="section-copy">仅代表 seed 地址活动，不等于已进入 JustLend。展示最近 100 条已扫描记录。</p><div class="table-wrap"><table><thead><tr><th>时间</th><th>资产 / 金额</th><th>发送方 → 接收方</th><th>交易</th></tr></thead><tbody id="xinbiTransfers"></tbody></table></div></details>
       <details><summary>冻结变化与监控覆盖</summary><div id="xinbiChanges"></div><ul id="xinbiLimitations"></ul><p><a href="https://x.com/MistTrack_io/status/2097334357891645946" target="_blank" rel="noopener noreferrer">MistTrack 原始地址来源 · 2026-09-08</a></p></details>

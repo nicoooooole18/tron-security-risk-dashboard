@@ -16,7 +16,7 @@
     const rows = all.filter(e => filter === "all" || filter === "flow" && e.kind.startsWith("FLOW_")
       || filter === "interaction" && e.kind === "INTERACTION" || filter === "anomaly" && e.anomalies?.length
       || filter === "rights" && e.kind === "JTOKEN_RIGHTS").sort((a,b) => b.blockTs-a.blockTs);
-    byId("xinbiEventCount").textContent = `展示 ${rows.length} 条 · 入金明细最多 500 条`;
+    byId("xinbiEventCount").textContent = `当前筛选：${amount(rows.length)} 条命中明细`;
     byId("xinbiEvents").innerHTML = rows.length ? rows.map(e => {
       const operation = e.operation;
       const label = operation?.actions?.length ? operation.actions.map(a => actions[a.action] || a.action).join(" / ")
@@ -25,11 +25,15 @@
         <td>${esc(kinds[e.kind] || e.kind)}<br>${esc(label)}</td><td>${amount(e.amount)} ${esc(e.token)}<br>${esc(e.market || "存款权益")}</td>
         <td>${(e.evidence || []).map(r => `<div class="xinbi-leg">${addr(r.from)} → ${addr(r.to)}<br>${amount(r.amount)} ${esc(r.token)} · ${esc(time(r.blockTs))} · ${tx(r.txid)}</div>`).join("")}</td>
         <td>${esc(e.reason)}${e.dust ? "<br>含 ≤1 USDT 小额线索，注意被动收款污染" : ""}${e.publicHub ? "<br>涉及公共平台，归属待核" : ""}${(e.anomalies || []).map(a => `<br><span class="pill amber">${esc(a)}</span>`).join("")}</td></tr>`;
-    }).join("") : '<tr><td colspan="5">当前已扫描范围内没有符合筛选的线索；请结合覆盖状态判断。</td></tr>';
+    }).join("") : '<tr><td colspan="5">当前筛选下未发现命中线索。地址初扫和历史补扫进度见上方；未命中不代表无风险。</td></tr>';
   }
   function render(data) {
     current = data;
     const s = data.summary || {}, c = data.coverage || {}, runtime = data.runtime || {};
+    const progress = byId("xinbiScanProgress");
+    if (progress) progress.innerHTML = c.totalAccounts > 0
+      ? `已初扫 <strong>${amount(c.scannedAccounts)} / ${amount(c.totalAccounts)}</strong> 个候选地址 · 当前保留 <strong>${amount(c.storedTransfers)}</strong> 条有效转账记录 · 历史待补齐 <strong>${amount(c.incompleteHistoryAccounts)}</strong> 个地址。<br>初扫表示至少成功读取过一次，不代表该地址的 30 天历史已全部补齐。${c.addressLimitReached ? "已达候选地址上限。" : ""}${c.storageTruncated ? "转账保留已达容量上限，部分历史记录已截断。" : ""}`
+      : "等待扫描结果：地址初扫、转账记录和历史补扫进度将在这里显示。";
     byId("xinbiState").textContent = runtime.lastError ? "扫描失败" : runtime.running ? `扫描中 ${runtime.processed}/${runtime.total}` : runtime.stale ? "数据待更新" : "已启用 · 有限覆盖";
     byId("xinbiState").className = `pill ${runtime.lastError ? "red" : "amber"}`;
     byId("xinbiSummary").innerHTML = [
