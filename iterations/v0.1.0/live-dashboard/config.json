@@ -380,11 +380,11 @@
       "source": "https://x.com/MistTrack_io/status/2097334357891645946",
       "sourceImage": "https://pbs.twimg.com/media/HRs6en3bIAAINIA.jpg?name=orig",
       "reportedAt": "2026-09-08T14:40:52Z",
-      "reportedSeedCount": 10,
+      "reportedSeedCount": 22,
       "lookbackDays": 30,
       "refreshSeconds": 300,
-      "maxAddresses": 2000,
-      "addressesPerCycle": 40,
+      "maxAddresses": 4000,
+      "addressesPerCycle": 53,
       "pagesPerAddress": 2,
       "pageSize": 200,
       "maxStoredTransfers": 100000,
@@ -398,52 +398,156 @@
         {
           "address": "TWPma8xH48AEN93x2krdukV9e1j6sPsBeS",
           "label": "新币担保 · MistTrack 1",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TXka5xc6mEkcoVXR7F2TFDKernyLt3XyW4",
           "label": "新币担保 · MistTrack 2",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TQhT3QWAbFiy6GEYuBrbK97uP3XVmTpRD8",
           "label": "新币担保 · MistTrack 3",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TK3n8pGHvDTcK53mpfeDAMzdwjb22qvFU3",
           "label": "新币担保 · MistTrack 4",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TGSGw4aUeAMNCfD8WqLRLe8ErQiJ1vqghj",
           "label": "新币担保 · MistTrack 5",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TXHX2NUvcgft4zs6MkkUtdNVERPTavHDWN",
           "label": "新币担保 · MistTrack 6",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "THH9JJNbLDN7qs1CyTxJQEjhC9y5FnZUhU",
           "label": "新币担保 · MistTrack 7",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TG83Fk56S2mycAUMYHZyZp9wMg6DCf4bUn",
           "label": "新币担保 · MistTrack 8",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TF7LUSoZQyDFxTFzCL11saBHAqMAyPh8dK",
           "label": "新币担保 · MistTrack 9",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
         },
         {
           "address": "TBNjCi1d5Ns6ec5aMp28LpfKcX7xTpykAN",
           "label": "新币担保 · MistTrack 10",
-          "attribution": "MistTrack 公开归属，非独立所有权认定"
+          "attribution": "MistTrack 公开归属，非独立所有权认定",
+          "source": "https://x.com/MistTrack_io/status/2097334357891645946",
+          "business": "新币担保"
+        },
+        {
+          "address": "TThEzBN6SQ8ojyhofX6wahj13QkEdGGWXB",
+          "label": "新币担保 · Bitrace 1",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TYkE8VwX1SGHM3Q2CA29nka5U2F2khKAj5",
+          "label": "新币担保 · Bitrace 2",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TEECjwHqVG8sDmM3VtscjuCaRe5p351MU7",
+          "label": "新币担保 · Bitrace 3",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TDU61o35UEe5hdB3R16c116DrPSV4kiyKz",
+          "label": "新币担保 · Bitrace 4",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TTWRf2MD6zJ26bS4uKCNrcp84aAr7AmTjm",
+          "label": "新币担保 · Bitrace 5",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TYvjt4ZKfsipHjA52nzgjUjDBF622SLCih",
+          "label": "新币担保 · Bitrace 6",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TH1yknksde3pBY3oWVhUxVTbWbLqdafqYT",
+          "label": "新币担保 · Bitrace 7",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TWqcMjV7Wq2RHe2CSiKQHpkn6A7B2AWUPe",
+          "label": "新币担保 · Bitrace 8",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TSmcHwvTR27Ao4NN8HhPFCVcPU5aTEqLDt",
+          "label": "新币担保 · Bitrace 9",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TR983hNyUNgrNSB1xncG9thZNhgYpbNvSh",
+          "label": "XPay · Bitrace 10",
+          "business": "XPay",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TNwe3WoEX6XrQ5NPAeWPkvpTtdaf27XYxK",
+          "label": "XPay · Bitrace 11",
+          "business": "XPay",
+          "source": "https://x.com/Bitrace_team/status/2097376491252453848",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
+        },
+        {
+          "address": "TMJfquPfp1BVUfSAsf95bLqGUkzdnbeiXu",
+          "label": "新币担保 · Bitrace 12",
+          "business": "新币担保",
+          "source": "https://x.com/Bitrace_team/status/2097480480811782478",
+          "attribution": "Bitrace 公开归属，非独立所有权认定"
         }
       ],
       "extraTokens": [
@@ -548,7 +652,34 @@
           "decimals": 18
         }
       ],
-      "assetSource": "https://openapi.just.network/lend/jtoken"
+      "assetSource": "https://openapi.just.network/lend/jtoken",
+      "sources": [
+        {
+          "name": "MistTrack 原始清单",
+          "url": "https://x.com/MistTrack_io/status/2097334357891645946"
+        },
+        {
+          "name": "Bitrace 21 地址更新",
+          "url": "https://x.com/Bitrace_team/status/2097376491252453848"
+        },
+        {
+          "name": "Bitrace 新业务地址更新",
+          "url": "https://x.com/Bitrace_team/status/2097480480811782478"
+        }
+      ],
+      "priorityAccounts": [
+        {
+          "address": "TAnP1DxhEuCtbGqX66RV8TtWdDUJzhErzp",
+          "origin": "TMJfquPfp1BVUfSAsf95bLqGUkzdnbeiXu",
+          "depth": 1,
+          "label": "180 万 USDT 下游收款地址（归属待核）",
+          "source": "https://x.com/Bitrace_team/status/2097480480811782478",
+          "evidenceTxids": [
+            "0855ff096e5024d8c5dfd1f5353101b281955ef0a80aa9ef5805a69d4e22fc78",
+            "2c141c48a1191f255c4eade555993cd8d31b7f713e8476b11136d8143de35719"
+          ]
+        }
+      ]
     }
   },
   "notes": [

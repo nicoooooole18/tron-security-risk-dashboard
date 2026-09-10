@@ -167,20 +167,34 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
     for (const w of watched) if (/^j\w+ market$/.test(w.name)) tokens.set(w.address, { symbol: w.name.replace(" market", ""), decimals: 8, jToken: true });
     const hubs = await getHubs(full);
     const seedSet = new Set(seeds.map(s => s.address));
+    const priorityAccounts = config.priorityAccounts || [];
+    if (priorityAccounts.some(a => !validAddress(a.address) || !seedSet.has(a.origin) || a.depth !== 1)) throw new Error("优先关联地址配置无效");
+    const prioritySet = new Set([...seedSet, ...priorityAccounts.map(a => a.address)]);
     let capReached = false;
     function addAccount(address, depth, weak = false) {
       if (protocol.has(address) || address === ZERO || !validAddress(address)) return;
       const existing = state.accounts[address];
-      if (existing) { if (depth < existing.depth) existing.depth = depth; if (!weak) existing.weak = false; return; }
-      if (Object.keys(state.accounts).length >= config.maxAddresses) {
+      if (existing) {
+        if (depth < existing.depth || (existing.weak && !weak)) {
+          existing.depth = Math.min(depth, existing.depth);
+          // Replay history after promotion so previously scanned edges expand
+          // with the new source/depth, including rows evicted by storage limits.
+          existing.history = { since, until: now, cursor: "", done: false };
+          existing.backfillDone = false;
+        }
+        if (!weak) existing.weak = false;
+        return;
+      }
+      if (!prioritySet.has(address) && Object.keys(state.accounts).length >= config.maxAddresses) {
         capReached = true;
         // Do not let inbound-only contacts crowd out seed-origin outflow wallets.
-        const victim = !weak && Object.entries(state.accounts).find(([a,v]) => v.weak && !seedSet.has(a));
+        const victim = !weak && Object.entries(state.accounts).find(([a,v]) => v.weak && !prioritySet.has(a));
         if (victim) delete state.accounts[victim[0]]; else return;
       }
       state.accounts[address] = { depth, weak, lastScan: 0, oldest: now, backfillDone: false, cursor: "", error: null };
     }
     for (const s of seeds) addAccount(s.address, 0);
+    for (const a of priorityAccounts) addAccount(a.address, a.depth);
     const txMap = new Map(state.transfers.filter(r => r.blockTs >= since).map(r => [transferKey(r), r]));
     status = { stage: "addresses", processed: 0, total: seeds.length, startedAt: new Date().toISOString() };
     for (const s of seeds) {
@@ -198,8 +212,8 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
       status.processed++;
     }
     const queue = Object.entries(state.accounts).filter(([a]) => !hubs.has(a) || seedSet.has(a))
-      .sort(([a,x],[b,y]) => (seedSet.has(b) ? 1 : 0) - (seedSet.has(a) ? 1 : 0) || x.lastScan-y.lastScan || Number(x.weak)-Number(y.weak) || x.depth-y.depth)
-      .slice(0, config.addressesPerCycle);
+      .sort(([a,x],[b,y]) => (prioritySet.has(b) ? 1 : 0) - (prioritySet.has(a) ? 1 : 0) || x.lastScan-y.lastScan || Number(x.weak)-Number(y.weak) || x.depth-y.depth)
+      .slice(0, Math.max(config.addressesPerCycle, prioritySet.size + 1));
     status = { ...status, stage: "transfers", processed: 0, total: queue.length };
     for (const [address, account] of queue) {
       try {
@@ -281,7 +295,7 @@ function createXinbiMonitor({ root, readConfig, fetchJson, apiBase, blacklist, r
       "同 tx / 资产 / 收发方 / 原始金额且无 log index 的重复记录保守去重，可能少计同笔交易的相同 Transfer。",
       "地址发现受数量和请求预算限制，候选账户轮询检查；归属标签来自人工核验的公开清单，不自动推断同一控制人。"
     ];
-    snapshot = { version: 1, enabled: true, generatedAt: new Date().toISOString(), source: config.source,
+    snapshot = { version: 1, enabled: true, generatedAt: new Date().toISOString(), source: config.source, sources: config.sources || [], priorityAccounts,
       reportedAt: config.reportedAt, seedCount: seeds.length, reportedSeedCount: config.reportedSeedCount,
       addresses: seeds.map(s => state.seedStatus[s.address]), changes: state.changes,
       ...findings, events: findings.events.slice(0, 500), rights: findings.rights.slice(0, 100), seedTransfers: findings.seedTransfers.slice(0, 100),

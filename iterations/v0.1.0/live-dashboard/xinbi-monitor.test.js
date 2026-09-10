@@ -12,10 +12,11 @@ const P = full.watchedAddresses.find(w => w.name === "jUSDT market").address;
 const U = full.tokens.USDT.contract;
 const now = Date.now();
 const row = (from, to, time, id, extra = {}) => ({from,to,blockTs:now-100000+time,txid:id.repeat(64),contract:U,token:"USDT",amount:100,amountRaw:"100000000",...extra});
-function findings(transfers,hubs=new Set()) {return buildFindings({transfers,seeds:[{address:S}],watched:[{address:P,name:"jUSDT",enabled:true}],hubs,config,now});}
+function findings(transfers,hubs=new Set()) {return buildFindings({transfers,priorityAccounts:[],seeds:[{address:S}],watched:[{address:P,name:"jUSDT",enabled:true}],hubs,config,now});}
 
-test("all ten source addresses have valid Base58Check checksums", () => {
-  assert.equal(config.seeds.length, 10);
+test("all 22 deduplicated source addresses have valid Base58Check checksums", () => {
+  assert.equal(config.seeds.length, 22);
+  assert.equal(new Set(config.seeds.map(s => s.address)).size, 22);
   for (const s of config.seeds) assert.equal(validAddress(s.address), true, s.address);
   assert.equal(validAddress(`${S.slice(0,-1)}1`), false);
 });
@@ -67,7 +68,7 @@ test("monitor persists pagination, deduplicates shared transactions, and reports
   const calls=[];
   const makeRaw=(from,to,n,id)=>({type:"Transfer",from,to,block_timestamp:now-n,transaction_id:id.repeat(64),value:"100000000",token_info:{address:U}});
   let fail=false;
-  const settings={...full,riskSources:{...full.riskSources,xinbi:{...config,seeds:[{address:S}],maxAddresses:10,pagesPerAddress:2,addressesPerCycle:10}}};
+  const settings={...full,riskSources:{...full.riskSources,xinbi:{...config,priorityAccounts:[],seeds:[{address:S}],maxAddresses:10,pagesPerAddress:2,addressesPerCycle:10}}};
   const monitor=createXinbiMonitor({root,readConfig:async()=>settings,apiBase:"https://example.test",blacklist:async()=>({status:"blacklisted"}),readBalance:async()=>100n,getHubs:async()=>new Set(),hexToAddress:x=>x,
     fetchJson:async url=>{const u=new URL(url);calls.push(u);if(fail)throw new Error("429 rate limit");
       if(u.pathname.endsWith('/events'))return {data:[{event_name:"RepayBorrow",contract_address:P,result:{payer:A,borrower:B}}]};
@@ -93,7 +94,7 @@ test("monitor persists pagination, deduplicates shared transactions, and reports
 test("head refresh does not erase incomplete history and fingerprints keep fixed windows", async () => {
   const root=await fs.mkdtemp(path.join(os.tmpdir(),"xinbi-cursor-test-"));
   const calls=[]; let cycle=0;
-  const settings={...full,riskSources:{...full.riskSources,xinbi:{...config,seeds:[{address:S}],pagesPerAddress:2}}};
+  const settings={...full,riskSources:{...full.riskSources,xinbi:{...config,priorityAccounts:[],seeds:[{address:S}],pagesPerAddress:2}}};
   const raw=n=>({type:"Transfer",from:S,to:A,block_timestamp:now-n,transaction_id:String(n).padStart(64,"0"),value:"1",token_info:{address:U}});
   const monitor=createXinbiMonitor({root,readConfig:async()=>settings,apiBase:"https://example.test",blacklist:async()=>({status:"clear"}),readBalance:async()=>0n,getHubs:async()=>new Set(),hexToAddress:x=>x,
     fetchJson:async url=>{const u=new URL(url);calls.push(u);
@@ -128,4 +129,24 @@ test("new public endpoint is read-only and runtime/config files cannot be fetche
     assert.equal((await fetch(`${base}/api/config`)).status,401);
     assert.equal((await fetch(`${base}/api/xinbi`,{method:'POST'})).status,404);
   }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
+test("new seeds bypass a full candidate cap and promoted accounts replay history", async () => {
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),"xinbi-promotion-"));
+  const calls=[];
+  const settings={...full,riskSources:{...full.riskSources,xinbi:{...config,priorityAccounts:[{address:C,origin:S,depth:1}],seeds:[{address:S},{address:A},{address:B}],maxAddresses:2,addressesPerCycle:1}}};
+  await fs.mkdir(path.join(root,"data"));
+  const old={depth:2,weak:false,lastScan:now-1000,lastSuccess:now-1000,backfillDone:true,history:{since:now-2000,until:now-1000,done:true},headThrough:now-1000};
+  await fs.writeFile(path.join(root,"data/xinbi-monitor-state.json"),JSON.stringify({version:1,accounts:{[S]:{...old,depth:0},[A]:old},transfers:[],seedStatus:{},changes:[],operations:{}}));
+  const monitor=createXinbiMonitor({root,readConfig:async()=>settings,apiBase:"https://example.test",blacklist:async()=>({status:"clear"}),readBalance:async()=>0n,getHubs:async()=>new Set(),hexToAddress:x=>x,fetchJson:async url=>{calls.push(new URL(url));return {data:[]};}});
+  try {
+    await monitor.start();await monitor.refresh();
+    const state=JSON.parse(await fs.readFile(path.join(root,"data/xinbi-monitor-state.json"),"utf8"));
+    for(const address of [S,A,B,C]) {assert.ok(state.accounts[address].lastSuccess);assert.ok(calls.some(u=>u.pathname.includes(address)));}
+    assert.equal(state.accounts[A].depth,0);
+    assert.equal(state.accounts[C].depth,1);
+    assert.equal(monitor.getSnapshot().priorityAccounts[0].address,C);
+    assert.ok(calls.some(u=>u.pathname.includes(A) && Number(u.searchParams.get("min_timestamp"))<now-86400000));
+    assert.equal(monitor.getSnapshot().seedCount,3);
+  } finally {monitor.stop();await fs.rm(root,{recursive:true,force:true});}
 });

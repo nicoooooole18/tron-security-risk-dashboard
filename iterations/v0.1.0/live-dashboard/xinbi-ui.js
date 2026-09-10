@@ -30,6 +30,8 @@
   function render(data) {
     current = data;
     const s = data.summary || {}, c = data.coverage || {}, runtime = data.runtime || {};
+    const related = byId("xinbiRelatedAccounts");
+    if (related) related.innerHTML = (data.priorityAccounts || []).map(a => `优先跟踪：${addr(a.address)} · ${esc(a.label)}<br>上游：${addr(a.origin)} · 交易证据：${(a.evidenceTxids || []).map(tx).join(" / ")}。按 1 跳候选跟踪，不计入来源地址数量。`).join("<br>");
     const progress = byId("xinbiScanProgress");
     if (progress) progress.innerHTML = c.totalAccounts > 0
       ? `已初扫 <strong>${amount(c.scannedAccounts)} / ${amount(c.totalAccounts)}</strong> 个候选地址 · 当前保留 <strong>${amount(c.storedTransfers)}</strong> 条有效转账记录 · 历史待补齐 <strong>${amount(c.incompleteHistoryAccounts)}</strong> 个地址。<br>初扫表示至少成功读取过一次，不代表该地址的 30 天历史已全部补齐。${c.addressLimitReached ? "已达候选地址上限。" : ""}${c.storageTruncated ? "转账保留已达容量上限，部分历史记录已截断。" : ""}`
@@ -37,13 +39,13 @@
     byId("xinbiState").textContent = runtime.lastError ? "扫描失败" : runtime.running ? `扫描中 ${runtime.processed}/${runtime.total}` : runtime.stale ? "数据待更新" : "已启用 · 有限覆盖";
     byId("xinbiState").className = `pill ${runtime.lastError ? "red" : "amber"}`;
     byId("xinbiSummary").innerHTML = [
-      ["来源地址", `${data.seedCount ?? "—"} / ${data.reportedSeedCount ?? 10}`],
+      ["来源地址", `${data.seedCount ?? "—"} / ${data.reportedSeedCount ?? "—"}`],
       ["当前冻结", (data.addresses || []).filter(a => a.status === "blacklisted").length],
       ["JustLend 路径入金", s.strongPathCount ?? "—"], ["仅交互线索", s.interactionCount ?? "—"],
       ["命中入金 USDT", amount(s.inflowUsdt)], ["jToken 转移", s.rightsCount ?? "—"]
     ].map(([k,v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("");
     byId("xinbiCoverage").textContent = `最近完成：${time(data.generatedAt)}。回溯：${time(c.since)} 至 ${time(c.until)}。已扫描 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0} 个候选账户；历史待补齐 ${c.incompleteHistoryAccounts ?? 0}；接口失败 ${c.errors?.length ?? 0}；操作待核 ${c.operationsPending ?? 0}。${c.addressLimitReached ? "已达地址上限。" : ""}${c.storageTruncated || c.graphTruncated ? "存在数据/计算截断。" : ""}${runtime.lastError ? `上次失败：${runtime.lastError}。` : ""}命中入金总额不等于涉案金额；扫描未命中不代表无风险。`;
-    byId("xinbiAddresses").innerHTML = (data.addresses || []).map(a => `<tr><td>${addr(a.address)}<br>${esc(a.attribution)}</td><td><span class="pill ${a.status === "blacklisted" ? "red" : "amber"}">${esc({ blacklisted: "已冻结", clear: "未冻结", unknown: "未知 / 重试" }[a.status] || "待查")}</span></td><td>${amount(a.balance)}</td><td>${esc(time(a.checkedAt))}</td></tr>`).join("");
+    byId("xinbiAddresses").innerHTML = (data.addresses || []).map(a => `<tr><td>${addr(a.address)}<br>${esc(a.business || a.label)} · ${esc(a.attribution)}${/^https:\/\/x\.com\//.test(a.source || "") ? `<br><a href="${esc(a.source)}" target="_blank" rel="noopener noreferrer">地址来源</a>` : ""}</td><td><span class="pill ${a.status === "blacklisted" ? "red" : "amber"}">${esc({ blacklisted: "已冻结", clear: "未冻结", unknown: "未知 / 重试" }[a.status] || "待查")}</span></td><td>${amount(a.balance)}</td><td>${esc(time(a.checkedAt))}</td></tr>`).join("");
     byId("xinbiTransfers").innerHTML = (data.seedTransfers || []).map(r => `<tr><td>${esc(time(r.blockTs))}</td><td>${amount(r.amount)} ${esc(r.token)}</td><td>${addr(r.from)} → ${addr(r.to)}</td><td>${tx(r.txid)}</td></tr>`).join("") || '<tr><td colspan="4">尚无已扫描记录。</td></tr>';
     byId("xinbiChanges").innerHTML = (data.changes || []).map(c => `<p>${esc(time(c.observedAt))} ${addr(c.address)}：${esc(c.from)} → ${esc(c.to)}（观测时间）</p>`).join("") || "尚未观测到冻结状态变化；首次读取作为基线。";
     byId("xinbiLimitations").innerHTML = [...(c.limitations || []), `扫描资产：${(c.assets || []).join("、")}`, `公共平台停止穿透：${c.stoppedHubs || 0} 个`].map(t => `<li>${esc(t)}</li>`).join("");
