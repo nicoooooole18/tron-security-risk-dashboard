@@ -9,6 +9,14 @@
   const kinds = { FLOW_0: "直接流入", FLOW_1: "1 个中转地址", FLOW_2: "2 个中转地址", INTERACTION: "仅交互关联", JTOKEN_RIGHTS: "jToken 权益转移" };
   const actions = { Mint: "存款", RepayBorrow: "还款", RepayBorrowBehalf: "代还款", LiquidateBorrow: "清算", Borrow: "借款", Redeem: "赎回" };
   let current = null;
+  function operationText(event) {
+    const operation = event.operation;
+    return operation?.actions?.length ? operation.actions.map(a => actions[a.action] || a.action).join(" / ")
+      : event.kind === "JTOKEN_RIGHTS" ? "TRC20 Transfer"
+      : operation?.error ? "操作读取失败"
+      : operation?.pending ? "操作待解析"
+      : "转账（未识别借贷操作）";
+  }
   function renderEvents() {
     if (!current) return;
     const filter = byId("xinbiFilter").value;
@@ -18,15 +26,62 @@
       || filter === "rights" && e.kind === "JTOKEN_RIGHTS").sort((a,b) => b.blockTs-a.blockTs);
     byId("xinbiEventCount").textContent = `当前筛选：${amount(rows.length)} 条命中明细`;
     byId("xinbiEvents").innerHTML = rows.length ? rows.map(e => {
-      const operation = e.operation;
-      const label = operation?.actions?.length ? operation.actions.map(a => actions[a.action] || a.action).join(" / ")
-        : e.kind === "JTOKEN_RIGHTS" ? "TRC20 Transfer" : operation?.error ? "操作读取失败" : operation?.pending ? "操作待解析" : "转账（未识别借贷操作）";
+      const label = operationText(e);
       const priority = e.level === "P1" ? "重点线索" : "一般线索";
       return `<tr><td>${esc(time(e.blockTs))}<br><span class="pill ${e.level === "P1" ? "red" : "amber"}">${esc(e.level)} ${priority}</span></td>
         <td>${esc(kinds[e.kind] || e.kind)}<br>${esc(label)}</td><td>${amount(e.amount)} ${esc(e.token)}<br>${esc(e.market || "存款权益")}</td>
         <td>${(e.evidence || []).map(r => `<div class="xinbi-leg">${addr(r.from)} → ${addr(r.to)}<br>${amount(r.amount)} ${esc(r.token)} · ${esc(time(r.blockTs))} · ${tx(r.txid)}</div>`).join("")}</td>
         <td>${esc(e.reason)}${e.dust ? "<br>含 ≤1 USDT 小额线索，注意被动收款污染" : ""}${e.publicHub ? "<br>涉及公共平台，归属待核" : ""}${(e.anomalies || []).map(a => `<br><span class="pill amber">${esc(a)}</span>`).join("")}</td></tr>`;
     }).join("") : '<tr><td colspan="5">当前筛选下未发现命中线索。地址初扫和历史补扫进度见上方；未命中不代表无风险。</td></tr>';
+  }
+  function renderJusdt() {
+    if (!current) return;
+    const c = current.coverage || {};
+    const filter = byId("jusdtFilter").value;
+    const deposits = (current.events || []).filter(e => /(^|\b)jUSDT\b/i.test(e.market || ""));
+    const rights = (current.rights || []).filter(e => e.token === "jUSDT");
+    const all = [
+      ...deposits.map(e => ({ ...e, jusdtType: "deposit" })),
+      ...rights.map(e => ({ ...e, jusdtType: "rights" }))
+    ].sort((a, b) => b.blockTs - a.blockTs);
+    const rows = all.filter(e => filter === "all" || e.jusdtType === filter);
+    const related = new Set();
+    for (const e of deposits) related.add(e.from);
+    for (const e of rights) { related.add(e.from); related.add(e.to); }
+    const latest = all[0]?.blockTs;
+    const depositUsdt = deposits.filter(e => e.token === "USDT").reduce((sum, e) => sum + e.amount, 0);
+    const rightsAmount = rights.reduce((sum, e) => sum + e.amount, 0);
+    byId("jusdtSummary").innerHTML = [
+      ["关联入金", deposits.length],
+      ["关联入金交易额", `${amount(depositUsdt)} USDT`],
+      ["jUSDT 权益转移", `${rights.length} 笔 / ${amount(rightsAmount)} jUSDT`],
+      ["相关账户", related.size]
+    ].map(([k, v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("");
+    const coverageLimited = Number(c.pendingAccounts || 0) > 0 || Number(c.incompleteHistoryAccounts || 0) > 0
+      || c.addressLimitReached || c.storageTruncated || c.graphTruncated;
+    const decision = byId("jusdtDecision");
+    if (deposits.length) {
+      decision.textContent = `发现 ${deposits.length} 条风险关联资金进入 jUSDT 市场${rights.length ? `，并发现 ${rights.length} 笔后续 jUSDT 权益转移` : ""}。请从交易证据核对具体路径。${coverageLimited ? " 当前扫描仍不完整或存在截断。" : ""}`;
+      decision.className = "decision-banner danger";
+    } else if (rights.length) {
+      decision.textContent = `暂未发现关联资金存入 jUSDT 市场；发现 ${rights.length} 笔 jUSDT 权益转移线索。${coverageLimited ? " 当前扫描仍不完整或存在截断。" : ""}`;
+      decision.className = "decision-banner warning";
+    } else {
+      decision.textContent = `已扫描范围内暂未发现风险关联的 jUSDT 入金或权益转移。${coverageLimited ? " 扫描仍不完整或存在截断，不能据此认定无风险。" : ""}`;
+      decision.className = coverageLimited ? "decision-banner warning" : "decision-banner clear";
+    }
+    byId("jusdtCount").textContent = `当前筛选：${amount(rows.length)} 条`;
+    byId("jusdtRows").innerHTML = rows.length ? rows.map(e => {
+      const isDeposit = e.jusdtType === "deposit";
+      const evidence = isDeposit ? (e.evidence || []) : [e];
+      return `<tr><td>${esc(time(e.blockTs))}<br><span class="pill ${e.level === "P1" ? "red" : "amber"}">${esc(e.level)} ${e.level === "P1" ? "重点线索" : "一般线索"}</span></td>
+        <td>${isDeposit ? "关联资金进入 jUSDT" : "jUSDT 权益转移"}<br>${esc(operationText(e))}</td>
+        <td>${amount(e.amount)} ${esc(e.token)}</td>
+        <td>${isDeposit ? addr(e.from) : `${addr(e.from)} → ${addr(e.to)}`}</td>
+        <td>${evidence.map(r => `<div class="xinbi-leg">${addr(r.from)} → ${addr(r.to)}<br>${amount(r.amount)} ${esc(r.token)} · ${tx(r.txid)}</div>`).join("")}</td>
+        <td>${esc(e.reason)}</td></tr>`;
+    }).join("") : '<tr><td colspan="6">当前筛选下没有 jUSDT 相关线索。</td></tr>';
+    byId("jusdtCoverage").textContent = `数据来自新币专项的 30 天路径扫描；最近识别活动：${time(latest)}。当前候选地址已初扫 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0}，历史待补齐 ${c.incompleteHistoryAccounts ?? 0}。页面只展示已命中的 jUSDT 市场入金和权益 Transfer，不等同于完整持仓或赎回生命周期。`;
   }
   function render(data) {
     current = data;
@@ -63,7 +118,7 @@
       ["来源地址", `${data.seedCount ?? "—"} / ${data.reportedSeedCount ?? "—"}`],
       ["当前冻结", (data.addresses || []).filter(a => a.status === "blacklisted").length],
       ["JustLend 路径入金", s.strongPathCount ?? "—"], ["仅交互线索", s.interactionCount ?? "—"],
-      ["命中入金 USDT", amount(s.inflowUsdt)], ["jToken 转移", s.rightsCount ?? "—"]
+      ["命中入金 USDT", amount(s.inflowUsdt)], ["全部 jToken 转移", s.rightsCount ?? "—"]
     ].map(([k,v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("");
     byId("xinbiCoverage").textContent = `最近完成：${time(data.generatedAt)}。回溯：${time(c.since)} 至 ${time(c.until)}。已扫描 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0} 个候选账户；历史待补齐 ${c.incompleteHistoryAccounts ?? 0}；接口失败 ${c.errors?.length ?? 0}；操作解析待补 ${c.operationsPending ?? 0}。${c.addressLimitReached ? "已达地址上限。" : ""}${c.storageTruncated || c.graphTruncated ? "存在数据/计算截断。" : ""}${runtime.lastError ? `上次失败：${runtime.lastError}。` : ""}命中入金总额不等于涉案金额；扫描未命中不代表无风险。`;
     byId("xinbiAddresses").innerHTML = (data.addresses || []).map(a => `<tr><td>${addr(a.address)}<br>${esc(a.business || a.label)} · ${esc(a.attribution)}${/^https:\/\/x\.com\//.test(a.source || "") ? `<br><a href="${esc(a.source)}" target="_blank" rel="noopener noreferrer">地址来源</a>` : ""}</td><td><span class="pill ${a.status === "blacklisted" ? "red" : "amber"}">${esc({ blacklisted: "已冻结", clear: "未冻结", unknown: "未知 / 重试" }[a.status] || "待查")}</span></td><td>${amount(a.balance)}</td><td>${esc(time(a.checkedAt))}</td></tr>`).join("");
@@ -71,6 +126,7 @@
     byId("xinbiChanges").innerHTML = (data.changes || []).map(c => `<p>${esc(time(c.observedAt))} ${addr(c.address)}：${esc(c.from)} → ${esc(c.to)}（观测时间）</p>`).join("") || "尚未观测到冻结状态变化；首次读取作为基线。";
     byId("xinbiLimitations").innerHTML = [...(c.limitations || []), `扫描资产：${(c.assets || []).join("、")}`, `公共平台停止穿透：${c.stoppedHubs || 0} 个`].map(t => `<li>${esc(t)}</li>`).join("");
     renderEvents();
+    renderJusdt();
   }
   async function load() {
     try {
@@ -80,5 +136,6 @@
     } catch (error) { byId("xinbiState").textContent = "数据读取失败"; byId("xinbiCoverage").textContent = `新币监控接口不可用：${error.message}。已有显示可能过期，不能据此判断无风险。`; }
   }
   byId("xinbiFilter").addEventListener("change", renderEvents);
+  byId("jusdtFilter").addEventListener("change", renderJusdt);
   load(); setInterval(load, 60000);
 })();

@@ -23,6 +23,7 @@
     <nav class="dashboard-nav" aria-label="看板导航">
       <a href="#riskOverview">当前结论</a>
       <a href="#xinbiMonitor">新币专项</a>
+      <a href="#jusdtMonitor">jUSDT 监测</a>
       <a href="#baseMonitoring">基础监控</a>
       <a href="#methodology">口径与数据源</a>
     </nav>
@@ -94,6 +95,37 @@
         <ul id="xinbiLimitations"></ul>
         <p class="source-links"><a href="https://x.com/MistTrack_io/status/2097334357891645946" target="_blank" rel="noopener noreferrer">MistTrack 原始地址来源 · 2026-09-08</a> · <a href="https://x.com/Bitrace_team/status/2097376491252453848" target="_blank" rel="noopener noreferrer">Bitrace 21 地址清单</a> · <a href="https://x.com/Bitrace_team/status/2097480480811782478" target="_blank" rel="noopener noreferrer">Bitrace 新业务地址</a></p>
       </details>
+    </section>
+
+    <section class="card jusdt-monitor" id="jusdtMonitor" aria-label="jUSDT 权益监测">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">JustLend V1 · USDT 市场</span>
+          <h2>jUSDT 入金与权益监测</h2>
+          <p class="section-copy">单独查看风险来源资金存入 jUSDT 市场，以及关联账户之间的 jUSDT 权益转移。</p>
+        </div>
+        <span class="pill muted">专项视图</span>
+      </div>
+      <div class="decision-banner" id="jusdtDecision">正在读取 jUSDT 监测结果。</div>
+      <div class="xinbi-metrics jusdt-metrics" id="jusdtSummary"></div>
+      <div class="section-tools xinbi-tools">
+        <label>筛选
+          <select id="jusdtFilter">
+            <option value="all">全部 jUSDT 线索</option>
+            <option value="deposit">关联入金</option>
+            <option value="rights">权益转移</option>
+          </select>
+        </label>
+        <span id="jusdtCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>时间 / 优先级</th><th>信号</th><th>金额</th><th>相关账户</th><th>交易证据</th><th>系统判断</th></tr></thead>
+          <tbody id="jusdtRows"></tbody>
+        </table>
+      </div>
+      <p class="notice" id="jusdtCoverage">等待专项扫描覆盖信息。</p>
+      <p class="section-copy">jUSDT 合约：<a href="https://tronscan.org/#/contract/TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd" target="_blank" rel="noopener noreferrer">TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd</a>。转移数量代表已识别的权益流转，不代表账户当前余额或当前风险敞口。</p>
     </section>
 
     <div class="section-divider" id="baseMonitoring">
