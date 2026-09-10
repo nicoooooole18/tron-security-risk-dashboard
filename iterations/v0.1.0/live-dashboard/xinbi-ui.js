@@ -21,7 +21,8 @@
       const operation = e.operation;
       const label = operation?.actions?.length ? operation.actions.map(a => actions[a.action] || a.action).join(" / ")
         : e.kind === "JTOKEN_RIGHTS" ? "TRC20 Transfer" : operation?.error ? "操作读取失败" : operation?.pending ? "操作待解析" : "转账（未识别借贷操作）";
-      return `<tr><td>${esc(time(e.blockTs))}<br><span class="pill ${e.level === "P1" ? "red" : "amber"}">${esc(e.level)} 待核查</span></td>
+      const priority = e.level === "P1" ? "重点线索" : "一般线索";
+      return `<tr><td>${esc(time(e.blockTs))}<br><span class="pill ${e.level === "P1" ? "red" : "amber"}">${esc(e.level)} ${priority}</span></td>
         <td>${esc(kinds[e.kind] || e.kind)}<br>${esc(label)}</td><td>${amount(e.amount)} ${esc(e.token)}<br>${esc(e.market || "存款权益")}</td>
         <td>${(e.evidence || []).map(r => `<div class="xinbi-leg">${addr(r.from)} → ${addr(r.to)}<br>${amount(r.amount)} ${esc(r.token)} · ${esc(time(r.blockTs))} · ${tx(r.txid)}</div>`).join("")}</td>
         <td>${esc(e.reason)}${e.dust ? "<br>含 ≤1 USDT 小额线索，注意被动收款污染" : ""}${e.publicHub ? "<br>涉及公共平台，归属待核" : ""}${(e.anomalies || []).map(a => `<br><span class="pill amber">${esc(a)}</span>`).join("")}</td></tr>`;
@@ -30,6 +31,26 @@
   function render(data) {
     current = data;
     const s = data.summary || {}, c = data.coverage || {}, runtime = data.runtime || {};
+    const decision = byId("xinbiDecision");
+    if (decision) {
+      const strong = Number(s.strongPathCount || 0);
+      const weak = Number(s.interactionCount || 0) + Number(s.rightsCount || 0);
+      const coverageLimited = Number(c.pendingAccounts || 0) > 0 || Number(c.incompleteHistoryAccounts || 0) > 0
+        || c.addressLimitReached || c.storageTruncated || c.graphTruncated;
+      if (runtime.lastError) {
+        decision.textContent = `专项扫描异常：${runtime.lastError}。当前结果可能过期，请先查看扫描覆盖。`;
+        decision.className = "decision-banner danger";
+      } else if (strong > 0) {
+        decision.textContent = `发现 ${strong} 条新币来源资金进入 JustLend 的直接或中转路径，请优先查看交易证据。${coverageLimited ? " 当前仍存在未完成或受限扫描，命中数量可能继续变化。" : ""}`;
+        decision.className = "decision-banner danger";
+      } else if (weak > 0) {
+        decision.textContent = `暂未发现直接或中转路径；发现 ${weak} 条交互或权益关联线索，可按需查看证据。${coverageLimited ? " 当前仍存在未完成或受限扫描。" : ""}`;
+        decision.className = "decision-banner warning";
+      } else {
+        decision.textContent = `已扫描范围内暂未发现新币相关资金进入 JustLend。${coverageLimited ? " 扫描仍未完整或存在容量截断，不能据此认定无风险。" : ""}`;
+        decision.className = coverageLimited ? "decision-banner warning" : "decision-banner clear";
+      }
+    }
     const related = byId("xinbiRelatedAccounts");
     if (related) related.innerHTML = (data.priorityAccounts || []).map(a => `优先跟踪：${addr(a.address)} · ${esc(a.label)}<br>上游：${addr(a.origin)} · 交易证据：${(a.evidenceTxids || []).map(tx).join(" / ")}。按 1 跳候选跟踪，不计入来源地址数量。`).join("<br>");
     const progress = byId("xinbiScanProgress");
@@ -44,7 +65,7 @@
       ["JustLend 路径入金", s.strongPathCount ?? "—"], ["仅交互线索", s.interactionCount ?? "—"],
       ["命中入金 USDT", amount(s.inflowUsdt)], ["jToken 转移", s.rightsCount ?? "—"]
     ].map(([k,v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("");
-    byId("xinbiCoverage").textContent = `最近完成：${time(data.generatedAt)}。回溯：${time(c.since)} 至 ${time(c.until)}。已扫描 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0} 个候选账户；历史待补齐 ${c.incompleteHistoryAccounts ?? 0}；接口失败 ${c.errors?.length ?? 0}；操作待核 ${c.operationsPending ?? 0}。${c.addressLimitReached ? "已达地址上限。" : ""}${c.storageTruncated || c.graphTruncated ? "存在数据/计算截断。" : ""}${runtime.lastError ? `上次失败：${runtime.lastError}。` : ""}命中入金总额不等于涉案金额；扫描未命中不代表无风险。`;
+    byId("xinbiCoverage").textContent = `最近完成：${time(data.generatedAt)}。回溯：${time(c.since)} 至 ${time(c.until)}。已扫描 ${c.scannedAccounts ?? 0}/${c.totalAccounts ?? 0} 个候选账户；历史待补齐 ${c.incompleteHistoryAccounts ?? 0}；接口失败 ${c.errors?.length ?? 0}；操作解析待补 ${c.operationsPending ?? 0}。${c.addressLimitReached ? "已达地址上限。" : ""}${c.storageTruncated || c.graphTruncated ? "存在数据/计算截断。" : ""}${runtime.lastError ? `上次失败：${runtime.lastError}。` : ""}命中入金总额不等于涉案金额；扫描未命中不代表无风险。`;
     byId("xinbiAddresses").innerHTML = (data.addresses || []).map(a => `<tr><td>${addr(a.address)}<br>${esc(a.business || a.label)} · ${esc(a.attribution)}${/^https:\/\/x\.com\//.test(a.source || "") ? `<br><a href="${esc(a.source)}" target="_blank" rel="noopener noreferrer">地址来源</a>` : ""}</td><td><span class="pill ${a.status === "blacklisted" ? "red" : "amber"}">${esc({ blacklisted: "已冻结", clear: "未冻结", unknown: "未知 / 重试" }[a.status] || "待查")}</span></td><td>${amount(a.balance)}</td><td>${esc(time(a.checkedAt))}</td></tr>`).join("");
     byId("xinbiTransfers").innerHTML = (data.seedTransfers || []).map(r => `<tr><td>${esc(time(r.blockTs))}</td><td>${amount(r.amount)} ${esc(r.token)}</td><td>${addr(r.from)} → ${addr(r.to)}</td><td>${tx(r.txid)}</td></tr>`).join("") || '<tr><td colspan="4">尚无已扫描记录。</td></tr>';
     byId("xinbiChanges").innerHTML = (data.changes || []).map(c => `<p>${esc(time(c.observedAt))} ${addr(c.address)}：${esc(c.from)} → ${esc(c.to)}（观测时间）</p>`).join("") || "尚未观测到冻结状态变化；首次读取作为基线。";

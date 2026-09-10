@@ -10,9 +10,9 @@
   <main class="page">
     <header class="header">
       <div>
-        <div class="eyebrow">LIVE THIRD-PARTY FREEZE RISK</div>
-        <h1>JustLend 第三方冻结风险实时看板</h1>
-        <p>真实读取 TRON 链上 Transfer、Tether / Circle blacklist 状态；HTX SP-1 / SP-2 复用既有 CEX 地址库，不伪造标签命中。</p>
+        <div class="eyebrow">RISK SIGNALS &amp; EVIDENCE</div>
+        <h1>JustLend 外部资金风险监控</h1>
+        <p>面向少数风险人员，优先呈现进入 JustLend 的风险线索、链上证据与监控覆盖边界。</p>
       </div>
       <div class="header-actions">
         <button id="refreshBtn" class="btn primary">刷新数据</button>
@@ -20,62 +20,92 @@
       </div>
     </header>
 
-    <section class="status-strip" id="statusStrip">
-      <div>
-        <strong id="statusTitle">加载中</strong>
-        <span id="statusDesc">正在读取 TRON 链上数据。</span>
-      </div>
-      <span class="pill" id="statusPill">SYNC</span>
-    </section>
+    <nav class="dashboard-nav" aria-label="看板导航">
+      <a href="#riskOverview">当前结论</a>
+      <a href="#xinbiMonitor">新币专项</a>
+      <a href="#baseMonitoring">基础监控</a>
+      <a href="#methodology">口径与数据源</a>
+    </nav>
 
-    <section class="grid metrics">
-      <article class="card">
-        <span class="label">Tether 黑名单</span>
-        <strong id="metricUsdt">--</strong>
-        <p>Tether getBlackListStatus</p>
-      </article>
-      <article class="card">
-        <span class="label">Circle 黑名单</span>
-        <strong id="metricUsdc">--</strong>
-        <p>Circle isBlacklisted</p>
-      </article>
-      <article class="card">
-        <span class="label">近期高风险流入</span>
-        <strong id="metricEvents">--</strong>
-        <p>仅统计 HTX SP 风险命中</p>
-      </article>
-      <article class="card">
-        <span class="label">HTX SP 识别</span>
-        <strong id="metricHtx">--</strong>
-        <p>复用 CEX 地址库</p>
-      </article>
+    <section class="overview-section" id="riskOverview" aria-labelledby="riskOverviewTitle">
+      <div class="section-head overview-heading">
+        <div>
+          <h2 id="riskOverviewTitle">当前结论</h2>
+          <p class="section-copy">先判断是否出现需要优先查看的线索，再进入交易证据和扫描细节。</p>
+        </div>
+        <span class="pill muted">基础监控</span>
+      </div>
+      <div class="status-strip" id="statusStrip">
+        <div>
+          <strong id="statusTitle">加载中</strong>
+          <span id="statusDesc">正在读取 TRON 链上数据。</span>
+        </div>
+        <span class="pill" id="statusPill">SYNC</span>
+      </div>
+
+      <div class="grid metrics">
+        <article class="card">
+          <span class="label">Tether 黑名单</span>
+          <strong id="metricUsdt">--</strong>
+          <p>协议与用户地址监控</p>
+        </article>
+        <article class="card">
+          <span class="label">Circle 黑名单</span>
+          <strong id="metricUsdc">--</strong>
+          <p>协议与用户地址监控</p>
+        </article>
+        <article class="card">
+          <span class="label">HTX 重点流入</span>
+          <strong id="metricEvents">--</strong>
+          <p>P1 表示查看优先级</p>
+        </article>
+        <article class="card">
+          <span class="label">HTX 路径识别</span>
+          <strong id="metricHtx">--</strong>
+          <p>基于已核验地址标签</p>
+        </article>
+      </div>
     </section>
 
     <section class="card xinbi-monitor" id="xinbiMonitor" aria-label="新币风险监控">
       <div class="section-head">
-        <div><h2>新币风险监控</h2><p class="section-copy">新币相关地址、进入 JustLend 的资金路径与异常行为。链上路径和仅交互线索分开判断。</p></div>
+        <div><span class="section-kicker">专项监控 · 新币担保 / XPay</span><h2>新币相关资金是否进入 JustLend</h2><p class="section-copy">P1 / P2 表示线索查看优先级，不代表风险已经确认，也不形成待办。</p></div>
         <span class="pill amber" id="xinbiState">等待扫描</span>
       </div>
+      <div class="decision-banner" id="xinbiDecision">正在读取专项监控结论。</div>
       <div id="xinbiSummary" class="xinbi-metrics"></div>
-      <p class="notice" id="xinbiCoverage">首次扫描尚未完成，不能据此判断无风险。</p>
-      <details open><summary>新币地址与冻结状态</summary>
-        <p class="notice" id="xinbiRelatedAccounts"></p>
-        <div class="table-wrap"><table><thead><tr><th>地址 / 归属来源</th><th>USDT 冻结状态</th><th>当前 USDT 余额</th><th>检查时间</th></tr></thead><tbody id="xinbiAddresses"></tbody></table></div>
-      </details>
-      <details open><summary>JustLend 入金与权益转移</summary>
-        <p class="notice" id="xinbiScanProgress">等待扫描结果：地址初扫、转账记录和历史补扫进度将在这里显示。</p>
+      <details open id="xinbiSignals"><summary>1. JustLend 风险线索</summary>
         <div class="section-tools xinbi-tools"><label>筛选 <select id="xinbiFilter"><option value="all">全部线索</option><option value="flow">直接 / 1 跳 / 2 跳路径</option><option value="interaction">仅交互关联</option><option value="anomaly">异常行为</option><option value="rights">jToken 权益转移</option></select></label><span id="xinbiEventCount"></span></div>
         <div class="table-wrap"><table><thead><tr><th>时间 / 等级</th><th>类型 / 操作</th><th>金额 / 市场</th><th>路径与交易证据</th><th>判断 / 异常</th></tr></thead><tbody id="xinbiEvents"></tbody></table></div>
         <p class="section-copy">明细展示说明：本表展示命中结果，最多保留 500 条入金明细和 100 条权益转移明细；这些是展示上限，不是扫描交易量或地址覆盖量。</p>
       </details>
-      <details><summary>新币地址近期资金动态</summary><p class="section-copy">仅代表 seed 地址活动，不等于已进入 JustLend。展示最近 100 条已扫描记录。</p><div class="table-wrap"><table><thead><tr><th>时间</th><th>资产 / 金额</th><th>发送方 → 接收方</th><th>交易</th></tr></thead><tbody id="xinbiTransfers"></tbody></table></div></details>
-      <details><summary>冻结变化与监控覆盖</summary><div id="xinbiChanges"></div><ul id="xinbiLimitations"></ul><p><a href="https://x.com/MistTrack_io/status/2097334357891645946" target="_blank" rel="noopener noreferrer">MistTrack 原始地址来源 · 2026-09-08</a> · <a href="https://x.com/Bitrace_team/status/2097376491252453848" target="_blank" rel="noopener noreferrer">Bitrace 21 地址清单</a> · <a href="https://x.com/Bitrace_team/status/2097480480811782478" target="_blank" rel="noopener noreferrer">Bitrace 新业务地址</a></p></details>
+      <details id="xinbiEvidence"><summary>2. 来源地址与资金证据</summary>
+        <p class="notice" id="xinbiRelatedAccounts"></p>
+        <h3>来源地址与冻结状态</h3>
+        <div class="table-wrap"><table><thead><tr><th>地址 / 归属来源</th><th>USDT 冻结状态</th><th>当前 USDT 余额</th><th>检查时间</th></tr></thead><tbody id="xinbiAddresses"></tbody></table></div>
+        <h3 class="subsection-title">来源地址近期资金动态</h3>
+        <p class="section-copy">仅代表来源地址活动，不等于已进入 JustLend。展示最近 100 条已扫描记录。</p>
+        <div class="table-wrap"><table><thead><tr><th>时间</th><th>资产 / 金额</th><th>发送方 → 接收方</th><th>交易</th></tr></thead><tbody id="xinbiTransfers"></tbody></table></div>
+      </details>
+      <details id="xinbiCoveragePanel"><summary>3. 扫描覆盖与系统状态</summary>
+        <p class="notice" id="xinbiCoverage">首次扫描尚未完成，不能据此判断无风险。</p>
+        <p class="notice" id="xinbiScanProgress">等待扫描结果：地址初扫、转账记录和历史补扫进度将在这里显示。</p>
+        <div class="change-log"><strong>冻结状态变化</strong><div id="xinbiChanges"></div></div>
+        <ul id="xinbiLimitations"></ul>
+        <p class="source-links"><a href="https://x.com/MistTrack_io/status/2097334357891645946" target="_blank" rel="noopener noreferrer">MistTrack 原始地址来源 · 2026-09-08</a> · <a href="https://x.com/Bitrace_team/status/2097376491252453848" target="_blank" rel="noopener noreferrer">Bitrace 21 地址清单</a> · <a href="https://x.com/Bitrace_team/status/2097480480811782478" target="_blank" rel="noopener noreferrer">Bitrace 新业务地址</a></p>
+      </details>
     </section>
+
+    <div class="section-divider" id="baseMonitoring">
+      <span class="section-kicker">基础监控</span>
+      <h2>协议地址、用户地址与普通流入</h2>
+      <p>用于核对协议自身冻结状态、用户地址交集与 HTX 路径；与新币专项结论分开呈现。</p>
+    </div>
 
     <section class="card address-monitor">
       <div class="section-head">
         <div>
-          <h2>地址风险监控</h2>
+          <h2>协议与用户地址</h2>
           <p class="section-copy">分开查看 JustLend 协议自身地址与用户地址池风险，默认展示协议地址监控。</p>
         </div>
         <span class="pill muted" id="watchedCount">--</span>
@@ -124,7 +154,7 @@
                 <th>JustLend 身份</th>
                 <th>黑名单状态</th>
                 <th>命中资产</th>
-                <th>处理建议</th>
+                <th>系统判断</th>
               </tr>
             </thead>
             <tbody id="userRows"></tbody>
@@ -137,7 +167,7 @@
     <section class="card">
       <div class="section-head">
         <div>
-          <h2>链上流入事件</h2>
+          <h2>普通链上流入明细</h2>
           <p class="section-copy" id="eventWindowText">按近期窗口读取 watched address 流入。</p>
         </div>
         <div class="section-tools">
@@ -176,7 +206,7 @@
     <section class="card">
       <div class="section-head">
         <div>
-          <h2>HTX SP 路径命中</h2>
+          <h2>HTX 来源路径</h2>
           <p class="section-copy">仅展示链上证据完整的 HTX -> 钱包 / 平台 -> JustLend 路径。</p>
         </div>
         <span class="pill" id="htxSpCount">--</span>
@@ -200,9 +230,9 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="methodology">
       <div class="section-head">
-        <h2>说明</h2>
+        <h2>口径与数据源</h2>
         <span class="pill muted">只读</span>
       </div>
       <ul id="notes"></ul>
