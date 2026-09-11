@@ -8,6 +8,7 @@ const crypto = require("node:crypto");
 const vm = require("node:vm");
 const evidence = require("./xinbi-investigation");
 const { createXinbiMonitor, buildFindings, normalizeRow, precedes, validAddress } = require("./xinbi-monitor");
+const { decodeBalanceOfResult } = require("./server");
 const full = require("./config.json");
 const fixture = require("./test-fixtures/xinbi-2026-09-09-events.json");
 const [A,B,C,D,E,F,G] = evidence.addresses.map(a => a.address);
@@ -39,6 +40,17 @@ function find(transfers, investigationAccounts = evidence.addresses.map(a=>a.add
   return buildFindings({transfers, seeds:[{address:A}], watched:full.watchedAddresses,
     hubs:new Set(), config:full.riskSources.xinbi, now:NOW, investigationAccounts});
 }
+test("balanceOf decoder accepts the jUSDT proxy return shape and rejects ambiguous values", () => {
+  const balance = "000000000000000000000000000000000000000000000000003551196a976a91";
+  const zero = "0".repeat(64);
+  assert.equal(decodeBalanceOfResult({constant_result:[balance]}, U), 15007343370005137n);
+  assert.equal(decodeBalanceOfResult({constant_result:[balance]}, P), 15007343370005137n);
+  assert.equal(decodeBalanceOfResult({constant_result:[balance + zero + zero]}, P), 15007343370005137n);
+  assert.throws(() => decodeBalanceOfResult({constant_result:[balance + zero + zero]}, U), /标准 uint256/);
+  assert.throws(() => decodeBalanceOfResult({constant_result:[balance + zero + "1".padStart(64,"0")]}, P), /附加槽位非零/);
+  assert.throws(() => decodeBalanceOfResult({constant_result:["not-hex"]}, P), /格式无效/);
+  assert.throws(() => decodeBalanceOfResult({}, P), /格式无效/);
+});
 test("official event fixtures match all ten transactions, seven addresses and exact large integer amounts", () => {
   assert.equal(evidence.steps.length,10);
   for(const a of evidence.addresses) assert.ok(validAddress(a.address));

@@ -4,6 +4,7 @@ const fsSync = require("node:fs");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createXinbiMonitor } = require("./xinbi-monitor");
+const { JUSDT } = require("./xinbi-investigation");
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, "config.json");
@@ -855,6 +856,29 @@ function decodeUintResult(raw) {
   }
 }
 
+function decodeBalanceOfResult(result, contract) {
+  const raw = Array.isArray(result?.constant_result) ? result.constant_result[0] : "";
+  if (!raw || !/^[0-9a-f]+$/i.test(raw) || raw.length % 64 !== 0) {
+    throw new Error("balanceOf 返回格式无效，余额未知");
+  }
+
+  const words = raw.match(/.{64}/g);
+  if (contract === JUSDT) {
+    if (![1, 3].includes(words.length)) {
+      throw new Error("jUSDT balanceOf 返回槽位数量异常，余额未知");
+    }
+    if (words.slice(1).some((word) => BigInt(`0x${word}`) !== 0n)) {
+      throw new Error("jUSDT balanceOf 附加槽位非零，余额未知");
+    }
+    return BigInt(`0x${words[0]}`);
+  }
+
+  if (words.length !== 1) {
+    throw new Error("balanceOf 未返回标准 uint256，余额未知");
+  }
+  return BigInt(`0x${words[0]}`);
+}
+
 async function getContractUintValue(contract, functionSelector, address) {
   const result = await triggerConstantContract({
     contract,
@@ -1694,9 +1718,7 @@ const xinbiMonitor = createXinbiMonitor({
   blacklist: getTokenBlacklistStatus,
   readBalance: async (contract, address) => {
     const result = await triggerConstantContract({ contract, functionSelector: "balanceOf(address)", parameter: encodeTronAddressParameter(address) });
-    const raw = result.constant_result?.[0];
-    if (!raw || !/^[0-9a-f]{64}$/i.test(raw)) throw new Error("balanceOf 未返回标准 uint256，余额未知");
-    return BigInt(`0x${raw}`);
+    return decodeBalanceOfResult(result, contract);
   },
   getHubs: async config => {
     const intel = await buildAddressIntel(config);
@@ -1768,4 +1790,4 @@ if (require.main === module) server.listen(PORT, HOST, () => {
   xinbiMonitor.start().catch(error => console.error(`[xinbi] startup: ${error.message}`));
 });
 
-module.exports = { server, xinbiMonitor };
+module.exports = { server, xinbiMonitor, decodeBalanceOfResult };
