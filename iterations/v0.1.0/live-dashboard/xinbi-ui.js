@@ -78,10 +78,7 @@
       decision.textContent = `已扫描范围内暂未发现风险关联的 jUSDT 入金或权益转移。${coverageLimited ? " 扫描仍不完整或存在截断，不能据此认定无风险。" : ""}`;
       decision.className = coverageLimited ? "decision-banner warning" : "decision-banner clear";
     }
-    if (current.investigations?.length) {
-      decision.textContent = `已登记新币关联 180 万 USDT 历史存赎事件：两批凭证均已赎回，不能作为当前未赎回敞口。链上复核和七地址余额见下方；滚动扫描${coverageLimited ? "仍有覆盖缺口" : "仅代表已扫描范围"}。`;
-      decision.className = "decision-banner warning";
-    }
+    if (current.investigations?.length) decision.textContent += " 历史 180 万台账仅证明首轮赎回；E 的近期活动及 H 后续持仓请查看上方代理监测，不能据历史赎回认定全部退出。";
     if (current.runtime?.lastError || current.runtime?.stale) {
       decision.textContent += ` 当前快照${current.runtime.lastError ? "扫描失败" : "待更新"}，请检查扫描状态。`;
       decision.className = "decision-banner warning";
@@ -132,9 +129,6 @@
       if (runtime.lastError) {
         decision.textContent = `专项扫描异常：${runtime.lastError}。当前结果可能过期，请先查看扫描覆盖。`;
         decision.className = "decision-banner danger";
-      } else if (data.investigations?.length) {
-        decision.textContent = "已登记新币关联 180 万 USDT 历史存赎事件，两批凭证均已赎回。请在 jUSDT 监测中查看七地址、交易证据及后台复核状态；滚动扫描未命中不撤销历史证据。";
-        decision.className = "decision-banner warning";
       } else if (strong > 0) {
         decision.textContent = `发现 ${strong} 条新币来源资金进入 JustLend 的直接或中转路径，请优先查看交易证据。${coverageLimited ? " 当前仍存在未完成或受限扫描，命中数量可能继续变化。" : ""}`;
         decision.className = "decision-banner danger";
@@ -142,7 +136,7 @@
         decision.textContent = `暂未发现直接或中转路径；发现 ${weak} 条交互或权益关联线索，可按需查看证据。${coverageLimited ? " 当前仍存在未完成或受限扫描。" : ""}`;
         decision.className = "decision-banner warning";
       } else {
-        decision.textContent = `已扫描范围内暂未发现新币相关资金进入 JustLend。${coverageLimited ? " 扫描仍未完整或存在容量截断，不能据此认定无风险。" : ""}`;
+        decision.textContent = `滚动路径扫描暂无新增命中。历史事件仍有效；共用代理 E 的入金与后续持仓见独立监测区。${coverageLimited ? " 扫描仍未完整或存在容量截断，不能据此认定无风险。" : ""}`;
         decision.className = coverageLimited ? "decision-banner warning" : "decision-banner clear";
       }
     }

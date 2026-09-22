@@ -39,6 +39,13 @@ test("public hub is a tracing boundary and dust is downgraded", () => {
   const e=findings([row(S,A,1,"1",{amount:0.1}),row(A,P,2,"2")]).events[0];
   assert.equal(e.level,"P2"); assert.equal(e.dust,true);
 });
+test("shared proxy old seed funding cannot attribute later independent deposits to Xinbi", () => {
+  const E="TFvGJpSNFsa3xiz8mYPKNDpFvrU43UrKCX";
+  const f=findings([row(S,E,1,"1"),row(E,P,2,"2")]);
+  assert.equal(f.events.length,0);
+  const sameTx=findings([row(S,E,2,"2",{eventIndex:0}),row(E,P,2,"2",{eventIndex:1})]);
+  assert.equal(sameTx.events.length,1);
+});
 test("jToken transfer records risk rights without inventing an underlying inflow", () => {
   const f=findings([row(S,A,1,"1",{jToken:true,token:"jUSDT",contract:P})]);
   assert.equal(f.rights.length,1); assert.equal(f.events.length,0);
@@ -124,7 +131,14 @@ test("new public endpoint is read-only and runtime/config files cannot be fetche
   try{
     const response=await fetch(`${base}/api/xinbi`);const s=await response.json();
     assert.equal(response.status,200);assert.equal(s.runtime.running,false);assert.equal(s.coverage.status,'pending');
-    for(const file of ['/.env','/config.json','/server.js','/xinbi-monitor.js','/xinbi-investigation.js','/test-fixtures/xinbi-2026-09-09-events.json','/data/xinbi-monitor-state.json','/data/xinbi-snapshot.json'])
+    const proxy=await (await fetch(`${base}/api/xinbi-proxy`)).json();assert.equal(proxy.runtime.running,false);
+    assert.equal(Date.parse(proxy.until)-Date.parse(proxy.since),7*86400000);
+    const range=await fetch(`${base}/api/xinbi-proxy?since=2026-09-01T00:00:00Z&until=2026-09-02T00:00:00Z`);
+    assert.equal(range.status,200);assert.equal((await range.json()).since,"2026-09-01T00:00:00.000Z");
+    for(const query of ["since=bad&until=bad","since=2026-01-01&until=2026-03-01","since=2026-09-01"])
+      assert.equal((await fetch(`${base}/api/xinbi-proxy?${query}`)).status,400);
+    assert.equal((await fetch(`${base}/api/xinbi-proxy`,{method:'POST'})).status,404);
+    for(const file of ['/.env','/config.json','/server.js','/xinbi-monitor.js','/proxy-monitor.js','/data/xinbi-proxy-snapshot.json','/xinbi-investigation.js','/test-fixtures/xinbi-2026-09-09-events.json','/data/xinbi-monitor-state.json','/data/xinbi-snapshot.json'])
       assert.equal((await fetch(base+file)).status,404,file);
     assert.equal((await fetch(`${base}/api/config`)).status,401);
     assert.equal((await fetch(`${base}/api/xinbi`,{method:'POST'})).status,404);

@@ -46,6 +46,7 @@ function precedes(a, b) {
 
 function buildFindings({ transfers, seeds, watched, hubs, config, now, investigationAccounts = [] }) {
   const seedSet = new Set(seeds.map(s => s.address));
+  const sharedProxies = new Set(["TFvGJpSNFsa3xiz8mYPKNDpFvrU43UrKCX", "TWYKaMvx6MzwLt12MWXDvANeC5d9n3uQH2"]);
   const protocol = new Map(watched.filter(w => w.enabled).map(w => [w.address, w]));
   const incoming = new Map();
   const outgoing = new Map();
@@ -65,6 +66,9 @@ function buildFindings({ transfers, seeds, watched, hubs, config, now, investiga
     if (depth >= maxDepth || hubs.has(last.from) || protocol.has(last.from) || visited.has(last.from)) return null;
     const seen = new Set([...visited, last.from]);
     for (const prior of incoming.get(last.from) || []) {
+      // A shared deposit proxy's old funding must not taint every later user.
+      if (sharedProxies.has(last.from)
+        && prior.txid !== last.txid) continue;
       if (prior.contract !== last.contract || !precedes(prior, last)) continue;
       const prefix = trace(prior, depth + 1, seen);
       if (prefix) return [...prefix, last];
@@ -75,7 +79,7 @@ function buildFindings({ transfers, seeds, watched, hubs, config, now, investiga
     const chain = trace(row);
     let kind = chain ? `FLOW_${chain.length - 1}` : null;
     let evidence = chain;
-    if (!chain) {
+    if (!chain && !sharedProxies.has(row.from)) {
       // Sending to a seed is interaction evidence, not evidence of seed-origin funds.
       const interaction = (outgoing.get(row.from) || []).find(r => seedSet.has(r.to) && precedes(r, row));
       const differentAsset = (incoming.get(row.from) || []).find(r => seedSet.has(r.from) && precedes(r, row));

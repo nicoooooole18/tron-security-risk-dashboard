@@ -5,6 +5,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createXinbiMonitor } = require("./xinbi-monitor");
 const { JUSDT } = require("./xinbi-investigation");
+const { createProxyMonitor, decodePosition } = require("./proxy-monitor");
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, "config.json");
@@ -1692,7 +1693,7 @@ async function startSnapshotService() {
 async function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const requested = url.pathname === "/" ? "/index.html" : url.pathname;
-  if (!["/index.html", "/app.js", "/styles.css", "/xinbi-ui.js"].includes(requested)) {
+  if (!["/index.html", "/app.js", "/styles.css", "/xinbi-ui.js", "/proxy-ui.js"].includes(requested)) {
     res.writeHead(404); res.end("Not found"); return;
   }
   const filePath = path.normalize(path.join(ROOT, requested));
@@ -1713,6 +1714,9 @@ async function serveStatic(req, res) {
   }
 }
 
+const proxyMonitor = createProxyMonitor({root:ROOT,fetchJson,apiBase:TRONGRID_API_BASE,readPosition:async(contract,address)=>decodePosition(
+  await triggerConstantContract({contract,functionSelector:"getAccountSnapshot(address)",parameter:encodeTronAddressParameter(address)}))});
+
 const xinbiMonitor = createXinbiMonitor({
   root: ROOT, readConfig, fetchJson, apiBase: TRONGRID_API_BASE,
   blacklist: getTokenBlacklistStatus,
@@ -1730,6 +1734,17 @@ const xinbiMonitor = createXinbiMonitor({
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === "/api/xinbi-proxy" && req.method === "GET") {
+      try {
+        sendJson(res, 200, proxyMonitor.getSnapshot({
+          since: url.searchParams.get("since"), until: url.searchParams.get("until")
+        }));
+      } catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        sendJson(res, 400, { error: error.message });
+      }
+      return;
+    }
     if (url.pathname === "/api/xinbi" && req.method === "GET") {
       sendJson(res, 200, xinbiMonitor.getSnapshot()); return;
     }
@@ -1788,6 +1803,7 @@ if (require.main === module) server.listen(PORT, HOST, () => {
     console.error(`[snapshot] service failed: ${error.stack || error.message}`);
   });
   xinbiMonitor.start().catch(error => console.error(`[xinbi] startup: ${error.message}`));
+  proxyMonitor.start().catch(error => console.error(`[proxy] startup: ${error.message}`));
 });
 
-module.exports = { server, xinbiMonitor, decodeBalanceOfResult };
+module.exports = { server, xinbiMonitor, proxyMonitor, decodeBalanceOfResult };

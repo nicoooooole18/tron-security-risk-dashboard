@@ -22,6 +22,7 @@
 
     <nav class="dashboard-nav" aria-label="看板导航">
       <a href="#riskOverview">当前结论</a>
+      <a href="#proxyMonitor">代理 E 监测</a>
       <a href="#xinbiMonitor">新币专项</a>
       <a href="#jusdtMonitor">jUSDT 监测</a>
       <a href="#baseMonitoring">基础监控</a>
@@ -66,6 +67,33 @@
           <p>基于已核验地址标签</p>
         </article>
       </div>
+    </section>
+
+    <section class="card xinbi-monitor" id="proxyMonitor" aria-label="代理合约 E 独立监测">
+      <h2>代理合约 E · 入金与后续持仓</h2>
+      <p>E 是本次调查编号，指外部存款代理合约 <a class="xinbi-address" href="https://tronscan.org/#/address/TFvGJpSNFsa3xiz8mYPKNDpFvrU43UrKCX" target="_blank" rel="noopener noreferrer">TFvGJpSNFsa3xiz8mYPKNDpFvrU43UrKCX</a>。它代出资地址向 JustLend USDT 市场存款、取得并转出 jUSDT；其运营主体待确认，使用该合约不等于资金属于新币。</p>
+      <form id="proxyRangeForm" class="section-tools proxy-range">
+        <label>开始时间 <input id="proxySince" type="datetime-local" required aria-label="开始时间（北京时间）"></label>
+        <label>结束时间 <input id="proxyUntil" type="datetime-local" required aria-label="结束时间（北京时间）"></label>
+        <button type="submit">应用</button><button type="button" id="proxyRecent">最近 7 天</button>
+        <span>北京时间 · 最长 30 天</span>
+      </form>
+      <p id="proxyRangeError" role="alert" class="notice"></p>
+      <div id="proxyDecision" class="decision-banner warning">等待独立扫描；不能据此判断无入金。</div>
+      <div id="proxySummary" class="xinbi-metrics"></div>
+      <p id="proxyCoverage" class="notice"></p>
+      <div class="table-wrap"><table><thead><tr><th>北京时间日期</th><th>出资地址数</th><th>存入笔数</th><th>USDT</th></tr></thead><tbody id="proxyDays"></tbody></table></div>
+      <h3>最新持仓（不随时间筛选变化，含历史与其他资金，不等于新币敞口）</h3>
+      <div class="table-wrap"><table><thead><tr><th>角色 / 地址</th><th>jUSDT 份额</th><th>USDT 等值</th><th>读取时间 / 状态</th></tr></thead><tbody id="proxyPositions"></tbody></table></div>
+      <details open><summary>所选时段经 E 入金：出资地址 → E → JustLend USDT 市场</summary>
+        <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>出资地址</th><th>USDT</th><th>交易哈希</th><th>链上匹配</th></tr></thead><tbody id="proxyDeposits"></tbody></table></div>
+      </details>
+      <details><summary>E 转出的 jUSDT：接收地址及交易证据</summary>
+        <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>E → 接收地址</th><th>jUSDT</th><th>交易哈希</th></tr></thead><tbody id="proxyRights"></tbody></table></div>
+      </details>
+      <details><summary>后续接收地址经 H 再存（不叠加入金总额）</summary>
+        <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>接收地址 → H → 市场</th><th>USDT</th><th>交易哈希</th></tr></thead><tbody id="proxyReentries"></tbody></table></div>
+      </details>
     </section>
 
     <section class="card xinbi-monitor" id="xinbiMonitor" aria-label="新币风险监控">
@@ -332,5 +360,6 @@
   <div class="toast" id="toast">已刷新</div>
   <script src="./app.js"></script>
   <script src="./xinbi-ui.js"></script>
+  <script src="./proxy-ui.js"></script>
 </body>
 </html>
