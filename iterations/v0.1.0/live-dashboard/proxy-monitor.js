@@ -122,7 +122,7 @@ function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPag
     const until=Date.now(),since=until-30*DAY;stage="transfers";
     const markets=await getMarkets();
     if(!markets.length)throw new Error("持仓市场配置为空");
-    contracts=new Set([U,J,...markets.flatMap(m=>[m.contract,m.underlying]).filter(Boolean)]);
+    contracts=new Set([U,J]);
     const blocked=new Set([E,H,I,...markets.map(m=>m.contract),...await getHubs()]);
     const scans=[];
     for(const a of [E,H]) scans.push(await scan(a,since,until));

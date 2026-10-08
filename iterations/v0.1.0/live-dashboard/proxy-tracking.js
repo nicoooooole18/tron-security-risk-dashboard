@@ -3,13 +3,12 @@
 const ZERO = "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
 const valid = a => /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a || "") && a !== ZERO;
 const edgeKey = r => [r.txid,r.contract,r.from,r.to,r.raw].join(":");
+const JUSDT = "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd";
+const USDT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+const inScope = e => e.contract === USDT || e.contract === JUSDT;
 function configuredMarkets(config) {
-  const tokens = [...Object.values(config.tokens || {}), ...(config.riskSources?.xinbi?.extraTokens || [])];
-  return [...new Map((config.watchedAddresses || []).filter(m => m.enabled !== false && /market/.test(m.role || ""))
-    .map(m => { const t = tokens.find(t => t.symbol === m.asset) || (m.asset === "USDCOLD" ? config.tokens?.USDC : undefined); return [m.address, {
-      contract:m.address,symbol:m.asset,decimals:m.asset === "TRX" ? 6 : t?.decimals,
-      underlying:t?.contract,jDecimals:8
-    }]; })).values()];
+  return (config.watchedAddresses || []).some(m => m.enabled !== false && m.address === JUSDT && m.asset === "USDT")
+    ? [{contract:JUSDT,symbol:"USDT",decimals:6,underlying:USDT,jDecimals:8}] : [];
 }
 function rootsFrom(analysis) {
   return [...analysis.deposits.flatMap(d => d.funders.map(address => ({address,blockTs:d.blockTs,txid:d.txid,role:"出资方"}))),
@@ -39,10 +38,22 @@ function discover(state, roots, {blocked,maxAccounts=5000,maxHops=4}) {
 }
 async function updateTracking({previous,analysis,markets,scan,readPosition,blocked,until,
   transferBudget=40,positionBudget=300,maxAccounts=5000,maxHops=4,maxEdges=100000}) {
+  markets=markets.filter(m=>m.contract===JUSDT).map(m=>({...m,symbol:"USDT",decimals:6,underlying:USDT,jDecimals:8}));
+  if(!markets.length)throw new Error("USDT 市场未启用");
   const state=previous ? structuredClone(previous) : {accounts:{},edges:[],roots:[]};
+  // Rebuild membership once when migrating the previously broader asset scope.
+  const legacyAccounts=state.scope!=="USDT-jUSDT" ? state.accounts : null;
+  state.edges=state.edges.filter(inScope);
+  if(legacyAccounts)state.accounts={};
   state.roots=[...new Map([...state.roots,...rootsFrom(analysis)].map(r=>[[r.address,r.txid,r.role].join(":"),r])).values()];
   const options={blocked,maxAccounts,maxHops};
   discover(state,state.roots,options);
+  if(legacyAccounts)for(const [address,a] of Object.entries(state.accounts)) {
+    const old=legacyAccounts[address];
+    if(old)state.accounts[address]={...old,...a,positions:old.positions?.[JUSDT]?{[JUSDT]:old.positions[JUSDT]}:{},
+      scanUntil:null,scanComplete:false};
+  }
+  state.scope="USDT-jUSDT";
   const edges=new Map(state.edges.map(e=>[edgeKey(e),e]));
   const queue=Object.values(state.accounts).sort((a,b)=>(a.scanAttempt||0)-(b.scanAttempt||0)).slice(0,transferBudget);
   for(const account of queue) {
@@ -50,7 +61,7 @@ async function updateTracking({previous,analysis,markets,scan,readPosition,block
     try {
       const result=await scan(account.address,account.scanUntil ? Math.max(account.since,account.scanUntil-60000) : account.since,until);
       account.scanComplete=result.complete; account.scanError=null;
-      for(const e of result.rows) if(e.from===account.address && valid(e.to)) {
+      for(const e of result.rows) if(inScope(e) && e.from===account.address && valid(e.to)) {
         if(edges.size<maxEdges || edges.has(edgeKey(e))) edges.set(edgeKey(e),e);
         else state.edgeLimitReached=true;
       }
@@ -81,13 +92,14 @@ async function updateTracking({previous,analysis,markets,scan,readPosition,block
 function trackingView(state, analysis, {blocked,now=Date.now(),staleMs=900000}={}) {
   blocked=blocked || new Set();
   if(!state) return {ready:false,complete:false,rows:[],totals:[],note:"地址持仓队列尚未初始化，不能判断资金退出"};
+  const scopedEdges=state.edges.filter(inScope);
   const members=new Map();
   for(const r of rootsFrom(analysis)) if(!blocked.has(r.address)) {
     const old=members.get(r.address);
     if(!old || r.blockTs<old.since) members.set(r.address,{since:r.blockTs,depth:0,role:r.role,txid:r.txid});
   }
   let hopLimited=false,stopped=0;
-  for(let hop=0;hop<=state.maxHops;hop++) for(const e of state.edges) {
+  for(let hop=0;hop<=state.maxHops;hop++) for(const e of scopedEdges) {
     const parent=members.get(e.from);
     if(!parent || e.blockTs<parent.since) continue;
     if(blocked.has(e.to)){continue;}
@@ -97,14 +109,14 @@ function trackingView(state, analysis, {blocked,now=Date.now(),staleMs=900000}={
       members.set(e.to,{since:Math.min(old?.since ?? Infinity,e.blockTs),depth:Math.min(old?.depth ?? Infinity,parent.depth+1),
         role:old?.role || "后续流向",upstream:e.from,txid:e.txid});
   }
-  stopped=state.edges.filter(e=>members.has(e.from)&&e.blockTs>=members.get(e.from).since&&blocked.has(e.to)).length;
+  stopped=scopedEdges.filter(e=>members.has(e.from)&&e.blockTs>=members.get(e.from).since&&blocked.has(e.to)).length;
   const counts={addresses:members.size,queried:0,pending:0,failed:0,stale:0,transferPending:0,transferFailed:0};
   const totals=new Map(),rows=[];
   for(const [address,origin] of members) {
     const a=state.accounts[address];
     if(!a?.scanUntil || !a.scanComplete || now-a.scanUntil>staleMs) counts.transferPending++;
     if(a?.scanError)counts.transferFailed++;
-    for(const m of state.markets) {
+    for(const m of state.markets.filter(m=>m.contract===JUSDT)) {
       const p=a?.positions[m.contract];
       const status=!p?"pending":p.status!=="ok"?"error":now-Date.parse(p.checkedAt)>staleMs?"stale":"ok";
       counts[{pending:"pending",error:"failed",stale:"stale",ok:"queried"}[status]]++;
@@ -117,6 +129,6 @@ function trackingView(state, analysis, {blocked,now=Date.now(),staleMs=900000}={
     supplyRaw:String(t.supply),borrowRaw:String(t.borrow),netRaw:String(t.supply-t.borrow),covered:t.covered,expected:members.size})),
     complete:!counts.pending&&!counts.failed&&!counts.stale&&!counts.transferPending&&!hopLimited&&!state.addressLimitReached&&!state.edgeLimitReached,
     hopLimited,addressLimitReached:state.addressLimitReached,edgeLimitReached:!!state.edgeLimitReached,stopped,
-    attributedAmount:null,note:"按地址及市场去重的关联地址总持仓，含历史及混同资金；本批资金可归因金额待核。公共平台及共用代理停止穿透，TRX 原生转账、换币和跨链后的同源追踪未覆盖。"};
+    attributedAmount:null,note:"按地址去重的 jUSDT 折算 USDT 存款余额，含历史及混同资金；本批资金可归因金额待核。公共平台及共用代理停止穿透，TRX 原生转账、换币和跨链后的同源追踪未覆盖。"};
 }
 module.exports={configuredMarkets,rootsFrom,updateTracking,trackingView};

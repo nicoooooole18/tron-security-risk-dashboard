@@ -9,15 +9,15 @@ const analysis={deposits:[{funders:[A],blockTs:t,txid:"a".repeat(64)}],rights:[{
 const edge=(from,to,blockTs,contract=J)=>({from,to,blockTs,contract,raw:"100",txid:String(blockTs).padStart(64,"a")});
 const position=n=>({underlyingRaw:String(n),borrowRaw:"0",jTokenRaw:"100",exchangeRateRaw:"100000000000000"});
 const base={analysis,markets,blocked,until:Date.now(),scan:async()=>({rows:[],complete:true}),readPosition:async()=>position(0)};
-test("new receivers and downstream transfers enter all-market queries; dedupe and cohort history",async()=>{
+test("new receivers and downstream transfers enter USDT-only queries; dedupe and cohort history",async()=>{
  const other={contract:U,symbol:"OTHER",decimals:18};
  const s=await updateTracking({...base,markets:[...markets,other],scan:async address=>({complete:true,rows:address===B?[edge(B,C,t+2),edge(B,H,t+3)]:[]}),
  readPosition:async(m,a)=>({...position(a===C?"2500000":"0"),borrowRaw:a===C?"500000":"0"})});
  assert.deepEqual(Object.keys(s.accounts).sort(),[A,B,C].sort());
- assert.equal(Object.keys(s.accounts[C].positions).length,2);
+ assert.equal(Object.keys(s.accounts[C].positions).length,1);
  const v=trackingView(s,analysis,{blocked});
  assert.equal(v.counts.addresses,3);assert.equal(v.totals[0].supplyRaw,"2500000");assert.equal(v.totals[0].netRaw,"2000000");
- assert.equal(v.totals[1].supplyRaw,"2500000");assert.equal(v.counts.transferPending,1);
+ assert.equal(v.totals.length,1);assert.equal(v.counts.transferPending,1);
  const empty=trackingView(s,{deposits:[],rights:[]},{blocked});assert.equal(empty.counts.addresses,0);
  const next=await updateTracking({...base,previous:JSON.parse(JSON.stringify(s)),analysis:{deposits:[],rights:[]}});
  assert.ok(next.accounts[C]);assert.equal(next.accounts[C].positions[J].underlyingRaw,"0");
@@ -48,13 +48,25 @@ test("only time-ordered descendants belong to a selected cohort; shared hubs sto
  const v=trackingView(s,analysis,{blocked});assert.equal(v.counts.addresses,2);assert.equal(v.stopped,1);
  assert.equal(s.accounts[C],undefined);assert.equal(s.accounts[H],undefined);
 });
-test("configured markets preserve per-asset decimals including native TRX",()=>{
- const config=require("./config.json"),ms=configuredMarkets(config);
- assert.ok(ms.length>10);assert.equal(ms.find(m=>m.contract===J).decimals,6);
- assert.equal(ms.find(m=>m.symbol==="TRX").decimals,6);
- assert.equal(ms.find(m=>m.symbol==="USDD").decimals,18);
- assert.equal(ms.find(m=>m.symbol==="USDCOLD").decimals,6);
- assert.ok(ms.every(m=>Number.isInteger(m.decimals)));
+test("only the configured official USDT market is queried",()=>{
+ const ms=configuredMarkets(require("./config.json"));
+ assert.deepEqual(ms,[{contract:J,symbol:"USDT",decimals:6,underlying:U,jDecimals:8}]);
+ assert.deepEqual(configuredMarkets({watchedAddresses:[]}),[]);
+});
+test("legacy cache excludes other-asset descendants before and after migration",async()=>{
+ const legacy=await updateTracking({...base});
+ legacy.scope=undefined;
+ legacy.markets.push({contract:U,symbol:"OTHER",decimals:18});
+ legacy.edges.push(edge(B,C,t+2,"OTHER"));
+ legacy.accounts[C]={address:C,since:t+2,depth:1,positions:{[J]:{...position(999999),status:"ok",checkedAt:new Date().toISOString()}}};
+ legacy.accounts[A].positions[U]={...position(999),status:"ok"};
+ assert.equal(trackingView(legacy,analysis,{blocked}).counts.addresses,2);
+ const queried=[];
+ const migrated=await updateTracking({...base,previous:legacy,readPosition:async(m,a)=>{queried.push([m,a]);return position(0);}});
+ assert.equal(migrated.accounts[C],undefined);
+ assert.equal(migrated.accounts[A].positions[U],undefined);
+ assert.equal(migrated.edges.length,0);
+ assert.ok(queried.every(([m,a])=>m===J&&a!==C));
 });
 test("monitor persists queues on disk and serves selected cohort without network writes on GET",async()=>{
  const root=await fs.mkdtemp(path.join(os.tmpdir(),"proxy-tracking-test-"));let requests=0;
@@ -85,4 +97,12 @@ test("UI distinguishes pending/failed/stale from zero and clears stale amounts o
  assert.match(nodes.get("proxyTrackingCoverage").textContent,/覆盖不完整/);
  assert.match(nodes.get("proxyTrackingTotals").innerHTML,/已读取部分/);
  fail=true;await poll();assert.equal(nodes.get("proxyTrackingRows").innerHTML,"");assert.equal(nodes.get("proxyTrackingTotals").innerHTML,"");
+});
+
+test("new flow discovery rejects other tokens and retains USDT reentry paths",async()=>{
+ const read=[];
+ const s=await updateTracking({...base,scan:async a=>({complete:true,rows:a===B?[edge(B,C,t+2,U),edge(B,I,t+3,"OTHER")]:[]}),
+ readPosition:async(m,a)=>{read.push(m);return position(a===C?5000000:0);}});
+ assert.ok(s.accounts[C]);assert.equal(s.edges.length,1);assert.ok(read.every(m=>m===J));
+ assert.equal(trackingView(s,analysis,{blocked}).totals[0].supplyRaw,"5000000");
 });

@@ -83,12 +83,12 @@
       <div id="proxySummary" class="xinbi-metrics"></div>
       <p id="proxyCoverage" class="notice"></p>
       <div class="table-wrap"><table><thead><tr><th>北京时间日期</th><th>出资地址数</th><th>存入笔数</th><th>USDT</th></tr></thead><tbody id="proxyDays"></tbody></table></div>
-      <h3>所选时段关联地址 · 最新 JustLend 持仓</h3>
+      <h3>所选时段关联地址 · 当前 USDT 存量</h3>
       <p id="proxyTrackingCoverage" class="notice">等待地址持仓队列初始化，不能判断资金退出。</p>
       <div id="proxyTrackingTotals" class="xinbi-metrics"></div>
-      <p class="notice">展示关联地址全部持仓，包含其他时期及混同资金。本批资金可归因金额：待核，不能用入金减转账估算。不同资产分别统计。</p>
-      <details><summary>地址与市场明细（含待查询、失败及过期）</summary>
-        <div class="table-wrap"><table><thead><tr><th>地址 / 发现依据</th><th>市场资产</th><th>存款</th><th>借款</th><th>净头寸</th><th>读取时间 / 状态</th></tr></thead><tbody id="proxyTrackingRows"></tbody></table></div>
+      <p class="notice">仅展示当前 jUSDT 折算的 USDT 存款余额，包含其他时期及混同资金；USDT 借款另列。本批资金可归因金额：待核，不能用入金减转账估算。</p>
+      <details><summary>逐地址 jUSDT / USDT 余额与流向证据（含待查询、失败及过期）</summary>
+        <div class="table-wrap"><table><thead><tr><th>地址 / 发现依据</th><th>jUSDT 份额</th><th>USDT 存款余额</th><th>USDT 借款</th><th>读取时间 / 状态</th></tr></thead><tbody id="proxyTrackingRows"></tbody></table></div>
       </details>
       <h3>共用合约参考持仓（不计入上述地址汇总，含混同资金）</h3>
       <div class="table-wrap"><table><thead><tr><th>角色 / 地址</th><th>jUSDT 份额</th><th>USDT 等值</th><th>读取时间 / 状态</th></tr></thead><tbody id="proxyPositions"></tbody></table></div>
