@@ -7,7 +7,21 @@
   const addr=x=>/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(x||"")?`<a class="xinbi-address" href="https://tronscan.org/#/address/${x}" target="_blank" rel="noopener noreferrer">${x}</a>`:esc(x);
   const tx=x=>/^[a-f0-9]{64}$/i.test(x||"")?`<a href="https://tronscan.org/#/transaction/${x}" target="_blank" rel="noopener noreferrer">${x.slice(0,12)}…</a>`:"未知";
   const raw=x=>/^\d+$/.test(x||"")?`${BigInt(x)/100000000n}.${String(BigInt(x)%100000000n).padStart(8,"0")}`:"未知";
+  const units=(value,decimals)=>{
+    if(value==null || !Number.isInteger(decimals))return "未知";
+    const n=BigInt(value),abs=n<0n?-n:n,digits=String(abs).padStart(decimals+1,"0");
+    return `${n<0n?"-":""}${digits.slice(0,decimals?-decimals:undefined)}${decimals?"."+digits.slice(-decimals):""}`;
+  };
+  function renderTracking(d){
+    const v=d.trackingView,c=v?.counts;
+    el("proxyTrackingCoverage").textContent=!v?.ready?"地址持仓队列尚未初始化，不能判断资金退出":
+      `所选时段关联及后续地址 ${c.addresses} 个；地址×市场查询：有效 ${c.queried} / 待查 ${c.pending} / 失败 ${c.failed} / 过期 ${c.stale}。流向待补或过期 ${c.transferPending} 个地址（失败 ${c.transferFailed}）。${v.complete&&d.coverage?.complete&&!d.runtime?.stale&&!d.runtime?.lastError?"已完成配置范围内查询。":"覆盖不完整，以下仅为已读取部分，不能判断全部退出。"}${v.hopLimited?"已达追踪跳数上限。":""}${v.addressLimitReached||v.edgeLimitReached?"已达容量上限。":""} ${v.note||""}`;
+    el("proxyTrackingTotals").innerHTML=(v?.totals||[]).map(t=>`<div><span>${esc(t.symbol)} · ${t.covered}/${t.expected} 地址已读取</span><strong>${t.covered<t.expected?"已读取部分 · ":""}存款 ${t.covered?units(t.supplyRaw,t.decimals):"未知"}</strong><p>借款 ${t.covered?units(t.borrowRaw,t.decimals):"未知"}<br>净头寸 ${t.covered?units(t.netRaw,t.decimals):"未知"}</p></div>`).join("");
+    const labels={pending:"待查询",error:"查询失败",stale:"余额已过期",ok:"已读取；归因待核"};
+    el("proxyTrackingRows").innerHTML=(v?.rows||[]).map(p=>`<tr><td>${addr(p.address)}<br>${esc(p.role)} · ${time(p.since)}<br>${p.upstream?addr(p.upstream)+" → ":""}${tx(p.txid)}</td><td>${esc(p.symbol)}<br>${addr(p.market)}</td><td>${p.status==="ok"?units(p.underlyingRaw,p.decimals):"未知"}</td><td>${p.status==="ok"?units(p.borrowRaw,p.decimals):"未知"}</td><td>${p.status==="ok"?units(String(BigInt(p.underlyingRaw)-BigInt(p.borrowRaw)),p.decimals):"未知"}</td><td>${time(p.checkedAt)}<br>${esc(labels[p.status])}${p.error?"："+esc(p.error):""}</td></tr>`).join("") || '<tr><td colspan="6">暂无可展示的关联持仓；请结合覆盖状态判断。</td></tr>';
+  }
   function render(d) {
+    renderTracking(d);
     const s=d.summary||{},r=d.runtime||{},c=d.coverage||{};
     const valid=d.generatedAt&&!r.stale&&!r.lastError&&c.complete;
     const decision=el("proxyDecision");decision.className="decision-banner warning";
@@ -34,9 +48,10 @@
     el("proxySince").max=el("proxyUntil").max=localValue(now);
   }
   function clearResults(){
-    for(const id of ["proxySummary","proxyDays","proxyDeposits","proxyReentries","proxyRights"])
+    for(const id of ["proxySummary","proxyDays","proxyDeposits","proxyReentries","proxyRights","proxyTrackingTotals","proxyTrackingRows","proxyPositions"])
       el(id).innerHTML="";
     el("proxyCoverage").textContent="";
+    el("proxyTrackingCoverage").textContent="等待所选时段持仓数据，不能判断资金退出。";
   }
   async function load(){
     const id=++requestId;

@@ -1714,7 +1714,11 @@ async function serveStatic(req, res) {
   }
 }
 
-const proxyMonitor = createProxyMonitor({root:ROOT,fetchJson,apiBase:TRONGRID_API_BASE,readPosition:async(contract,address)=>decodePosition(
+const proxyMonitor = createProxyMonitor({root:ROOT,fetchJson,apiBase:TRONGRID_API_BASE,
+  getMarkets:async()=>require("./proxy-tracking").configuredMarkets(await readConfig()),
+  getHubs:async()=>{const config=await readConfig();const intel=await buildAddressIntel(config);
+    return new Set([...intel.htxSeeds,...intel.platformSeeds,...(config.riskSources?.xinbi?.publicHubAddresses || [])]);},
+  readPosition:async(contract,address)=>decodePosition(
   await triggerConstantContract({contract,functionSelector:"getAccountSnapshot(address)",parameter:encodeTronAddressParameter(address)}))});
 
 const xinbiMonitor = createXinbiMonitor({

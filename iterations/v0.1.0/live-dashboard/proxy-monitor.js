@@ -1,6 +1,7 @@
 "use strict";
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const {updateTracking,trackingView}=require("./proxy-tracking");
 const E = "TFvGJpSNFsa3xiz8mYPKNDpFvrU43UrKCX";
 const H = "TWYKaMvx6MzwLt12MWXDvANeC5d9n3uQH2";
 const I = "TYRq8Y4UHbXuEHBif7WvrPHynxp7B6NMJ7";
@@ -22,9 +23,9 @@ function weekStart(now) {
   return Date.UTC(china.getUTCFullYear(), china.getUTCMonth(), china.getUTCDate())
     - ((china.getUTCDay() + 6) % 7) * DAY - 8 * 3600000;
 }
-function normalize(r) {
+function normalize(r, contracts = new Set([U,J])) {
   if (r.confirmed === false || r.finalResult === "FAILED" || r.contractRet && r.contractRet !== "SUCCESS") return null;
-  if (![U, J].includes(r.contract_address) || !/^[0-9a-f]{64}$/i.test(r.transaction_id || "")
+  if (!contracts.has(r.contract_address) || !/^[0-9a-f]{64}$/i.test(r.transaction_id || "")
     || !/^\d+$/.test(String(r.quant)) || BigInt(r.quant) === 0n || !(Number(r.block_ts) > 0)) return null;
   return { txid: r.transaction_id, blockTs: Number(r.block_ts), from: r.from_address,
     to: r.to_address, contract: r.contract_address, raw: String(r.quant) };
@@ -71,9 +72,10 @@ function decodePosition(result) {
   return { jTokenRaw:String(words[1]), borrowRaw:String(words[2]), exchangeRateRaw:String(words[3]),
     underlyingRaw:String(words[1]*words[3]/10n**18n), underlyingUsdt:Number(words[1]*words[3]/10n**18n)/1e6 };
 }
-function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPages=40,apiBase="https://api.trongrid.io"}) {
+function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPages=40,apiBase="https://api.trongrid.io",getMarkets=async()=>[{contract:J,symbol:"USDT",decimals:6,underlying:U}],getHubs=async()=>new Set(),trackingOptions={}}) {
   const file=path.join(root,"data/xinbi-proxy-snapshot.json");
   let snapshot=null,running=null,timer=null,lastError=null,stage="pending";
+  let contracts=new Set([U,J]);
   async function scanTronScan(address,since,until) {
     const found=new Map(); let offset=0;
     for(let page=0;page<maxPages;page++) {
@@ -83,7 +85,7 @@ function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPag
       if(!Array.isArray(d.token_transfers)) throw new Error("TronScan 转账响应缺失");
       const rows=d.token_transfers;
       if(rows.some(r=>!Number.isFinite(Number(r.block_ts)) || Number(r.block_ts)<=0)) throw new Error("转账时间无效，无法确认分页完整性");
-      for(const r of rows) {const n=normalize(r);if(n && n.blockTs>=since && n.blockTs<=until)found.set(key(n),n);}
+      for(const r of rows) {const n=normalize(r,contracts);if(n && n.blockTs>=since && n.blockTs<=until)found.set(key(n),n);}
       if(!rows.length || rows.some(r=>Number(r.block_ts)<since)) return {address,provider:"TronScan",complete:true,pages:page+1,rows:[...found.values()]};
       offset+=rows.length;
     }
@@ -102,7 +104,7 @@ function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPag
         if(r.type!=="Transfer")continue;
         if(!(Number(r.block_timestamp)>0))throw new Error("转账时间无效");
         const n=normalize({transaction_id:r.transaction_id,block_ts:r.block_timestamp,from_address:r.from,to_address:r.to,
-          contract_address:r.token_info?.address,quant:r.value,confirmed:r.confirmed});
+          contract_address:r.token_info?.address,quant:r.value,confirmed:r.confirmed},contracts);
         if(n&&n.blockTs>=since&&n.blockTs<=until)found.set(key(n),n);
       }
       const next=d.meta?.fingerprint;
@@ -118,6 +120,10 @@ function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPag
   }
   async function run() {
     const until=Date.now(),since=until-30*DAY;stage="transfers";
+    const markets=await getMarkets();
+    if(!markets.length)throw new Error("持仓市场配置为空");
+    contracts=new Set([U,J,...markets.flatMap(m=>[m.contract,m.underlying]).filter(Boolean)]);
+    const blocked=new Set([E,H,I,...markets.map(m=>m.contract),...await getHubs()]);
     const scans=[];
     for(const a of [E,H]) scans.push(await scan(a,since,until));
     const analysis=analyze(scans.flatMap(s=>s.rows),since,until);
@@ -126,10 +132,13 @@ function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPag
       try {positions.push({address,...await readPosition(J,address),status:"ok",checkedAt:new Date().toISOString()});}
       catch(error){positions.push({address,status:"error",error:error.message,checkedAt:new Date().toISOString()});}
     }
+    stage="tracking";
+    const tracking=await updateTracking({previous:snapshot?.tracking,analysis,markets,scan,readPosition,blocked,until,...trackingOptions});
+    tracking.blocked=[...blocked];
     const previous=new Set((snapshot?.deposits || []).map(r=>r.txid));
     const newDeposits=analysis.deposits.filter(r=>!previous.has(r.txid));
     snapshot={version:2,rows:scans.flatMap(s=>s.rows),generatedAt:new Date().toISOString(),since:new Date(since).toISOString(),until:new Date(until).toISOString(),
-      addresses:{E,H,I,J},...analysis,positions,
+      addresses:{E,H,I,J},...analysis,positions,tracking,
       coverage:{complete:scans.every(s=>s.complete) && !analysis.summary.unresolvedDeposits,
         scans:scans.map(({rows,...s})=>s),balanceErrors:positions.filter(p=>p.status!=="ok").length},
       alert:{active:analysis.deposits.length>0,level:analysis.deposits.length?"warning":"none",
@@ -153,6 +162,7 @@ function createProxyMonitor({root,fetchJson,readPosition,refreshMs=300000,maxPag
     const dataThrough=available?Math.min(until,Date.parse(snapshot.until)):null;
     return {...(snapshot || {}), rows:undefined, ...analysis,
       addresses:{E,H,I,J},positions:snapshot?.positions || [],
+      tracking:undefined,trackingView:trackingView(snapshot?.tracking,analysis,{blocked:new Set(snapshot?.tracking?.blocked || [])}),
       since:new Date(since).toISOString(),until:new Date(until).toISOString(),
       dataThrough:dataThrough?new Date(dataThrough).toISOString():null,
       coverage:{...snapshot?.coverage,windowCovered,
