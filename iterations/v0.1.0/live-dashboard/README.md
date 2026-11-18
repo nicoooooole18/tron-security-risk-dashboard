@@ -147,9 +147,20 @@ PORT=8787
 
 ## MEXC 专项（USDT / USDD）
 
-生产入口为 `http://43.134.57.52/freeze-risk/#mexc`。本轮采用**复核快照发布**：`reviewed-snapshots/` 保存已经核验、带原始时点的两市场快照，配合 `mexc-attribution-review.json` 展示归因。若有独立采集器生成的 `data/mexc*-snapshot.json`，运行时快照优先；没有时使用发布基线，既不清空也不覆盖其他生产缓存。历史归因不因刷新按钮而自动变成实时值。
+生产入口为 `http://43.134.57.52/freeze-risk/#mexc`。独立采集器持续更新 USDT / jUSDT 和 USDD / jUSDD 的运行时快照，配合 `mexc-attribution-review.json` 展示历史归因。`reviewed-snapshots/` 保存已经核验、带原始时点的发布基线；尚无运行时快照时使用该基线，既不清空也不覆盖其他生产缓存。历史归因不因刷新按钮而自动变成实时值。
 
-VPS 内存余量不足以安全承载本地约 267 MB 的完整 MEXC 回查状态，**本轮不启用 `mexc-worker.js` 持续采集服务**。既有冻结、新币、代理采集沿用原服务。MEXC 后续数据需要经资源评估后单独启用采集器，或重新复核发布；页面保留覆盖范围、过期状态和逐行余额时点。快照原文件不通过 HTTP 静态路径开放，仅由只读 API 返回公开视图。
+首次上线仅发布复核快照。持续监控使用独立的 `justlend-mexc-monitor.service`，由 `mexc-live-supervisor.py` 串行运行两个短生命周期 Node 子进程；原 `mexc-worker.js` 和 `mexc-backfill.js` 仍用于离线完整回查，不在 VPS 上常驻。既有冻结、新币、代理采集沿用原服务。快照原文件不通过 HTTP 静态路径开放，仅由只读 API 返回公开视图。
+
+### 持续采集的资源与证据边界
+
+- `mexc-live-bootstrap.js` 从本地完整缓存导出启动状态，先对比全部路径和权益结果。仅移除两钱包范围内不能充当来源证据的第二层钱包非来源 USDT 索引行；完整交易回执、MEXC 来源记录、权益记录仍保留。钱包后来成为更短路径或权益接收方时，自动重放相应历史；来源清单变更也会补扫。金额始终是十进制整数字符串。
+- 地址字典和定长记录减少重复 JSON 字符串。原 236.5 MB / 30.5 MB 缓存导出为约 10.1 MB / 9.6 MB，原始审计缓存不改写；USDT 23 笔、USDD 38 笔的历史路径及权益回放保持一致。精简状态位于 `data/mexc-live/USDT/` 和 `data/mexc-live/USDD/`，不覆盖完整回查缓存。
+- 每 300 秒调度一轮，USDT 完成后才启动 USDD；进程退出释放整个市场的堆。每市场最多 96 次实际 HTTP 请求，至少间隔 1,500 ms；429 时停止本轮，整个 MEXC 采集暂停 15 分钟。默认每轮最多处理 24 个地址、每地址 2 页、4 个回执、24 个持仓；USDT 冻结状态轮询最多 13 个来源地址。周期不等于所有地址均已追平，页面展示市场水位、待补队列与各持仓时间。
+- systemd 限制整个独立服务最多使用单核 20% CPU、256 MiB 内存、禁用该服务的 swap，内存达到 160 MiB 开始回收压力；子进程堆为 96 MiB，降低 GC 年轻代空间。每次启动要求主机至少有 220 MiB 可用内存，运行中低于 80 MiB、磁盘不足 512 MiB 或原看板接口超过 2.5 秒即停采并重试。现有服务的配置、配额和数据不改写。
+- 从原回查结束时间继续读取，不跳过离线至启用之间的日期。普通钱包仅在新市场入金需要其上游证据时续查，权益地址持续轮转。已复核的 31 个 USDT、16 个 USDD 观察地址也持续查份额和 jToken 转出，公共池仅作观察，不提升为来源地址或自动穿透归因。发现后续变动会将原留存结果标为待复核；新的链上活动不会自动改写确认本金。
+- `data/mexc-live-status.json` 展示心跳、暂停原因、请求预算、各市场采集状态和原看板响应时间。暂停、失败、超时、过期均保留上一份快照，不能显示为零；状态和缓存文件不开放静态下载。网络请求在 150 秒预算后停止，为计算和原子保存留出时间；单轮超过 210 秒会结束子进程，下一轮从最后保存的游标继续。
+
+验证命令：`node --test *.test.js` 与 `python3 mexc-live-supervisor.test.py`。部署前必须验证服务器 Node 18 的峰值和真实链上两市场采集，并对比启用前后的原看板接口响应。安装随仓库保存的 systemd user unit 后启用，启动状态仅在首次安装且文件不存在时导入；后续部署保留服务器已经推进的 MEXC 游标。临时停采使用 `systemctl --user stop justlend-mexc-monitor.service`，不会停止看板服务。
 
 来源清单为 `mexc-sources.json`。2026-11-16 登录 Arkham、选择 Tron 后，累计核对了 2 个 MEXC 热钱包和 37 个充值地址；每条保留标签、来源链接、核对日期和状态，新增充值地址另附可见转账证据。该清单是**已核对的子集**，不代表全量 TRON 地址；当前账号的历史分页受 Enterprise 权限限制，用户已选择按可核对地址继续。交易对手、提款接收方不会自动成为 MEXC 来源地址。`predicted` / `removed` 均不用于来源匹配。扩充清单会使旧快照失效，采集器重新计算关联路径。
 
@@ -167,9 +178,9 @@ DASHBOARD_READ_ONLY=1 HOST=127.0.0.1 PORT=8789 node server.js
 node mexc-worker.js --once
 ```
 
-持续采集使用 `node mexc-worker.js`，顺序运行 USDT 和 USDD 两个独立市场队列，每轮结束后等待 300 秒。只读调用 TronGrid，沿用本地 `.env` 的 `TRON_PRO_API_KEY`；不发链上交易。`/api/mexc` 只允许 GET，刷新页面不触发扫描。前端每 30 秒读取快照，仅在 MEXC Tab 可见时轮询。USDT 数据写入被 Git 忽略的 `data/mexc-state.json`、`data/mexc-snapshot.json`；USDD 使用 `data/mexc-usdd-state.json`、`data/mexc-usdd-snapshot.json`。缓存、完整审计底稿及配置不会随静态文件公开。
+本地完整缓存模式可使用 `node mexc-worker.js`，顺序运行 USDT 和 USDD 两个独立市场队列，每轮结束后等待 300 秒；VPS 使用上文的限额服务。两者均只读调用 TronGrid，沿用 `.env` 的 `TRON_PRO_API_KEY`（兼容 `TRONGRID_API_KEY` 和 `TRON_PRO_API_KEYS` 首个条目）；不发链上交易。`/api/mexc` 只允许 GET，刷新页面不触发扫描。前端每 30 秒读取快照，仅在 MEXC Tab 可见时轮询。完整模式 USDT 数据写入被 Git 忽略的 `data/mexc-state.json`、`data/mexc-snapshot.json`；USDD 使用 `data/mexc-usdd-state.json`、`data/mexc-usdd-snapshot.json`。限额模式状态单独保存，快照仍发布到相同位置。缓存、完整审计底稿及配置不会随静态文件公开。
 
-采集器使用独占 `data/mexc-worker.lock`，禁止多进程写同一缓存；进程异常退出后会保留锁，应确认原进程已停止后再清理。`MEXC_DATA_ROOT` 可隔离运行时缓存目录，来源清单仍从代码目录读取；标准服务器读取代码目录下的缓存，隔离目录用于调试，不会自动改变服务器读取位置。
+采集器共用独占 `data/mexc-worker.lock`，禁止完整模式与限额模式同时运行。限额服务同时使用文件锁并核对 PID，只回收已经退出进程的锁；完整模式异常退出后需确认原进程已停止再清理。完整模式的 `MEXC_DATA_ROOT` 可隔离运行时缓存目录，来源清单仍从代码目录读取；标准服务器读取代码目录下的缓存，隔离目录用于调试，不会自动改变服务器读取位置。
 
 固定窗口历史回查使用：
 

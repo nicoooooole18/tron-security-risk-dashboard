@@ -327,6 +327,7 @@
         <div class="header-actions"><button type="button" class="btn primary" id="mexcRefresh">刷新专项数据</button><span id="mexcTime" class="sync-meta">等待首次读取</span></div>
       </section>
       <div id="mexcNotice" class="mexc-notice" role="status" aria-live="polite">正在读取专项快照，尚不能判断是否有流入。</div>
+      <p id="mexcCollectorStatus" class="section-copy" role="status">正在读取采集进程状态…</p>
       <div id="mexcReviewNote" class="mexc-review-note"></div>
       <div class="mexc-metrics" id="mexcMetrics"></div>
       <section class="card mexc-card mexc-deepening" id="mexcUSDTDeepening" hidden></section>
@@ -353,6 +354,7 @@
           <div class="table-wrap"><table><thead><tr><th>关联钱包</th><th>jToken 份额</th><th>全部存款权益</th><th>借款</th><th>读取状态 / 北京时间</th></tr></thead><tbody id="mexcPositions"></tbody></table></div>
         </details>
         <details><summary>jToken 权益转手 <span id="mexcRightsCount"></span></summary><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>发送方 → 接收方</th><th>jToken / 市场</th><th>交易证据</th></tr></thead><tbody id="mexcRights"></tbody></table></div></details>
+        <details><summary>复核观察地址的 jToken 变动 <span id="mexcObservedRightsCount"></span></summary><p class="section-copy">包含已复核钱包、公共池及后续接收方的观察记录。仅用于提示重新核实留存，不自动认定为 MEXC 本金或已确认赎回，也不计入来源金额。</p><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>发送方 → 接收方</th><th>jToken / 市场</th><th>交易证据</th></tr></thead><tbody id="mexcObservedRights"></tbody></table></div></details>
         <details><summary>赎回记录 <span id="mexcRedeemCount"></span></summary><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>赎回地址</th><th>份额 / 底层资产</th><th>核验 / 交易</th></tr></thead><tbody id="mexcRedeems"></tbody></table></div></details>
         <details><summary>合约跨交易转手 · 待核 <span id="mexcAmbiguousCount"></span></summary><p class="section-copy">仅为等量转出候选，不能确认接收人权益来自该批资金；不自动继续归因。</p><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>合约 → 接收方</th><th>jToken / 市场</th><th>交易证据</th></tr></thead><tbody id="mexcAmbiguous"></tbody></table></div></details>
       </section>

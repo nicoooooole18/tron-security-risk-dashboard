@@ -150,6 +150,7 @@ function analyze({transfers=[], receipts={}, sources, accountTypes={}, hubs=new 
   function trace(last, wallets=0, seen=new Set(), depth=0) {
     const cacheKey=`${key(last)}:${wallets}:${depth}:${[...seen].sort().join(",")}`;
     if(traceCache.has(cacheKey))return traceCache.get(cacheKey);
+    if(graphLimited)return null;
     const result=traceUncached(last,wallets,seen,depth);
     if(!graphLimited&&traceCache.size<100000)traceCache.set(cacheKey,result);
     return result;
@@ -170,11 +171,13 @@ function analyze({transfers=[], receipts={}, sources, accountTypes={}, hubs=new 
         // The payer and recipient are the same wallet: do not count it twice.
         const path=trace(swap.paid,wallets,seen,depth+1);
         if(path)return [...path,prior,last];
+        if(graphLimited)return null;
       }
       // Arbitrary contracts may relay only evidence from this same execution.
       if(kind==="contract" && prior.txid!==last.txid)continue;
       const path=trace(prior,wallets+(kind==="wallet"?1:0),visited,depth+1);
       if(path)return [...path,last];
+      if(graphLimited)return null;
     }
     return null;
   }
@@ -202,12 +205,13 @@ function analyze({transfers=[], receipts={}, sources, accountTypes={}, hubs=new 
 }
 function trackRights({events,rows,receipts,members={},accountTypes={},hubs=new Set(),maxMembers=1000,maxHops=4,market=MARKETS.USDT}) {
   const underlying=market.underlying,jToken=market.jToken;
-  members=structuredClone(members);const rights=[],redemptions=[],ambiguous=[],anchors=new Map();let limited=false;
+  members=structuredClone(members);const rights=[],redemptions=[],ambiguous=[],anchors=new Map();let limited=false,memberCount=Object.keys(members).length;
   const add=(a,edge,depth,origin)=>{
     if(a===ZERO || a===jToken || hubs.has(a))return;
-    if(!members[a] && Object.keys(members).length>=maxMembers){limited=true;return;}
+    if(!members[a] && memberCount>=maxMembers){limited=true;return;}
     const k=`${a}:${edge.txid}`,anchor=anchors.get(k);
     if(!anchor || precedes(edge,anchor.edge))anchors.set(k,{address:a,edge,depth,origin});
+    if(!members[a])memberCount++;
     if(!members[a] || precedes(edge,members[a].edge))members[a]={address:a,edge,depth,origin};
   };
   for(const e of events.filter(e=>e.operation==="Mint" && e.mintTokens)) {

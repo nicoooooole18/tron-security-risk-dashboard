@@ -1,0 +1,28 @@
+[Unit]
+Description=Bounded USDT and USDD MEXC monitoring
+After=network-online.target justlend-freeze-risk-dashboard.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/nn/project/justlend-capital-dashboard/iterations/v0.1.0/live-dashboard
+ExecStart=/usr/bin/python3 mexc-live-supervisor.py
+Environment=MEXC_NODE_BIN=/usr/bin/node
+Restart=on-failure
+RestartSec=60
+CPUAccounting=yes
+CPUQuota=20%
+CPUWeight=10
+MemoryAccounting=yes
+MemoryHigh=160M
+MemoryMax=256M
+MemorySwapMax=0
+TasksMax=32
+Nice=15
+IOWeight=10
+IOSchedulingClass=idle
+TimeoutStopSec=15
+KillMode=control-group
+UMask=0077
+
+[Install]
+WantedBy=default.target

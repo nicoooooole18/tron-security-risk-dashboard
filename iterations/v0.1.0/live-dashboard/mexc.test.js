@@ -199,6 +199,7 @@ test("MEXC endpoint is read-only and private runtime files cannot be fetched",as
     const r=await fetch(`${base}/api/mexc?refresh=1`);assert.equal(r.status,200);assert.equal((await r.json()).scope,"MEXC-USDT-jUSDT-USDD-jUSDD");
     assert.equal((await fetch(`${base}/api/mexc`,{method:"POST"})).status,405);
     for(const file of ["reviewed-snapshots/mexc-snapshot.json","reviewed-snapshots/mexc-usdd-snapshot.json"])assert.equal((await fetch(`${base}/${file}`)).status,404);
+    for(const file of ["mexc-live-supervisor.py","justlend-mexc-monitor.service","data/mexc-live-status.json","data/mexc-live/USDT/data/mexc-state.json"])assert.equal((await fetch(`${base}/${file}`)).status,404);
     for(const file of ["mexc-sources.json","mexc-worker.js","mexc-provider.js","mexc-attribution.js","mexc-attribution-review.json","data/mexc-state.json","data/mexc-snapshot.json","data/mexc-usdd-state.json","data/mexc-usdd-snapshot.json","data/mexc-attribution-evidence-2026-11-16.json","test-fixtures/mexc-conversions-2026-11-16.json",".env"])assert.equal((await fetch(`${base}/${file}`)).status,404);
     for(const file of ["mexc-ui.js","dashboard-tabs.js"])assert.equal((await fetch(`${base}/${file}`)).status,200);
   }finally{await new Promise(r=>server.close(r));}

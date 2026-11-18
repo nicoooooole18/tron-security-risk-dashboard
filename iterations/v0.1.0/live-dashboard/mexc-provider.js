@@ -14,21 +14,29 @@ function addressHex(a) {
   let n=0n;for(const c of a)n=n*58n+BigInt(abc.indexOf(c));
   return n.toString(16).padStart(50,"0").slice(0,42);
 }
-function createProvider({fetchImpl=fetch,delayMs=350,apiKey=process.env.TRON_PRO_API_KEY||process.env.TRONGRID_API_KEY||""}={}) {
-  let next=0;
+function createProvider({fetchImpl=fetch,delayMs=350,maxRequests=Infinity,maxDurationMs=Infinity,circuitBreakOnRateLimit=false,apiKey=process.env.TRON_PRO_API_KEY||process.env.TRONGRID_API_KEY||String(process.env.TRON_PRO_API_KEYS||"").split(",")[0].trim()}={}) {
+  let next=0,requests=0,reserved=0,rateLimited=false,timeBudgetExhausted=false;
+  const started=Date.now();
   async function request(route,body) {
     for(let attempt=0;attempt<3;attempt++) {
+      if(rateLimited)throw new Error("TronGrid HTTP 429：本轮暂停，保留游标等待下一轮");
+      if(requests+reserved>=maxRequests)throw new Error("本轮 MEXC 请求预算已用完，保留游标下一轮续查");
       const slot=Math.max(next,Date.now());next=slot+delayMs;
+      if(slot-started>=maxDurationMs){timeBudgetExhausted=true;throw new Error("本轮 MEXC 采集时间预算已用完，保存游标下一轮续查");}
+      reserved++;
       await new Promise(r=>setTimeout(r,Math.max(0,slot-Date.now())));
+      reserved--;requests++;
       const response=await fetchImpl(`https://api.trongrid.io${route}`,{method:body?"POST":"GET",redirect:"error",
         headers:{"Content-Type":"application/json",...(apiKey?{"TRON-PRO-API-KEY":apiKey}:{})},
         body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(15000)});
+      if(response.status===429&&circuitBreakOnRateLimit){rateLimited=true;throw new Error("TronGrid HTTP 429：本轮暂停，保留游标等待下一轮");}
       if([429,502,503,504].includes(response.status) && attempt<2){next=Date.now()+1000*2**attempt;continue;}
       if(!response.ok)throw new Error(`TronGrid HTTP ${response.status}`);
       const result=await response.json();if(result.success===false || result.Error)throw new Error("TronGrid 请求未成功");return result;
     }
   }
   return {
+    stats:()=>({requests,maxRequests:Number.isFinite(maxRequests)?maxRequests:null,rateLimited,timeBudgetExhausted}),
     async solidBlock() {
       const d=await request("/walletsolidity/getnowblock",{}),b=d.block_header?.raw_data;
       if(!Number.isSafeInteger(b?.number)||!Number.isSafeInteger(b?.timestamp))throw new Error("已确认区块信息无效");

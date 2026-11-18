@@ -3,6 +3,7 @@ const fs=require("node:fs/promises");
 const path=require("node:path");
 const crypto=require("node:crypto");
 const C=require("./mexc-core");
+const {compactState,canDiscardFunding,promoteCompacted,packState,unpackState}=require("./mexc-compact");
 const DEFAULTS={lookbackDays:30,refreshSeconds:300,accountsPerCycle:8,pagesPerAccount:2,receiptsPerCycle:20,
   positionsPerCycle:20,maxAccounts:2000,maxTransfers:100000,maxMembers:1000,maxReceipts:30000,maxArchive:5000};
 async function readJson(file,fallback){try{return JSON.parse(await fs.readFile(file,"utf8"));}catch(e){if(e.code==="ENOENT")return fallback;throw e;}}
@@ -20,19 +21,27 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
   async function run(){
     const backfill=Number.isFinite(config.backfillUntil),now=backfill?config.backfillUntil:clock(),since=now-config.lookbackDays*C.DAY,book=C.validateSources(await readSources());
     const sourceVersion=version(book),seeds=new Set(book.addresses.filter(a=>a.status==="verified").map(a=>a.address));
-    state ||= await readJson(stateFile,{version:1,accounts:{},transfers:[],receipts:{},receiptAttempts:{},members:{},positions:{},archive:{},frozen:{},limits:{}});
+    state ||= unpackState(await readJson(stateFile,{version:1,accounts:{},transfers:[],receipts:{},receiptAttempts:{},members:{},positions:{},archive:{},frozen:{},limits:{}}));
     if(state.version!==1)throw new Error("MEXC 缓存版本不支持");
-    if(state.sourceVersion && state.sourceVersion!==sourceVersion){state.members={};state.positions={};state.archive={};}
+    if(state.sourceVersion && state.sourceVersion!==sourceVersion){state.members={};state.positions={};state.archive={};
+      if(config.compact)for(const q of Object.values(state.accounts))if(q.fundingCompacted){q.history=null;q.head=null;q.through=null;q.lastSuccess=0;}}
     state.sourceVersion=sourceVersion;const hubs=await getHubs();const types={};
     const hubVersion=version([...hubs].sort());
     if(state.hubVersion && state.hubVersion!==hubVersion){state.members={};state.positions={};state.archive={};}
     state.hubVersion=hubVersion;
-    const add=(a,depth=0,rights=false)=>{
-      if(!C.validAddress(a)||a===C.ZERO||seeds.has(a)&&!rights||hubs.has(a))return;
+    let accountCount=Object.keys(state.accounts).length;
+    const watches=new Map((config.watchAccounts||[]).map(w=>[w.address,w]));
+    const add=(a,depth=0,rights=false,watch=false)=>{
+      if(!C.validAddress(a)||a===C.ZERO||seeds.has(a)&&!rights||hubs.has(a)&&!watch)return;
       if(!state.accounts[a]){
-        if(Object.keys(state.accounts).length>=config.maxAccounts){state.limits.accounts=true;return;}
+        if(accountCount>=config.maxAccounts){state.limits.accounts=true;return;}
         state.accounts[a]={depth,rights,lastAttempt:0,active:true};
-      }else {state.accounts[a].depth=Math.min(state.accounts[a].depth,depth);if(rights)state.accounts[a].rights=true;}
+        accountCount++;
+      }else {
+        if(config.compact)promoteCompacted(state.accounts[a],depth,rights,{since,until:now,streamFields:streamFields(rights)});
+        state.accounts[a].depth=Math.min(state.accounts[a].depth,depth);if(rights)state.accounts[a].rights=true;
+      }
+      if(!watch&&depth<2)state.accounts[a].watchOnly=false;
       state.accounts[a].active=true;return state.accounts[a];
     };
     // Rebuild reachability so a newly verified public hub also excludes candidates reachable only through that hub.
@@ -42,14 +51,31 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
     for(const receipt of Object.values(state.receipts))for(const r of receipt.transfers)if(funding(r.contract)&&r.blockTs>=since&&r.blockTs<=now){if(!contractIncoming.has(r.to))contractIncoming.set(r.to,[]);contractIncoming.get(r.to).push(r);}
     const enqueue=(a,depth,rights=false)=>{const previous=state.accounts[a];const change=!previous?.active||depth<previous.depth;const q=add(a,depth,rights);if(q&&change)reachable.push([a,q]);};
     enqueue(jToken,-1);for(const a of Object.keys(state.members))enqueue(a,2,true);
+    for(const [a,w] of watches){
+      const existing=state.accounts[a],q=add(a,2,true,true);if(!q)continue;
+      q.watchSince=Math.min(q.watchSince||Infinity,w.since);q.watchOnly=!state.members[a]&&q.depth>=2;
+      if(!existing)q.history={since:w.since,until:now,cursor:"",done:false,asset:jToken};
+    }
     for(let i=0;i<reachable.length;i++){
       const [a,q]=reachable[i];
       if((a===jToken||q.type==="wallet")&&q.depth<1)for(const r of incoming.get(a)||[])enqueue(r.from,q.depth+1);
       else if(q.type==="contract"&&a!==jToken)for(const r of contractIncoming.get(a)||[])enqueue(r.from,q.depth);
     }
+    if(config.compact){
+      compactState(state,{sources:book,market,since});
+      const outputs=new Map(),consider=r=>{
+        if(funding(r.contract)&&r.blockTs>=since&&state.accounts[r.to]?.active)
+          outputs.set(r.from,Math.max(outputs.get(r.from)||0,r.blockTs));
+      };
+      for(const r of state.transfers)consider(r);
+      for(const receipt of Object.values(state.receipts))for(const r of receipt.transfers)consider(r);
+      for(const [a,q] of Object.entries(state.accounts))q.requiredThrough=a===jToken||q.rights?now:outputs.get(a)||q.history?.until||now;
+      incoming.clear();contractIncoming.clear();reachable.length=0;
+    }
     const transferMap=new Map(state.transfers.filter(r=>r.blockTs>=since || r.contract===jToken && (state.members[r.from]||state.members[r.to])).map(r=>[C.key(r),r]));
     const ingest=(r,rights=false)=>{
       if(!r || r.blockTs<since && !(rights && r.contract===jToken) || r.blockTs>now)return;
+      if(config.compact&&canDiscardFunding(r,state,seeds)){state.accounts[r.to].fundingCompacted=true;return true;}
       if(transferMap.size>=config.maxTransfers && !transferMap.has(C.key(r))){state.limits.transfers=true;return false;}
       transferMap.set(C.key(r),r);return true;
     };
@@ -73,19 +99,31 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
       }
     }
     resetHistoryBounds();
-    const queue=Object.entries(state.accounts).filter(([,q])=>q.active&&(!backfill||!q.history?.done||q.error)).sort(([a,x],[b,y])=>(b===jToken?1:0)-(a===jToken?1:0)||x.lastAttempt-y.lastAttempt)
-      .slice(0,config.accountsPerCycle);
+    const eligible=Object.entries(state.accounts).filter(([,q])=>q.active&&(!backfill||!q.history?.done||q.error)
+      &&(!config.compact||!q.history?.done||q.head||q.error||!q.lastSuccess||(q.through||0)<q.requiredThrough))
+      .sort(([a,x],[b,y])=>(b===jToken?1:0)-(a===jToken?1:0)||x.lastAttempt-y.lastAttempt);
+    let queue=eligible.slice(0,config.accountsPerCycle);
+    if(config.compact){
+      const primary=eligible.filter(([a])=>a===jToken),rights=eligible.filter(([a,q])=>a!==jToken&&q.rights).slice(0,Math.ceil((config.accountsPerCycle-primary.length)/2));
+      const chosen=new Set([...primary,...rights].map(([a])=>a));
+      queue=[...primary,...rights,...eligible.filter(([a])=>!chosen.has(a)).slice(0,Math.max(0,config.accountsPerCycle-chosen.size))];
+    }
     await pool(queue,config.concurrency||1,async([a,q])=>{
       q.lastAttempt=clock();
       try{
-        q.type=a===jToken?"contract":["wallet","contract"].includes(q.type)?q.type:await provider.type(a);
+        q.type=a===jToken?"contract":q.watchOnly?q.type||"watch":["wallet","contract"].includes(q.type)?q.type:await provider.type(a);
         if(q.type==="unknown")throw new Error("地址类型待核验");
         q.history ||= {since,until:now,cursor:"",done:false,...streamFields(q.rights)};
         // Contract provenance is limited to full market-deposit receipts; unrelated historical funding is not traversed.
-        if(backfill && q.type==="contract" && a!==jToken && !q.rights){q.history.done=true;q.history.evidenceScope="same-transaction-receipts";q.error=null;q.lastSuccess=now;return;}
-        q.head ||= {since:Math.max(since,(q.through||now)-60000),until:now,cursor:"",...streamFields(q.rights)};
+        if((backfill||config.compact) && q.type==="contract" && a!==jToken && !q.rights){q.history.done=true;q.history.evidenceScope="same-transaction-receipts";q.through=now;q.error=null;q.lastSuccess=now;return;}
+        const headUntil=config.compact?q.requiredThrough:now;
+        if(!q.head&&(!config.compact||!q.through||q.through<headUntil))q.head={since:Math.min(headUntil,Math.max(since,(q.through||q.history.until||now)-60000)),until:headUntil,cursor:"",...(q.watchOnly?{asset:jToken}:streamFields(q.rights))};
         const readPage=async(stream,history)=>{
-          const d=await provider.page(a,stream);
+          let d;
+          try{d=await provider.page(a,stream);}catch(e){
+            if(/HTTP 400|fingerprint|cursor/i.test(e.message)){stream.cursor="";stream.seen=[];stream.done=false;}
+            throw e;
+          }
           if(!Array.isArray(d.rows)||typeof d.next!=="string" || d.next && (!d.rows.length || d.next===stream.cursor || stream.seen?.includes(d.next)))throw new Error("转账分页游标异常");
           let overflow=false;
           for(const row of d.rows){const r=C.normalizeTransfer(row);if(!r)continue;
@@ -94,7 +132,7 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
           }
           if(overflow)throw new Error("转账存储上限已达，未推进游标");
           stream.seen ||= [];if(d.next)stream.seen.push(d.next);stream.cursor=d.next;
-          if(!d.next){stream.done=true;if(!history){q.through=stream.until;q.head=null;}}
+          if(!d.next){stream.done=true;delete stream.seen;if(!history){q.through=stream.until;q.head=null;}}
         };
         if(backfill&&config.historyShards>1&&q.depth===1&&q.type==="wallet"&&!q.rights&&!q.history.segments&&(q.history.seen?.length||0)>=64){
           const h=q.history,count=config.historyShards,span=h.until-h.since+1;
@@ -133,12 +171,14 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
     };
     const receiptsNeeded=neededReceipts(preliminary);
     const pending=[...receiptsNeeded.values()].filter(r=>!state.receipts[r.txid]).sort((a,b)=>(state.receiptAttempts[a.txid]?.at||0)-(state.receiptAttempts[b.txid]?.at||0)||b.blockTs-a.blockTs);
+    let receiptCount=Object.keys(state.receipts).length;
     await pool(pending.slice(0,config.receiptsPerCycle),config.concurrency||1,async r=>{
       try{
-        if(Object.keys(state.receipts).length>=config.maxReceipts){state.limits.receipts=true;return;}
+        if(receiptCount>=config.maxReceipts){state.limits.receipts=true;return;}
         const receipt=await provider.receipt(r.txid);
-        if(Object.keys(state.receipts).length>=config.maxReceipts){state.limits.receipts=true;return;}
+        if(receiptCount>=config.maxReceipts){state.limits.receipts=true;return;}
         state.receipts[r.txid]=receipt;
+        receiptCount++;
         state.receiptAttempts[r.txid]={at:now,error:null};
       }catch(e){state.receiptAttempts[r.txid]={at:now,error:e.message};}
     });
@@ -150,9 +190,11 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
     for(const [a,q] of Object.entries(state.accounts))types[a]=q.type;
     const analysis=C.analyze({transfers:state.transfers,receipts:state.receipts,sources:book,accountTypes:types,hubs,since,until:now,maxVisits:config.maxGraphVisits||50000,market});
     // Canonical receipts can split a provisional account-index row into multiple log events.
-    for(const [id,e] of Object.entries(state.archive))if(e.blockTs>=since)delete state.archive[id];
+    let archiveCount=Object.keys(state.archive).length;
+    for(const [id,e] of Object.entries(state.archive))if(e.blockTs>=since){delete state.archive[id];archiveCount--;}
     for(const e of analysis.events){
-      if(Object.keys(state.archive).length>=config.maxArchive&&!state.archive[e.id]){state.limits.archive=true;break;}
+      if(archiveCount>=config.maxArchive&&!state.archive[e.id]){state.limits.archive=true;break;}
+      if(!state.archive[e.id])archiveCount++;
       state.archive[e.id]=e;
     }
     const tracked=C.trackRights({events:Object.values(state.archive),rows:analysis.rows,receipts:state.receipts,members:state.members,
@@ -165,43 +207,49 @@ function createMexcMonitor({root=__dirname,provider,readSources=()=>readJson(pat
     }
     // A new page or canonical receipt may reveal a later connection during this very cycle.
     resetHistoryBounds();
-    const positions=Object.keys(state.members).filter(a=>types[a]==="wallet"&&!hubs.has(a))
+    const positions=[...new Set([...Object.keys(state.members).filter(a=>types[a]==="wallet"&&!hubs.has(a)),...watches.keys()])]
       .sort((a,b)=>(state.positions[a]?.attemptedAt||0)-(state.positions[b]?.attemptedAt||0));
     for(const a of positions.slice(0,config.positionsPerCycle)){
       const previous=state.positions[a],checkedAt=clock();
       try{state.positions[a]={...await provider.position(a,market),status:"ok",checkedAt,attemptedAt:checkedAt};}
       catch(e){state.positions[a]={status:"error",error:e.message,attemptedAt:checkedAt,lastGood:previous?.status==="ok"?previous:previous?.lastGood};}
     }
-    for(const a of [...seeds].slice(0,50))if(clock()-(state.frozen[a]?.checkedAt||0)>(state.frozen[a]?.status==="unknown"?60000:900000)){
+    const frozenQueue=[...seeds].filter(a=>clock()-(state.frozen[a]?.checkedAt||0)>(state.frozen[a]?.status==="unknown"?60000:900000)).sort((a,b)=>(state.frozen[a]?.checkedAt||0)-(state.frozen[b]?.checkedAt||0));
+    for(const a of frozenQueue.slice(0,config.frozenPerCycle??50)){
       const checkedAt=clock();try{state.frozen[a]={status:await provider.frozen(a),checkedAt};}catch{state.frozen[a]={status:"unknown",checkedAt};}
     }
     const accounts=Object.values(state.accounts).filter(q=>q.active), events=Object.values(state.archive).filter(e=>e.blockTs>=since).sort((a,b)=>b.blockTs-a.blockTs);
     const currentPositions=positions.map(a=>({address:a,...state.positions[a],status:!state.positions[a]?"pending":state.positions[a].status==="ok"&&clock()-state.positions[a].checkedAt>900000?"stale":state.positions[a].status}));
-    const historyPending=accounts.filter(a=>!a.history?.done).length,headPending=accounts.filter(a=>!a.through||now-a.through>900000).length;
+    const historyPending=accounts.filter(a=>!a.history?.done).length,headPending=accounts.filter(a=>!a.through||(config.compact?a.requiredThrough:now)-a.through> (config.compact?0:900000)).length;
     // New rights members may already have fully scanned accounts; include their newly required receipts before declaring completion.
     const stillNeeded=new Set([...neededReceipts(analysis).values()].filter(r=>!state.receipts[r.txid]).map(r=>r.txid));
     const receiptPending=stillNeeded.size;
     const errors=Object.entries(state.accounts).filter(([,a])=>a.active&&a.error).map(([address,a])=>({address,error:a.error}));
     const pendingMembers=Object.keys(state.members).filter(a=>!["wallet","contract"].includes(types[a])).length;
     const scanComplete=backfill && seeds.size>0 && historyPending===0 && receiptPending===0 && pendingMembers===0 && errors.length===0 && !analysis.graphLimited && !tracked.limited && !Object.values(state.limits).some(Boolean);
+    state.watchActivity ||= {};
+    const observedRights=analysis.rows.filter(r=>r.contract===jToken&&watches.has(r.from)&&r.blockTs>=watches.get(r.from).since).sort((a,b)=>b.blockTs-a.blockTs||(b.eventIndex??0)-(a.eventIndex??0));
+    for(const r of observedRights)if(r.blockTs>(state.watchActivity[r.from]?.lastOutgoingAt||0))state.watchActivity[r.from]={lastOutgoingAt:r.blockTs,txid:r.txid};
     const snapshot={version:1,scope:isUSDD?"MEXC-USDD-jUSDD":"MEXC-USDT-jUSDT",market:market.symbol,generatedAt:new Date(clock()).toISOString(),since:new Date(since).toISOString(),until:new Date(now).toISOString(),
       sourceVersion,sources:{...book,addresses:book.addresses.map(a=>({...a,frozen:state.frozen[a.address]||{status:"unknown"}}))},
       events:events.slice(0,500),rights:tracked.rights.slice(-500).reverse(),redemptions:tracked.redemptions.slice(-500).reverse(),ambiguous:tracked.ambiguous.slice(-100).reverse(),
-      positions:currentPositions.map(p=>({...p,asset:market.symbol,decimals:market.decimals,jToken})),summary:{matchedCount:events.length,directRaw:C.sum(events.filter(e=>e.kind==="direct")),
+      positions:currentPositions.map(p=>({...p,asset:market.symbol,decimals:market.decimals,jToken,reviewWatch:watches.has(p.address)})),
+      observedRights:observedRights.slice(0,500).map(r=>({...r,asset:market.symbol,monitorOnly:true})),watchActivity:state.watchActivity,
+      summary:{matchedCount:events.length,directRaw:C.sum(events.filter(e=>e.kind==="direct")),
         indirectRaw:C.sum(events.filter(e=>e.kind!=="direct")),attributedIndirectRaw:null,verifiedCount:events.filter(e=>e.verified).length},
-      coverage:{status:!seeds.size?"sources-pending":scanComplete?"backfill-complete":"bounded",sourceComplete:false,scanComplete,backfill,totalAccounts:accounts.length,excludedAccounts:Object.keys(state.accounts).length-accounts.length,historyPending,headPending:backfill?null:headPending,receiptPending,
+      coverage:{status:!seeds.size?"sources-pending":scanComplete?"backfill-complete":config.compact?"continuous":"bounded",sourceComplete:false,scanComplete,backfill,continuous:Boolean(config.compact),marketThrough:state.accounts[jToken]?.through||null,totalAccounts:accounts.length,excludedAccounts:Object.keys(state.accounts).length-accounts.length,historyPending,headPending:backfill?null:headPending,receiptPending,
         errors,receiptErrors:Object.entries(state.receiptAttempts).filter(([,v])=>v.error).slice(0,20).map(([txid,v])=>({txid,error:v.error})),
         pendingMembers,stoppedAddresses:analysis.boundaries.length,
         contractMembers:Object.keys(state.members).filter(a=>types[a]==="contract").length,
         limits:{...state.limits,graph:analysis.graphLimited,rights:tracked.limited},
-        displayTruncated:events.length>500||tracked.rights.length>500||tracked.redemptions.length>500||tracked.ambiguous.length>100,
-        refreshSeconds:config.refreshSeconds},
+        displayTruncated:events.length>500||tracked.rights.length>500||tracked.redemptions.length>500||tracked.ambiguous.length>100||observedRights.length>500,
+        watchAccounts:watches.size,watchHistoryPending:[...watches.keys()].filter(a=>!state.accounts[a]?.history?.done).length,refreshSeconds:config.refreshSeconds},
       limitations:["地址库为已核对的 Arkham TRON 子集；未命中不代表没有 MEXC 资金。",
         "首次回查 30 天，最多 2 个钱包中转；合约只用同交易事件穿透。支持同笔已核验 PSM 的 USDT → USDD 换币；其他换币与跨链待核。",
         "间接路径金额为该资产的交易额，不自动计为来源本金；归因复核、权益和持仓各自独立。",
         "公共平台停止穿透；合约跨交易转出的等量 jUSDT 单列待核，不自动归属于原出资方。",
         "持仓为关联钱包该市场的全部份额，含混同资金；失败或过期不按零处理。"]};
-    state.updatedAt=now;await atomicJson(stateFile,state);await atomicJson(snapFile,snapshot);return snapshot;
+    state.updatedAt=now;await atomicJson(stateFile,config.compact?packState(state):state);await atomicJson(snapFile,snapshot);return snapshot;
   }
   return {refresh(){if(!running)running=run().finally(()=>{running=null;});return running;}};
 }
@@ -221,7 +269,8 @@ async function readBaseSnapshot(root=__dirname,now=Date.now()) {
 }
 async function readMexcSnapshot(root=__dirname,now=Date.now()) {
   const base=await readBaseSnapshot(root,now);
-  const [usdd,review]=await Promise.all([readMarketSnapshot(root,"mexc-usdd-snapshot.json"),readJson(path.join(root,"mexc-attribution-review.json"),null)]);
+  const [usdd,review,collector]=await Promise.all([readMarketSnapshot(root,"mexc-usdd-snapshot.json"),readJson(path.join(root,"mexc-attribution-review.json"),null),readJson(path.join(root,"data/mexc-live-status.json"),null)]);
+  base.runtime={...base.runtime,collector:collector?{...collector,heartbeatStale:!Number.isFinite(Date.parse(collector.heartbeatAt))||now-Date.parse(collector.heartbeatAt)>120000}:null};
   if(!usdd&&!review)return base;
   return require("./mexc-attribution").combineSnapshots(base,usdd,review,now);
 }

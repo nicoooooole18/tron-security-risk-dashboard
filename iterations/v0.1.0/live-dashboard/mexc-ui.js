@@ -96,8 +96,11 @@
   }
   function render() {
     const d=current;if(!d)return;const c=d.coverage||{},s=d.summary,stale=d.runtime?.stale;
+    const collector=d.runtime?.collector,enabled=collector?.enabled;
     const publishedMarkets=[d.runtime?.snapshotOrigin==="reviewed-publication"?"USDT":null,d.runtime?.usddSnapshotOrigin==="reviewed-publication"?"USDD":null].filter(Boolean);
-    const publicationNote=publishedMarkets.length?`${publishedMarkets.join(" / ")} 显示已发布的复核快照，持续采集未启用；金额和留存以各自注明时点为准，刷新不会补采链上数据。`:"";
+    const publicationNote=publishedMarkets.length?`${publishedMarkets.join(" / ")} 显示已发布的复核快照，${enabled?"持续采集已启用，等待该市场首轮更新":"持续采集未启用"}；金额和留存以各自注明时点为准，刷新不会补采链上数据。`:"";
+    const phase=collector?.heartbeatStale?"进程心跳过期，请检查服务":({starting:"启动中",running:`正在采集 ${collector?.currentMarket||""}`,waiting:"等待下一轮",paused:"已暂停，自动复查",stopped:"已停止"}[collector?.phase]||"状态待确认");
+    el("mexcCollectorStatus").textContent=enabled?`持续采集：${phase}。${collector.pauseReason||"两个市场分进程串行运行，默认每 5 分钟调度；所有地址可能需要多轮补齐。"} 最近心跳 ${time(collector.heartbeatAt)}${collector.nextRunAt?` · 下轮 ${time(collector.nextRunAt)}`:""}。`:"持续采集尚未启用，当前展示已发布的复核快照。";
     const pending=c.status==="pending"||c.status==="sources-pending"||c.status==="sources-changed";
     el("mexcTime").textContent=d.generatedAt?`USDT采集：${time(d.generatedAt)}`:"尚无已完成快照";
     el("mexcNotice").classList.toggle("is-error",Boolean(fetchError));
@@ -115,16 +118,17 @@
     el("mexcPositions").innerHTML=p.map(r=>{
       const old=r.asset==="USDD"?d.runtime?.usddStale:stale;const ok=r.status==="ok"&&!old&&!fetchError;
       const label={ok:old||fetchError?"快照过期 / 待更新":"读取成功",pending:"待查询",error:"读取失败",stale:"数据过期"}[r.status]||"待核";
-      return `<tr><td>${addr(r.address)}<small>${r.asset||"USDT"} 市场</small></td><td>${ok?amount(r.jTokenRaw,8):"待核"}</td><td>${ok?amount(r.underlyingRaw,r.decimals??6):"待核"}</td><td>${ok?amount(r.borrowRaw,r.decimals??6):"待核"}</td><td>${esc(label)}<br>${esc(time(r.checkedAt||r.attemptedAt))}${r.error?`<small>${esc(r.error)}</small>`:""}</td></tr>`;
+      return `<tr><td>${addr(r.address)}<small>${r.asset||"USDT"} 市场${r.reviewWatch?" · 复核观察地址，非来源标签":""}</small></td><td>${ok?amount(r.jTokenRaw,8):"待核"}</td><td>${ok?amount(r.underlyingRaw,r.decimals??6):"待核"}</td><td>${ok?amount(r.borrowRaw,r.decimals??6):"待核"}</td><td>${esc(label)}<br>${esc(time(r.checkedAt||r.attemptedAt))}${r.error?`<small>${esc(r.error)}</small>`:""}</td></tr>`;
     }).join("")||empty(5,"暂无可展示的关联钱包；不表示持仓为零。");
     function flowRows(rows){return rows.map(r=>`<tr><td>${esc(time(r.blockTs))}</td><td>${addr(r.from)}<br>→ ${addr(r.to)}</td><td>${amount(r.amountRaw,8)} j${r.asset||"USDT"}</td><td>${tx(r.txid)}</td></tr>`).join("")||empty(4,"暂无已识别记录；请结合扫描覆盖查看。");}
     el("mexcRights").innerHTML=flowRows(d.rights||[]);el("mexcRightsCount").textContent=`· ${(d.rights||[]).length} 条`;
+    el("mexcObservedRights").innerHTML=flowRows(d.observedRights||[]);el("mexcObservedRightsCount").textContent=`· ${(d.observedRights||[]).length} 条`;
     el("mexcAmbiguous").innerHTML=flowRows(d.ambiguous||[]);el("mexcAmbiguousCount").textContent=`· ${(d.ambiguous||[]).length} 条`;
     el("mexcRedeemCount").textContent=`· ${(d.redemptions||[]).length} 条`;
     el("mexcRedeems").innerHTML=(d.redemptions||[]).map(r=>`<tr><td>${esc(time(r.blockTs))}</td><td>${addr(r.from)}</td><td>${amount(r.amountRaw,8)} j${r.asset||"USDT"}<br>${amount(r.underlyingRaw,r.decimals??6)} ${r.asset||"USDT"}</td><td>${r.kind==="redeem"?"Redeem 已核验":"仅转入市场 · 待核"}<br>${tx(r.txid)}</td></tr>`).join("")||empty(4,"暂无已识别赎回记录。");
     el("mexcSourceNote").textContent=d.sources?.note||"仅含已核对的 TRON 来源地址，不将交易对手自动纳入 MEXC 标签。";
     el("mexcSources").innerHTML=(d.sources?.addresses||[]).map(a=>`<tr><td>${addr(a.address)}</td><td>${esc(a.label)} · ${esc({verified:"已核对",predicted:"推测 / 未启用",removed:"已移除"}[a.status]||a.status)}<br>${/^https:\/\/(intel\.)?arkm\.com\//.test(a.source||"")?`<a href="${esc(a.source)}" target="_blank" rel="noopener noreferrer">标签来源 ↗</a>`:""}</td><td>${esc(a.checkedAt)}</td><td>${a.frozen?.checkedAt && Date.now()-a.frozen.checkedAt>900000?"过期 / 待核":esc({blacklisted:"已冻结",clear:"未冻结",unknown:"未知"}[a.frozen?.status]||"待查询")}<br><small>${esc(time(a.frozen?.checkedAt))}</small></td></tr>`).join("")||empty(4,"等待核对来源地址。");
-    el("mexcMarketCoverage").innerHTML=Object.entries(d.marketCoverage||{USDT:c}).map(([asset,m])=>`<div><strong>${asset} / j${asset}</strong><small>${m.scanComplete?"固定30天回查已完成":m.status==="pending"?"采集尚未完成":"回查进行中"} · 历史待查 ${m.historyPending??"待查询"} · 回执待核 ${m.receiptPending??"待查询"}</small><small>快照 ${time(m.generatedAt)} · 读取异常 ${(m.errors?.length||0)+(m.receiptErrors?.length||0)}${Object.values(m.limits||{}).some(Boolean)?" · 已触及上限，结果不完整":""}${m.displayTruncated?" · 明细到展示上限":""}</small></div>`).join("");
+    el("mexcMarketCoverage").innerHTML=Object.entries(d.marketCoverage||{USDT:c}).map(([asset,m])=>`<div><strong>${asset} / j${asset}</strong><small>${m.continuous?"持续增量采集":m.scanComplete?"固定30天回查已完成":m.status==="pending"?"采集尚未完成":"回查进行中"} · 历史待查 ${m.historyPending??"待查询"} · 回执待核 ${m.receiptPending??"待查询"}</small><small>快照 ${time(m.generatedAt)} · 读取异常 ${(m.errors?.length||0)+(m.receiptErrors?.length||0)}${Object.values(m.limits||{}).some(Boolean)?" · 已触及上限，结果不完整":""}${m.displayTruncated?" · 明细到展示上限":""}</small>${m.continuous?`<small>市场入金已查至 ${time(m.marketThrough)} · 增量待补 ${m.headPending??"待查询"} · 复核观察地址 ${m.watchAccounts||0} 个</small>`:""}</div>`).join("");
     el("mexcCoverage").innerHTML=[["已入队地址",c.totalAccounts],["历史回查待完成",c.historyPending],["增量待追平",c.headPending],["交易证据待查",c.receiptPending],["地址读取失败",c.errors?.length],["追踪边界地址",c.stoppedAddresses]].map(([k,v])=>`<div><strong>${esc(v??"—")}</strong><span>${esc(k)}</span></div>`).join("");
     el("mexcLimitations").innerHTML=(d.limitations||[]).map(x=>`<li>${esc(x)}</li>`).join("")+`<li>${publicationNote?esc(publicationNote):`独立采集器配置周期 ${esc(c.refreshSeconds||300)} 秒；刷新按钮仅读取最新快照。`}交易列表金额为操作交易额；顶部为独立复核结果，不能相加或视作净流入。</li>`+
       (Object.values(c.limits||{}).some(Boolean)?"<li>已触及存储或遍历上限，结果不完整，需扩容或缩小范围后补扫。</li>":"")+(c.displayTruncated?"<li>明细已到展示上限，卡片包含全部已识别结果，列表仅展示部分。</li>":"");

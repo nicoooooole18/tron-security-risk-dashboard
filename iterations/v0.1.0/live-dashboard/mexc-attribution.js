@@ -96,15 +96,16 @@ function combineSnapshots(base,usdd,review,now=Date.now()) {
   const retention=audit?.retention.map(p=>{
     const snap=p.asset==="USDD"?extra:base;
     const asOf=p.asOf||audit.positionsAsOf;
-    const changed=[...(snap?.rights||[]),...(snap?.redemptions||[])].some(t=>t.from===p.address&&t.blockTs>Date.parse(asOf));
-    return {...p,asOf,needsReview:changed};
+    const changed=[...(snap?.rights||[]),...(snap?.redemptions||[]),...(snap?.observedRights||[])].some(t=>t.from===p.address&&t.blockTs>Date.parse(asOf))||(snap?.watchActivity?.[p.address]?.lastOutgoingAt||0)>Date.parse(asOf);
+    return {...p,asOf,needsReview:changed,changeEvidence:changed?snap?.watchActivity?.[p.address]:undefined};
   })||[];
   let tm9=audit?.usdtDeepening?.tm9;
   if(tm9?.followup){const f=tm9.followup,watch=new Map(f.originalShareRetention.positions.map(p=>[p.address,Date.parse(p.asOf)]));
     for(const a of [f.teaCashReturn.mint.from,f.teaCashReturn.toTse.to])watch.set(a,Date.parse(f.teaCashReturn.asOf));
     for(const p of f.cashProbe?.rows||[])watch.set(p.address,Date.parse(f.cashProbe.asOf));
     for(const p of f.usddReturn?.watchpoints||[])watch.set(p.address,Date.parse(p.asOf));
-    const newer=[...live,...(base.rights||[]),...(base.redemptions||[]),...(extra?.rights||[]),...(extra?.redemptions||[])].some(e=>[e.from,e.to].some(a=>watch.has(a)&&e.blockTs>watch.get(a)));
+    const newer=[...live,...(base.rights||[]),...(base.redemptions||[]),...(extra?.rights||[]),...(extra?.redemptions||[]),...(base.observedRights||[]),...(extra?.observedRights||[])].some(e=>[e.from,e.to].some(a=>watch.has(a)&&e.blockTs>watch.get(a)))
+      ||[base.watchActivity,extra?.watchActivity].some(activity=>Object.entries(activity||{}).some(([a,r])=>watch.has(a)&&r.lastOutgoingAt>watch.get(a)));
     tm9={...tm9,followup:{...f,needsReview:newer}};
   }
   return {...base,scope:"MEXC-USDT-jUSDT-USDD-jUSDD",events,
@@ -113,6 +114,7 @@ function combineSnapshots(base,usdd,review,now=Date.now()) {
     rights:[...stamp(base.rights||[]),...ddStamp(extra?.rights||[])],
     redemptions:[...stamp(base.redemptions||[]),...ddStamp(extra?.redemptions||[])],
     ambiguous:[...stamp(base.ambiguous||[]),...ddStamp(extra?.ambiguous||[])],
+    observedRights:[...stamp(base.observedRights||[]),...ddStamp(extra?.observedRights||[])],
     review:audit?{...audit,retention,usdtDeepening:audit.usdtDeepening?{...audit.usdtDeepening,tm9,focus:audit.usdtDeepening.focus.map(f=>({...f,retention:retention.find(p=>p.address===f.address&&p.asset==="USDT")})),tmm:{...audit.usdtDeepening.tmm,returnRetention:retention.find(p=>p.address===audit.usdtDeepening.tmm.returnWallet&&p.asset==="USDT")}}:undefined,deepening:audit.deepening?{...audit.deepening,focus:{...audit.deepening.focus,retention:retention.find(p=>p.address===audit.deepening.focus.address&&p.asset==="USDD")},breakdown:audit.deepening.breakdown.map(g=>({...g,retention:retention.find(p=>p.address===g.address&&p.asset===g.asset)||null}))}:undefined,historical:true,newPendingCount:events.filter(e=>e.review.status==="pending").length}:null,reviewError:auditError,
     marketCoverage:{USDT:{...base.coverage,generatedAt:base.generatedAt},USDD:extra?{...extra.coverage,generatedAt:extra.generatedAt}:{status:"pending",scanComplete:false,historyPending:null,receiptPending:null}},
     limitations:["地址库为已核对的 Arkham TRON 子集；未命中不代表没有 MEXC 资金。",
