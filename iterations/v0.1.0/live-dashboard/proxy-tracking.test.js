@@ -43,6 +43,17 @@ test("old balances, transfer failures and hop/cap limits remain explicit",async(
  s=await updateTracking({...base,previous:s,scan:async()=>{throw new Error("offline");}});
  v=trackingView(s,analysis,{blocked});assert.ok(v.counts.transferFailed>0);assert.equal(v.complete,false);
 });
+test("a full 5000-address queue rejects repeated new recipients without blocking the service",async()=>{
+ const alphabet="123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+ const address=i=>{let value=i+1,s="";while(value){s=alphabet[value%58]+s;value=Math.floor(value/58);}return "T"+s.padStart(33,"1");};
+ const accounts=Object.fromEntries(Array.from({length:4999},(_,i)=>[address(i),{since:t,depth:0,positions:{}}]));
+ accounts[A]={address:A,since:t,depth:0,positions:{}};
+ const previous={scope:"USDT-jUSDT",accounts,roots:[],edges:Array.from({length:10000},(_,i)=>edge(A,C,t+2+i))};
+ const started=Date.now();
+ const s=await updateTracking({...base,previous,transferBudget:0,positionBudget:0});
+ assert.equal(Object.keys(s.accounts).length,5000);assert.equal(s.accounts[C],undefined);assert.equal(s.addressLimitReached,true);
+ assert.ok(Date.now()-started<5000,"full queues must remain bounded when repeatedly encountering excluded addresses");
+});
 test("only time-ordered descendants belong to a selected cohort; shared hubs stop traversal",async()=>{
  const s=await updateTracking({...base,scan:async address=>({complete:true,rows:address===B?[edge(B,C,t-1),edge(B,H,t+2)]:[]})});
  const v=trackingView(s,analysis,{blocked});assert.equal(v.counts.addresses,2);assert.equal(v.stopped,1);

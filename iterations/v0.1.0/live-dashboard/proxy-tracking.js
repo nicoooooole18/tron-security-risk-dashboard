@@ -16,12 +16,14 @@ function rootsFrom(analysis) {
 }
 function discover(state, roots, {blocked,maxAccounts=5000,maxHops=4}) {
   const accounts=state.accounts;
+  let accountCount=Object.keys(accounts).length;
   let limited=false;
   const add=(address,since,depth) => {
     if (!valid(address) || blocked.has(address)) return;
     if (!accounts[address]) {
-      if(Object.keys(accounts).length>=maxAccounts){limited=true;return;}
+      if(accountCount>=maxAccounts){limited=true;return;}
       accounts[address]={address,since,depth,positions:{}};
+      accountCount++;
     } else {
       // An earlier path requires a history backfill, even for previously scanned addresses.
       if(since<accounts[address].since) accounts[address].scanUntil=null;
