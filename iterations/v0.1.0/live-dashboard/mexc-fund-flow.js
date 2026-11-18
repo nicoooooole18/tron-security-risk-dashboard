@@ -99,7 +99,8 @@ function retainedShares({address,wallet,receipts,entries,principalUpperRaw=null,
   const rows=walletRows(address,wallet,receipts).filter(r=>r.contract===market.jToken),now=BigInt(wallet.balances[market.jToken]);
   let opening=now;for(const r of rows){if(r.from===address)opening+=BigInt(r.amountRaw);if(r.to===address)opening-=BigInt(r.amountRaw);}if(opening<0n)throw Error("Share opening balance invalid");
   let balance=opening,lo=0n,hi=0n;const byTx=new Map(entries.filter(e=>e.mintTokens).map(e=>[e.txid,e])),outflows=[];
-  const batches=Object.values(Object.groupBy(rows,r=>r.blockTs)).sort((a,b)=>a[0].blockTs-b[0].blockTs);
+  const byTime=new Map();for(const r of rows){if(!byTime.has(r.blockTs))byTime.set(r.blockTs,[]);byTime.get(r.blockTs).push(r);}
+  const batches=[...byTime.values()].sort((a,b)=>a[0].blockTs-b[0].blockTs);
   for(const batch of batches){for(const r of batch.filter(r=>r.to===address)){const amount=BigInt(r.amountRaw);balance+=amount;const e=byTx.get(r.txid);
       if(e&&r.from===market.jToken&&amount===BigInt(e.mintTokens)&&r.eventIndex>e.actionIndex){const minted=BigInt(e.amountRaw),lower=BigInt(e.attribution.lowerRaw),upper=BigInt(e.attribution.upperRaw);lo+=lower*amount/minted;hi+=min(amount,(upper*amount+minted-1n)/minted);}
     }

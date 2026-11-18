@@ -14,7 +14,8 @@ async function calculate({draft=false}={}){
   const wallets=Object.fromEntries([...addresses].map(a=>{if(!audit.wallets[a]?.complete)throw Error(`缺少完整审计: ${a}`);return [a,audit.wallets[a]];}));
   const graph=F.buildFundGraph({wallets,receipts,sources:book,since:audit.since,until:audit.entryUntil,required:!draft});
   const individual=new Map(events.map(e=>[e.id,graph.bounds([C.key(e)])])),groups=[];
-  for(const [a,es] of Object.entries(Object.groupBy(events,e=>e.from))){
+  const bySender=new Map();for(const e of events){if(!bySender.has(e.from))bySender.set(e.from,[]);bySender.get(e.from).push(e);}
+  for(const [a,es] of bySender){
     const b=graph.bounds(es.map(C.key)),component=new Set([a]);let changed=true;
     while(changed){changed=false;for(const [addr,w] of Object.entries(wallets))for(const r of F.walletRows(addr,w,receipts,{required:!draft}))if(wallets[r.from]&&wallets[r.to]&&(component.has(r.from)||component.has(r.to))){for(const p of [r.from,r.to])if(!component.has(p)){component.add(p);changed=true;}}}
     const sources=graph.sources.filter(r=>component.has(r.to));
