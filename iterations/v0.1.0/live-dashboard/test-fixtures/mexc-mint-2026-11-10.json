@@ -1,0 +1,38 @@
+{
+  "txid": "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715",
+  "blockTs": 1794327045000,
+  "transfers": [
+    {
+      "txid": "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715",
+      "from": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "to": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+      "contract": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "amountRaw": "2753339740844093",
+      "blockTs": 1794327045000,
+      "eventIndex": 3
+    },
+    {
+      "txid": "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715",
+      "from": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "300000000000",
+      "blockTs": 1794327045000,
+      "eventIndex": 1
+    }
+  ],
+  "actions": [
+    {
+      "name": "Mint",
+      "result": {
+        "0": "0x6c9b12b1b9c3d1dd9b8e142ffe7dd25dd94a2ec9",
+        "1": "300000000000",
+        "2": "2753339740844093",
+        "mintAmount": "300000000000",
+        "minter": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+        "mintTokens": "2753339740844093"
+      },
+      "eventIndex": 2
+    }
+  ]
+}

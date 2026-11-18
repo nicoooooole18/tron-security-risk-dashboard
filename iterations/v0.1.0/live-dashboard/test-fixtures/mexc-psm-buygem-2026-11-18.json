@@ -1,0 +1,137 @@
+{
+  "bbacb3904cd56102986594881e3192ed3c27e3ffb9718dfc27c865e1922a6e60": {
+    "txid": "bbacb3904cd56102986594881e3192ed3c27e3ffb9718dfc27c865e1922a6e60",
+    "blockTs": 1793207925000,
+    "transfers": [
+      {
+        "txid": "bbacb3904cd56102986594881e3192ed3c27e3ffb9718dfc27c865e1922a6e60",
+        "from": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+        "to": "TPmNgtjWzk3YMCL5F89jchtM8gefc1VWwF",
+        "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+        "amountRaw": "31383102500000000000000",
+        "blockTs": 1793207925000,
+        "eventIndex": 6
+      },
+      {
+        "txid": "bbacb3904cd56102986594881e3192ed3c27e3ffb9718dfc27c865e1922a6e60",
+        "from": "TPmNgtjWzk3YMCL5F89jchtM8gefc1VWwF",
+        "to": "TSUYvQ5tdd3DijCD1uGunGLpftHuSZ12sQ",
+        "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "amountRaw": "31383102500",
+        "blockTs": 1793207925000,
+        "eventIndex": 1
+      }
+    ],
+    "actions": [
+      {
+        "name": "SellGem",
+        "contract": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "result": {
+          "0": "0x9754db05b3290396211569b7f3dddc3abd3a51d7",
+          "1": "31383102500",
+          "2": "0",
+          "owner": "0x9754db05b3290396211569b7f3dddc3abd3a51d7",
+          "fee": "0",
+          "value": "31383102500"
+        },
+        "eventIndex": 8
+      }
+    ]
+  },
+  "514f9455a040e69eba82c7548c57295f4e67cfcf2e7b8ca278be205d4790924f": {
+    "txid": "514f9455a040e69eba82c7548c57295f4e67cfcf2e7b8ca278be205d4790924f",
+    "blockTs": 1793208618000,
+    "transfers": [
+      {
+        "txid": "514f9455a040e69eba82c7548c57295f4e67cfcf2e7b8ca278be205d4790924f",
+        "from": "TSUYvQ5tdd3DijCD1uGunGLpftHuSZ12sQ",
+        "to": "TEAq2LxMXNTZ3ET7StNWMPf3PZxWqzq9qQ",
+        "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "amountRaw": "500000000000",
+        "blockTs": 1793208618000,
+        "eventIndex": 6
+      },
+      {
+        "txid": "514f9455a040e69eba82c7548c57295f4e67cfcf2e7b8ca278be205d4790924f",
+        "from": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "to": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+        "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+        "amountRaw": "500000000000000000000000",
+        "blockTs": 1793208618000,
+        "eventIndex": 2
+      },
+      {
+        "txid": "514f9455a040e69eba82c7548c57295f4e67cfcf2e7b8ca278be205d4790924f",
+        "from": "TEAq2LxMXNTZ3ET7StNWMPf3PZxWqzq9qQ",
+        "to": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+        "amountRaw": "500000000000000000000000",
+        "blockTs": 1793208618000,
+        "eventIndex": 0
+      }
+    ],
+    "actions": [
+      {
+        "name": "BuyGem",
+        "contract": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "result": {
+          "0": "0x2e1326049e70d71294e92be6802cc01cefcf4082",
+          "1": "500000000000",
+          "2": "0",
+          "owner": "0x2e1326049e70d71294e92be6802cc01cefcf4082",
+          "fee": "0",
+          "value": "500000000000"
+        },
+        "eventIndex": 9
+      }
+    ]
+  },
+  "15b9fd5cfd6da4a5e2792d3d34fa18ef35451985a05b2848748aa00fa4115f92": {
+    "txid": "15b9fd5cfd6da4a5e2792d3d34fa18ef35451985a05b2848748aa00fa4115f92",
+    "blockTs": 1793211927000,
+    "transfers": [
+      {
+        "txid": "15b9fd5cfd6da4a5e2792d3d34fa18ef35451985a05b2848748aa00fa4115f92",
+        "from": "TSUYvQ5tdd3DijCD1uGunGLpftHuSZ12sQ",
+        "to": "TEAq2LxMXNTZ3ET7StNWMPf3PZxWqzq9qQ",
+        "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "amountRaw": "531383802400",
+        "blockTs": 1793211927000,
+        "eventIndex": 6
+      },
+      {
+        "txid": "15b9fd5cfd6da4a5e2792d3d34fa18ef35451985a05b2848748aa00fa4115f92",
+        "from": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "to": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+        "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+        "amountRaw": "531383802400000000000000",
+        "blockTs": 1793211927000,
+        "eventIndex": 2
+      },
+      {
+        "txid": "15b9fd5cfd6da4a5e2792d3d34fa18ef35451985a05b2848748aa00fa4115f92",
+        "from": "TEAq2LxMXNTZ3ET7StNWMPf3PZxWqzq9qQ",
+        "to": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+        "amountRaw": "531383802400000000000000",
+        "blockTs": 1793211927000,
+        "eventIndex": 0
+      }
+    ],
+    "actions": [
+      {
+        "name": "BuyGem",
+        "contract": "TBXW4hS5KYjjbJXDpnrPf4zhkLwrpUjbyz",
+        "result": {
+          "0": "0x2e1326049e70d71294e92be6802cc01cefcf4082",
+          "1": "531383802400",
+          "2": "0",
+          "owner": "0x2e1326049e70d71294e92be6802cc01cefcf4082",
+          "fee": "0",
+          "value": "531383802400"
+        },
+        "eventIndex": 9
+      }
+    ]
+  }
+}

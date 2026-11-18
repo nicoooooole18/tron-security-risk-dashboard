@@ -1,0 +1,1711 @@
+{
+  "version": 1,
+  "id": "mexc-2026-11-16",
+  "sourceVersion": "f764486f792c6eb5",
+  "reviewedAt": "2026-11-16T11:52:40.941Z",
+  "since": "2026-10-17T09:54:03.025Z",
+  "until": "2026-11-16T09:54:03.025Z",
+  "positionsAsOf": "2026-11-16T11:52:40.941Z",
+  "method": "已核对路径内的资金守恒区间；同一来源本金首次进入JustLend只计一次，公共池及其他资产不自动延伸归因。期初未追溯资金不视为已知MEXC来源。同区块未知排序采用保守放宽。",
+  "entries": [
+    {
+      "txid": "56b1048c4c1bdcbdc5120c06a38733a5b75d012d9135ed445e43b31f2c225440",
+      "from": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "100000000000",
+      "blockTs": 1794740829000,
+      "eventIndex": 1,
+      "id": "56b1048c4c1bdcbdc5120c06a38733a5b75d012d9135ed445e43b31f2c225440:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "af1a2a9cf086be6014c0181a792602f8c23d302cfb3d5a79c58f1c6da0bd6b75",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1512141717",
+          "blockTs": 1794025029000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "56b1048c4c1bdcbdc5120c06a38733a5b75d012d9135ed445e43b31f2c225440",
+          "from": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "100000000000",
+          "blockTs": 1794740829000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "RepayBorrow",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": null,
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "diverted",
+        "groupId": "USDT:TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+        "confirmedPrincipalRaw": null,
+        "note": "原USDT路径经过换币；10万还款不能直接归因。另有已确认的USDD存入，来源本金不可重复计数。"
+      }
+    },
+    {
+      "txid": "e5a20f61dc0f554d3ad3acfe9a4e30ebd63f60252ac39b01160addd3ea9b53f9",
+      "from": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "3857934",
+      "blockTs": 1794740004000,
+      "eventIndex": 1,
+      "id": "e5a20f61dc0f554d3ad3acfe9a4e30ebd63f60252ac39b01160addd3ea9b53f9:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "7c34179c5dea82c04f7c988f9367d7bf31fe37ac921ab5fe347b90540858e1aa",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "498800000",
+          "blockTs": 1794738012000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "e5a20f61dc0f554d3ad3acfe9a4e30ebd63f60252ac39b01160addd3ea9b53f9",
+          "from": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "3857934",
+          "blockTs": 1794740004000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "RepayBorrow",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": null,
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "diverted",
+        "groupId": "USDT:TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+        "confirmedPrincipalRaw": null,
+        "note": "498.8 USDT收款前余额为零，随后全额还款；另一笔3.857934来自新的非MEXC已知来源。"
+      }
+    },
+    {
+      "txid": "38c56867ba72f71db7b12593bfde64f8f2ff776947a0ff598d6b560193c58c56",
+      "from": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "498800000",
+      "blockTs": 1794739899000,
+      "eventIndex": 1,
+      "id": "38c56867ba72f71db7b12593bfde64f8f2ff776947a0ff598d6b560193c58c56:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "7c34179c5dea82c04f7c988f9367d7bf31fe37ac921ab5fe347b90540858e1aa",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "498800000",
+          "blockTs": 1794738012000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "38c56867ba72f71db7b12593bfde64f8f2ff776947a0ff598d6b560193c58c56",
+          "from": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "498800000",
+          "blockTs": 1794739899000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "RepayBorrow",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": null,
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "confirmed",
+        "groupId": "USDT:TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+        "confirmedPrincipalRaw": "498800000",
+        "note": "498.8 USDT收款前余额为零，随后全额还款；另一笔3.857934来自新的非MEXC已知来源。"
+      }
+    },
+    {
+      "txid": "42b674faf193cba0ec446eddcca7de2a5afdc2a04123abad7e5b5412e71acc17",
+      "from": "TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "300000000",
+      "blockTs": 1794506451000,
+      "eventIndex": 1,
+      "id": "42b674faf193cba0ec446eddcca7de2a5afdc2a04123abad7e5b5412e71acc17:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "031152178f8ae4149c3e78924944c128a4872112ee7adca87e7ce041b0c19af7",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TEHjEsU39Yf9Ney3wsrtzVZVHhTAWqgKyS",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "37590000",
+          "blockTs": 1792398675000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "7a8dd80cd1f8ac85100cfae3377478553062804c025896513c17860796da0767",
+          "from": "TEHjEsU39Yf9Ney3wsrtzVZVHhTAWqgKyS",
+          "to": "TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "191500000",
+          "blockTs": 1794493029000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "42b674faf193cba0ec446eddcca7de2a5afdc2a04123abad7e5b5412e71acc17",
+          "from": "TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "300000000",
+          "blockTs": 1794506451000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "2753151569642",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+        "confirmedPrincipalRaw": null,
+        "note": "37.59 USDT经中间钱包，时间间隔较长并有混同。"
+      }
+    },
+    {
+      "txid": "d93548f046455edfa4d581e416931b1836cb7d94e30cdeebcbd153bf417456e0",
+      "from": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "1000000000",
+      "blockTs": 1794479373000,
+      "eventIndex": 1,
+      "id": "d93548f046455edfa4d581e416931b1836cb7d94e30cdeebcbd153bf417456e0:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "48ab6ce8e2524ba207178d638741a52c46f93767c35f66f40fa1eb20fcf117d3",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TQMkmf4GhYpcDTBvnAbd3CjxhynEbsxupy",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "400000000",
+          "blockTs": 1792607484000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "1b32e1af11c042ee27df4f3a3b697049151d6c0da33778f218cdf953f8b0aa26",
+          "from": "TQMkmf4GhYpcDTBvnAbd3CjxhynEbsxupy",
+          "to": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1055000000",
+          "blockTs": 1794393741000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "d93548f046455edfa4d581e416931b1836cb7d94e30cdeebcbd153bf417456e0",
+          "from": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1000000000",
+          "blockTs": 1794479373000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "9177266463562",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+        "confirmedPrincipalRaw": null,
+        "note": "两笔存入共用400 USDT来源本金，上限合计计算。"
+      }
+    },
+    {
+      "txid": "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715",
+      "from": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "300000000000",
+      "blockTs": 1794327045000,
+      "eventIndex": 1,
+      "id": "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "c7483dbb30117249654c4e2b56d1663d4235d47bddeae1dfccd5d7ed12dbe2cf",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "842470000",
+          "blockTs": 1794322392000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715",
+          "from": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "300000000000",
+          "blockTs": 1794327045000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "2753339740844093",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "mixed",
+        "groupId": "USDT:TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+        "confirmedPrincipalRaw": null,
+        "note": "存款前多笔MEXC提款累计40,992.11 USDT，与其他资金混同，不能把30万全部归因。"
+      }
+    },
+    {
+      "txid": "13905c94b9dca33060908c4616536bc5b47f07753f398f35cbc29dabf987f79f",
+      "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "516237000",
+      "blockTs": 1794306603000,
+      "eventIndex": 1,
+      "id": "13905c94b9dca33060908c4616536bc5b47f07753f398f35cbc29dabf987f79f:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "7467cfdec0483760192bb68c71d674c2a66dc0ef562a3b4714a6e69f92579390",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "13191448538",
+          "blockTs": 1793269455000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "13905c94b9dca33060908c4616536bc5b47f07753f398f35cbc29dabf987f79f",
+          "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "516237000",
+          "blockTs": 1794306603000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "RepayBorrow",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": null,
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "diverted",
+        "groupId": "USDT:TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+        "confirmedPrincipalRaw": null,
+        "note": "MEXC款已兑换USDD并存入jUSDD；三笔USDT还款只可能包含0.000038 USDT残额。"
+      }
+    },
+    {
+      "txid": "4dea6bd48af82218e70efdfbd11b394295738cd5afe9497340b080e0607b1695",
+      "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "92444900",
+      "blockTs": 1794232782000,
+      "eventIndex": 1,
+      "id": "4dea6bd48af82218e70efdfbd11b394295738cd5afe9497340b080e0607b1695:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "7467cfdec0483760192bb68c71d674c2a66dc0ef562a3b4714a6e69f92579390",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "13191448538",
+          "blockTs": 1793269455000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "4dea6bd48af82218e70efdfbd11b394295738cd5afe9497340b080e0607b1695",
+          "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "92444900",
+          "blockTs": 1794232782000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "RepayBorrow",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": null,
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "diverted",
+        "groupId": "USDT:TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+        "confirmedPrincipalRaw": null,
+        "note": "MEXC款已兑换USDD并存入jUSDD；三笔USDT还款只可能包含0.000038 USDT残额。"
+      }
+    },
+    {
+      "txid": "ab4ac03a9a717bccb3b2c6e2b9024fd19bcf35216306602fa21bf1430a29367d",
+      "from": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "1000000000",
+      "blockTs": 1794183234000,
+      "eventIndex": 1,
+      "id": "ab4ac03a9a717bccb3b2c6e2b9024fd19bcf35216306602fa21bf1430a29367d:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "48ab6ce8e2524ba207178d638741a52c46f93767c35f66f40fa1eb20fcf117d3",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TQMkmf4GhYpcDTBvnAbd3CjxhynEbsxupy",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "400000000",
+          "blockTs": 1792607484000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "9c29c66e31423a108e3a743f5df258aa218f6de3b7fd891fc8cbf4b56c7f6cd3",
+          "from": "TQMkmf4GhYpcDTBvnAbd3CjxhynEbsxupy",
+          "to": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1080000000",
+          "blockTs": 1792963491000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "ab4ac03a9a717bccb3b2c6e2b9024fd19bcf35216306602fa21bf1430a29367d",
+          "from": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1000000000",
+          "blockTs": 1794183234000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "9178294235214",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+        "confirmedPrincipalRaw": null,
+        "note": "两笔存入共用400 USDT来源本金，上限合计计算。"
+      }
+    },
+    {
+      "txid": "14d3510969d3e1ae782c19c53a913b5533b457671c1122fc706a0d3add34d8de",
+      "from": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "6755203722",
+      "blockTs": 1794138507000,
+      "eventIndex": 1,
+      "id": "14d3510969d3e1ae782c19c53a913b5533b457671c1122fc706a0d3add34d8de:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "fe2bb1741a20b4fb767cc00bd314dc3eab8360228c01a1cf8b161fb051bfea3d",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TSBHPFbPUUntP8d3mZ4KzdCNJnFJDsDGCq",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "73000000000",
+          "blockTs": 1793450043000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "000cb7917e5b91bec0a0aa84e5308f5c0b061936a39d61813d7b01ac38a7b52b",
+          "from": "TSBHPFbPUUntP8d3mZ4KzdCNJnFJDsDGCq",
+          "to": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "27203722",
+          "blockTs": 1793964906000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "14d3510969d3e1ae782c19c53a913b5533b457671c1122fc706a0d3add34d8de",
+          "from": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "6755203722",
+          "blockTs": 1794138507000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "62002310511928",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+        "confirmedPrincipalRaw": null,
+        "note": "高频钱包4次转入合计180.185720；进入SUN池后不自动延续跨交易权益归因。"
+      }
+    },
+    {
+      "txid": "462222382d77a6a5c7681a546d63beb3ea27df053b772f82a817f1da48c2d816",
+      "from": "TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "204100000000",
+      "blockTs": 1793986023000,
+      "eventIndex": 1,
+      "id": "462222382d77a6a5c7681a546d63beb3ea27df053b772f82a817f1da48c2d816:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "e6c5225860c3d28c8a998e20d8d50537c29cbcb73d631210fba5be9af0d0819c",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TD7fM22Lt7Ai6zDyUHGKoW24kvZUg37uxE",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "999500000",
+          "blockTs": 1793431749000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "22d855c1811aa273ed4ec6be541068294fd75a9d9b855eda97f7ef030a512e27",
+          "from": "TD7fM22Lt7Ai6zDyUHGKoW24kvZUg37uxE",
+          "to": "TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "10000000",
+          "blockTs": 1793957463000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "462222382d77a6a5c7681a546d63beb3ea27df053b772f82a817f1da48c2d816",
+          "from": "TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "204100000000",
+          "blockTs": 1793986023000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "1873430714109278",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+        "confirmedPrincipalRaw": null,
+        "note": "能连接到该笔20.41万存款的中间转账仅10 USDT。"
+      }
+    },
+    {
+      "txid": "31a7554e904c91ac2ea83a2892a6e7330109f8f3f698c22b54d1e1b0e402a74f",
+      "from": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "216653892",
+      "blockTs": 1793963547000,
+      "eventIndex": 1,
+      "id": "31a7554e904c91ac2ea83a2892a6e7330109f8f3f698c22b54d1e1b0e402a74f:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "fe2bb1741a20b4fb767cc00bd314dc3eab8360228c01a1cf8b161fb051bfea3d",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TSBHPFbPUUntP8d3mZ4KzdCNJnFJDsDGCq",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "73000000000",
+          "blockTs": 1793450043000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "198879024dbfbbf47f4a6f25e33d68ed5d18e58caf9c7a41aa6b1789cdd4c25d",
+          "from": "TSBHPFbPUUntP8d3mZ4KzdCNJnFJDsDGCq",
+          "to": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "50669680",
+          "blockTs": 1793963433000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "31a7554e904c91ac2ea83a2892a6e7330109f8f3f698c22b54d1e1b0e402a74f",
+          "from": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "216653892",
+          "blockTs": 1793963547000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "1988679023003",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+        "confirmedPrincipalRaw": null,
+        "note": "高频钱包4次转入合计180.185720；进入SUN池后不自动延续跨交易权益归因。"
+      }
+    },
+    {
+      "txid": "1739ca83c449b95468604fe8abcc2e71ab0e0ede74fe3393b0580c9b22868866",
+      "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "92149938",
+      "blockTs": 1793624523000,
+      "eventIndex": 1,
+      "id": "1739ca83c449b95468604fe8abcc2e71ab0e0ede74fe3393b0580c9b22868866:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "7467cfdec0483760192bb68c71d674c2a66dc0ef562a3b4714a6e69f92579390",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "13191448538",
+          "blockTs": 1793269455000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "1739ca83c449b95468604fe8abcc2e71ab0e0ede74fe3393b0580c9b22868866",
+          "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "92149938",
+          "blockTs": 1793624523000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "RepayBorrow",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": null,
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "diverted",
+        "groupId": "USDT:TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+        "confirmedPrincipalRaw": null,
+        "note": "MEXC款已兑换USDD并存入jUSDD；三笔USDT还款只可能包含0.000038 USDT残额。"
+      }
+    },
+    {
+      "txid": "92e8dec2a8989a510ae031d967f4a9755efce8dcb202fc5875c72faf2fcaa420",
+      "from": "TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "33083000000",
+      "blockTs": 1793200719000,
+      "eventIndex": 1,
+      "id": "92e8dec2a8989a510ae031d967f4a9755efce8dcb202fc5875c72faf2fcaa420:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "27f5c62460950d235fdf4a2878082557b83db8f207b850d0bf6c524f128287dd",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TD27zqAbV5sJKzShJDEs2TK8iQeqtoAw8V",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "9999500000",
+          "blockTs": 1793190843000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "99ccb644fa72544ff6337609102f64a04c10c4e6f0baf313ca8ebf0478784413",
+          "from": "TD27zqAbV5sJKzShJDEs2TK8iQeqtoAw8V",
+          "to": "TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "33083000000",
+          "blockTs": 1793199492000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "92e8dec2a8989a510ae031d967f4a9755efce8dcb202fc5875c72faf2fcaa420",
+          "from": "TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "33083000000",
+          "blockTs": 1793200719000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "303796850286744",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "mixed",
+        "groupId": "USDT:TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+        "confirmedPrincipalRaw": null,
+        "note": "中间钱包持续收到MEXC提款，但期初余额及其他收支允许零归因；对应jUSDT已全部赎回。"
+      }
+    },
+    {
+      "txid": "04f5d570d9647fd00889cefd6c181a12ae9911803bd053361f12a0c249f59da4",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "1100000000000",
+      "blockTs": 1793192172000,
+      "eventIndex": 1,
+      "id": "04f5d570d9647fd00889cefd6c181a12ae9911803bd053361f12a0c249f59da4:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "112c1cabdbd1272e83fb6f56f6f429598227ffbe020bd9dc152c9f69bc0b4e3e",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TWTsG83oBPSZpNA416VXW2zMyxjaDpLjYS",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "50061430000",
+          "blockTs": 1792902486000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "1844234853a8273b6ee7a0ca0b45feb7631fbabb64416097d31b1dd3cacf3ce4",
+          "from": "TWTsG83oBPSZpNA416VXW2zMyxjaDpLjYS",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "143846890000",
+          "blockTs": 1793180466000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "04f5d570d9647fd00889cefd6c181a12ae9911803bd053361f12a0c249f59da4",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1100000000000",
+          "blockTs": 1793192172000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "10101206041635164",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "43ebe2a739be54aa6bb48a62027abc33955e0ab56f51e7467a778722b6ff743d",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "1100000000000",
+      "blockTs": 1793108364000,
+      "eventIndex": 1,
+      "id": "43ebe2a739be54aa6bb48a62027abc33955e0ab56f51e7467a778722b6ff743d:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "112c1cabdbd1272e83fb6f56f6f429598227ffbe020bd9dc152c9f69bc0b4e3e",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TWTsG83oBPSZpNA416VXW2zMyxjaDpLjYS",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "50061430000",
+          "blockTs": 1792902486000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "b5ca802a4adce1a0453cf3eef5c34611da56b9fbb51f9f96cb003b4bc01b7fc6",
+          "from": "TWTsG83oBPSZpNA416VXW2zMyxjaDpLjYS",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "157660490000",
+          "blockTs": 1793089389000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "43ebe2a739be54aa6bb48a62027abc33955e0ab56f51e7467a778722b6ff743d",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1100000000000",
+          "blockTs": 1793108364000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "10101810757722979",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "d54a4cb89931f52f1a57edfabe560e35ebf88bd3c28ad49e16b84cc059f44643",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "490000000000",
+      "blockTs": 1792941105000,
+      "eventIndex": 1,
+      "id": "d54a4cb89931f52f1a57edfabe560e35ebf88bd3c28ad49e16b84cc059f44643:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "a89f0263757343386410932d79fea44f2698778141d279c005144995b31d3d38",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TXt7g7NxhQnEBrsvKFnsWP6PKJ3odfFqJu",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "121500000",
+          "blockTs": 1792735146000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "e29dc9c4a9954f7633cfb59618f1de97476a64d825d9d824643fc6a997c52b60",
+          "from": "TXt7g7NxhQnEBrsvKFnsWP6PKJ3odfFqJu",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "149999000000",
+          "blockTs": 1792842018000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "d54a4cb89931f52f1a57edfabe560e35ebf88bd3c28ad49e16b84cc059f44643",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "490000000000",
+          "blockTs": 1792941105000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "4500459744355717",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "01e349d564b65cb39f2129dd4e65c445209fbf232b9d02ab6b1c5dc04cf30386",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "500000000000",
+      "blockTs": 1792861785000,
+      "eventIndex": 1,
+      "id": "01e349d564b65cb39f2129dd4e65c445209fbf232b9d02ab6b1c5dc04cf30386:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "a89f0263757343386410932d79fea44f2698778141d279c005144995b31d3d38",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TXt7g7NxhQnEBrsvKFnsWP6PKJ3odfFqJu",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "121500000",
+          "blockTs": 1792735146000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "e29dc9c4a9954f7633cfb59618f1de97476a64d825d9d824643fc6a997c52b60",
+          "from": "TXt7g7NxhQnEBrsvKFnsWP6PKJ3odfFqJu",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "149999000000",
+          "blockTs": 1792842018000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "01e349d564b65cb39f2129dd4e65c445209fbf232b9d02ab6b1c5dc04cf30386",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "500000000000",
+          "blockTs": 1792861785000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "4592609868291233",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "fbb045532e4503d2994e2835a68d9aee0d133785f3d3d605605f4a63ecca6cdc",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "500000000000",
+      "blockTs": 1792776897000,
+      "eventIndex": 1,
+      "id": "fbb045532e4503d2994e2835a68d9aee0d133785f3d3d605605f4a63ecca6cdc:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "855e865936090386ce53a4efe011583f9d2ca2a4ccfe6b55615a246050822c86",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "19272000000",
+          "blockTs": 1792326432000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "c46bb9ccff1994bca95c39e97dfd2e78e5d4ae181aa9a74e17b7004be6c7c828",
+          "from": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "33732480000",
+          "blockTs": 1792649499000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "fbb045532e4503d2994e2835a68d9aee0d133785f3d3d605605f4a63ecca6cdc",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "500000000000",
+          "blockTs": 1792776897000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "4592939054567866",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "aeb71c62380389048ce7fbaff518000788b28fe10d909781fd12229cb3324e40",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "1200000000000",
+      "blockTs": 1792650858000,
+      "eventIndex": 1,
+      "id": "aeb71c62380389048ce7fbaff518000788b28fe10d909781fd12229cb3324e40:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "855e865936090386ce53a4efe011583f9d2ca2a4ccfe6b55615a246050822c86",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "19272000000",
+          "blockTs": 1792326432000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "c46bb9ccff1994bca95c39e97dfd2e78e5d4ae181aa9a74e17b7004be6c7c828",
+          "from": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "33732480000",
+          "blockTs": 1792649499000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "aeb71c62380389048ce7fbaff518000788b28fe10d909781fd12229cb3324e40",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1200000000000",
+          "blockTs": 1792650858000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "11024123388315930",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "b8837f3d465cac3bb19c65c8fd6123ef7f68f546b6bda2c738982517cb69b934",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "1300000000000",
+      "blockTs": 1792573995000,
+      "eventIndex": 1,
+      "id": "b8837f3d465cac3bb19c65c8fd6123ef7f68f546b6bda2c738982517cb69b934:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "855e865936090386ce53a4efe011583f9d2ca2a4ccfe6b55615a246050822c86",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "19272000000",
+          "blockTs": 1792326432000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "c9af42e5a32c2d5e8224793696895cfd1ca4fe0e2b2a8a6ec37f4beefbfc2890",
+          "from": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "15060240000",
+          "blockTs": 1792491819000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "b8837f3d465cac3bb19c65c8fd6123ef7f68f546b6bda2c738982517cb69b934",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1300000000000",
+          "blockTs": 1792573995000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "11943455575340164",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "0f635b07a3b8ef8897d1bc1dfe4e573fb9d4e1654ed0e00453e56a51d3624465",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "500000000000",
+      "blockTs": 1792550568000,
+      "eventIndex": 1,
+      "id": "0f635b07a3b8ef8897d1bc1dfe4e573fb9d4e1654ed0e00453e56a51d3624465:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "855e865936090386ce53a4efe011583f9d2ca2a4ccfe6b55615a246050822c86",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "19272000000",
+          "blockTs": 1792326432000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "c9af42e5a32c2d5e8224793696895cfd1ca4fe0e2b2a8a6ec37f4beefbfc2890",
+          "from": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "15060240000",
+          "blockTs": 1792491819000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "0f635b07a3b8ef8897d1bc1dfe4e573fb9d4e1654ed0e00453e56a51d3624465",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "500000000000",
+          "blockTs": 1792550568000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "4593713520853116",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "c4e165046e5f320b45ac8852f760603152a33d49c50653e1f56b9405f78a91e2",
+      "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "amountRaw": "800000000000",
+      "blockTs": 1792510458000,
+      "eventIndex": 1,
+      "id": "c4e165046e5f320b45ac8852f760603152a33d49c50653e1f56b9405f78a91e2:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t:1",
+      "kind": "wallet",
+      "evidence": [
+        {
+          "txid": "855e865936090386ce53a4efe011583f9d2ca2a4ccfe6b55615a246050822c86",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "19272000000",
+          "blockTs": 1792326432000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "c9af42e5a32c2d5e8224793696895cfd1ca4fe0e2b2a8a6ec37f4beefbfc2890",
+          "from": "TN3K24QbSAZ3qPJxL3yS2WZ9EXGawgyVYC",
+          "to": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "15060240000",
+          "blockTs": 1792491819000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "c4e165046e5f320b45ac8852f760603152a33d49c50653e1f56b9405f78a91e2",
+          "from": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+          "to": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "800000000000",
+          "blockTs": 1792510458000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "7350146528116040",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "asset": "USDT",
+      "decimals": 6,
+      "jToken": "TXJgMdjVX5dKiQaUi9QobwNxtSQaFqccvd",
+      "review": {
+        "status": "weak",
+        "groupId": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+        "confirmedPrincipalRaw": null,
+        "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+      }
+    },
+    {
+      "txid": "b939099fe609bfdc5cd07fbaf6b938b5aab2cc0504392fa9a53764c4d396b8c8",
+      "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "to": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+      "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+      "amountRaw": "13191448500000000000000",
+      "blockTs": 1793269662000,
+      "eventIndex": 1,
+      "id": "b939099fe609bfdc5cd07fbaf6b938b5aab2cc0504392fa9a53764c4d396b8c8:TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz:1",
+      "kind": "conversion",
+      "evidence": [
+        {
+          "txid": "7467cfdec0483760192bb68c71d674c2a66dc0ef562a3b4714a6e69f92579390",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "13191448538",
+          "blockTs": 1793269455000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "599113a4992dc6c53579988f21584109d42a6415b2aa1da28f172f79985eaa96",
+          "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "to": "TSUYvQ5tdd3DijCD1uGunGLpftHuSZ12sQ",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "13191448500",
+          "blockTs": 1793269632000,
+          "eventIndex": 1
+        },
+        {
+          "txid": "599113a4992dc6c53579988f21584109d42a6415b2aa1da28f172f79985eaa96",
+          "from": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+          "to": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+          "amountRaw": "13191448500000000000000",
+          "blockTs": 1793269632000,
+          "eventIndex": 6
+        },
+        {
+          "txid": "b939099fe609bfdc5cd07fbaf6b938b5aab2cc0504392fa9a53764c4d396b8c8",
+          "from": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+          "to": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+          "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+          "amountRaw": "13191448500000000000000",
+          "blockTs": 1793269662000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "asset": "USDD",
+      "decimals": 18,
+      "jToken": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "131747184986357",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "review": {
+        "status": "confirmed",
+        "groupId": "USDD:TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+        "confirmedPrincipalRaw": "13191448500",
+        "note": "USDT来源、同笔PSM换币和后续USDD Mint均已核对；只计一次USDT来源本金。"
+      },
+      "conversionTxid": "599113a4992dc6c53579988f21584109d42a6415b2aa1da28f172f79985eaa96"
+    },
+    {
+      "txid": "dcc656148b84263bfb49de5b245aab65ff24cbb4a6c7dccdc68bde9ee454f675",
+      "from": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "to": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+      "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+      "amountRaw": "1512141717410000000000",
+      "blockTs": 1794025395000,
+      "eventIndex": 1,
+      "id": "dcc656148b84263bfb49de5b245aab65ff24cbb4a6c7dccdc68bde9ee454f675:TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz:1",
+      "kind": "conversion",
+      "evidence": [
+        {
+          "txid": "af1a2a9cf086be6014c0181a792602f8c23d302cfb3d5a79c58f1c6da0bd6b75",
+          "from": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+          "to": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1512141717",
+          "blockTs": 1794025029000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "f68e1d8ecf575dde0f8969ac5f4af0ad749edaf8e58164976ba73ce8f2880c9b",
+          "from": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+          "to": "TKwNfJYb2iyouByKpNdxQ6tryXK8KhTPT9",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "amountRaw": "1512141717",
+          "blockTs": 1794025356000,
+          "eventIndex": 0
+        },
+        {
+          "txid": "f68e1d8ecf575dde0f8969ac5f4af0ad749edaf8e58164976ba73ce8f2880c9b",
+          "from": "TKwNfJYb2iyouByKpNdxQ6tryXK8KhTPT9",
+          "to": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+          "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+          "amountRaw": "1512141717407177290326",
+          "blockTs": 1794025356000,
+          "eventIndex": 17
+        },
+        {
+          "txid": "dcc656148b84263bfb49de5b245aab65ff24cbb4a6c7dccdc68bde9ee454f675",
+          "from": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+          "to": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+          "contract": "TXDk8mbtRbXeYuMNS83CfKPaYYT8XWv9Hz",
+          "amountRaw": "1512141717410000000000",
+          "blockTs": 1794025395000,
+          "eventIndex": 1
+        }
+      ],
+      "source": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "dust": false,
+      "asset": "USDD",
+      "decimals": 18,
+      "jToken": "TKFRELGGoRgiayhwJTNNLqCNjFoLBh3Mnf",
+      "operation": "Mint",
+      "verified": true,
+      "attributedRaw": null,
+      "actionIndex": 2,
+      "mintTokens": "15102236209265",
+      "note": "时间有序的同资产关联路径；混同资金的可归因金额未知。",
+      "review": {
+        "status": "confirmed",
+        "groupId": "USDD:TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+        "confirmedPrincipalRaw": "1512141717",
+        "note": "USDT来源、同笔PSM换币和后续USDD Mint均已核对；只计一次USDT来源本金。"
+      },
+      "conversionTxid": "f68e1d8ecf575dde0f8969ac5f4af0ad749edaf8e58164976ba73ce8f2880c9b"
+    }
+  ],
+  "groups": [
+    {
+      "id": "USDT:TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "address": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "56b1048c4c1bdcbdc5120c06a38733a5b75d012d9135ed445e43b31f2c225440"
+      ],
+      "grossRaw": "100000000000",
+      "lowerRaw": "0",
+      "upperRaw": "0",
+      "note": "原USDT路径经过换币；10万还款不能直接归因。另有已确认的USDD存入，来源本金不可重复计数。"
+    },
+    {
+      "id": "USDT:TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+      "address": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "e5a20f61dc0f554d3ad3acfe9a4e30ebd63f60252ac39b01160addd3ea9b53f9",
+        "38c56867ba72f71db7b12593bfde64f8f2ff776947a0ff598d6b560193c58c56"
+      ],
+      "grossRaw": "502657934",
+      "lowerRaw": "498800000",
+      "upperRaw": "498800000",
+      "note": "498.8 USDT收款前余额为零，随后全额还款；另一笔3.857934来自新的非MEXC已知来源。"
+    },
+    {
+      "id": "USDT:TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+      "address": "TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "42b674faf193cba0ec446eddcca7de2a5afdc2a04123abad7e5b5412e71acc17"
+      ],
+      "grossRaw": "300000000",
+      "lowerRaw": "0",
+      "upperRaw": "37590000",
+      "note": "37.59 USDT经中间钱包，时间间隔较长并有混同。"
+    },
+    {
+      "id": "USDT:TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+      "address": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "d93548f046455edfa4d581e416931b1836cb7d94e30cdeebcbd153bf417456e0",
+        "ab4ac03a9a717bccb3b2c6e2b9024fd19bcf35216306602fa21bf1430a29367d"
+      ],
+      "grossRaw": "2000000000",
+      "lowerRaw": "0",
+      "upperRaw": "400000000",
+      "note": "两笔存入共用400 USDT来源本金，上限合计计算。"
+    },
+    {
+      "id": "USDT:TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+      "address": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "72cb2be00fddaa8b9d549a7249f305048fdd4a2c7ceb81fb792311ade8096715"
+      ],
+      "grossRaw": "300000000000",
+      "lowerRaw": "0",
+      "upperRaw": "40992110000",
+      "note": "存款前多笔MEXC提款累计40,992.11 USDT，与其他资金混同，不能把30万全部归因。"
+    },
+    {
+      "id": "USDT:TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "address": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "13905c94b9dca33060908c4616536bc5b47f07753f398f35cbc29dabf987f79f",
+        "4dea6bd48af82218e70efdfbd11b394295738cd5afe9497340b080e0607b1695",
+        "1739ca83c449b95468604fe8abcc2e71ab0e0ede74fe3393b0580c9b22868866"
+      ],
+      "grossRaw": "700831838",
+      "lowerRaw": "0",
+      "upperRaw": "38",
+      "note": "MEXC款已兑换USDD并存入jUSDD；三笔USDT还款只可能包含0.000038 USDT残额。"
+    },
+    {
+      "id": "USDT:TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+      "address": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "14d3510969d3e1ae782c19c53a913b5533b457671c1122fc706a0d3add34d8de",
+        "31a7554e904c91ac2ea83a2892a6e7330109f8f3f698c22b54d1e1b0e402a74f"
+      ],
+      "grossRaw": "6971857614",
+      "lowerRaw": "0",
+      "upperRaw": "180185720",
+      "note": "高频钱包4次转入合计180.185720；进入SUN池后不自动延续跨交易权益归因。"
+    },
+    {
+      "id": "USDT:TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+      "address": "TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "462222382d77a6a5c7681a546d63beb3ea27df053b772f82a817f1da48c2d816"
+      ],
+      "grossRaw": "204100000000",
+      "lowerRaw": "0",
+      "upperRaw": "10000000",
+      "note": "能连接到该笔20.41万存款的中间转账仅10 USDT。"
+    },
+    {
+      "id": "USDT:TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+      "address": "TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "92e8dec2a8989a510ae031d967f4a9755efce8dcb202fc5875c72faf2fcaa420"
+      ],
+      "grossRaw": "33083000000",
+      "lowerRaw": "0",
+      "upperRaw": "33083000000",
+      "note": "中间钱包持续收到MEXC提款，但期初余额及其他收支允许零归因；对应jUSDT已全部赎回。"
+    },
+    {
+      "id": "USDT:TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "address": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "asset": "USDT",
+      "decimals": 6,
+      "txids": [
+        "04f5d570d9647fd00889cefd6c181a12ae9911803bd053361f12a0c249f59da4",
+        "43ebe2a739be54aa6bb48a62027abc33955e0ab56f51e7467a778722b6ff743d",
+        "d54a4cb89931f52f1a57edfabe560e35ebf88bd3c28ad49e16b84cc059f44643",
+        "01e349d564b65cb39f2129dd4e65c445209fbf232b9d02ab6b1c5dc04cf30386",
+        "fbb045532e4503d2994e2835a68d9aee0d133785f3d3d605605f4a63ecca6cdc",
+        "aeb71c62380389048ce7fbaff518000788b28fe10d909781fd12229cb3324e40",
+        "b8837f3d465cac3bb19c65c8fd6123ef7f68f546b6bda2c738982517cb69b934",
+        "0f635b07a3b8ef8897d1bc1dfe4e573fb9d4e1654ed0e00453e56a51d3624465",
+        "c4e165046e5f320b45ac8852f760603152a33d49c50653e1f56b9405f78a91e2"
+      ],
+      "grossRaw": "7490000000000",
+      "lowerRaw": "0",
+      "upperRaw": "9141827663",
+      "note": "频繁存取和重复周转；9笔合计去重上限9,141.827663，不能逐笔累加代表路径。当前jUSDT为零。"
+    },
+    {
+      "id": "USDD:TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "address": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "asset": "USDD",
+      "decimals": 18,
+      "txids": [
+        "b939099fe609bfdc5cd07fbaf6b938b5aab2cc0504392fa9a53764c4d396b8c8"
+      ],
+      "grossRaw": "13191448500000000000000",
+      "principalAsset": "USDT",
+      "lowerRaw": "13191448500",
+      "upperRaw": "13191448500",
+      "note": "已确认换币存入；来源本金以USDT计，存入量以USDD展示。"
+    },
+    {
+      "id": "USDD:TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "address": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "asset": "USDD",
+      "decimals": 18,
+      "txids": [
+        "dcc656148b84263bfb49de5b245aab65ff24cbb4a6c7dccdc68bde9ee454f675"
+      ],
+      "grossRaw": "1512141717410000000000",
+      "principalAsset": "USDT",
+      "lowerRaw": "1512141717",
+      "upperRaw": "1512141717",
+      "note": "已确认换币存入；来源本金以USDT计，存入量以USDD展示。"
+    }
+  ],
+  "confirmedSources": [
+    {
+      "txid": "7c34179c5dea82c04f7c988f9367d7bf31fe37ac921ab5fe347b90540858e1aa",
+      "principalRaw": "498800000",
+      "entryTxid": "38c56867ba72f71db7b12593bfde64f8f2ff776947a0ff598d6b560193c58c56"
+    },
+    {
+      "txid": "7467cfdec0483760192bb68c71d674c2a66dc0ef562a3b4714a6e69f92579390",
+      "principalRaw": "13191448500",
+      "entryTxid": "b939099fe609bfdc5cd07fbaf6b938b5aab2cc0504392fa9a53764c4d396b8c8"
+    },
+    {
+      "txid": "af1a2a9cf086be6014c0181a792602f8c23d302cfb3d5a79c58f1c6da0bd6b75",
+      "principalRaw": "1512141717",
+      "entryTxid": "dcc656148b84263bfb49de5b245aab65ff24cbb4a6c7dccdc68bde9ee454f675"
+    }
+  ],
+  "totals": {
+    "confirmedPrincipalRaw": "15202390217",
+    "confirmedRepaymentRaw": "498800000",
+    "confirmedConversionPrincipalRaw": "14703590217",
+    "sameAssetLowerRaw": "498800000",
+    "sameAssetUpperRaw": "84343513421",
+    "suspectedAdditionalUpperRaw": "83844713421",
+    "originalGrossRaw": "8137658347386"
+  },
+  "retention": [
+    {
+      "address": "TKsTkSS6WqnPbGfUGAwHFwbDozG7GxJwK7",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "41001157135",
+      "wholeRaw": "300066211296",
+      "status": "mixed",
+      "note": "该钱包现持份额中的归因上限；不代表全部存款来自MEXC。"
+    },
+    {
+      "address": "TKnNGLEzPLo43ePhUBUxdQ7eRUjFZUBcr7",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "37595726",
+      "wholeRaw": "300045703",
+      "status": "mixed",
+      "note": "该钱包现持份额中的归因上限；不代表全部存款来自MEXC。"
+    },
+    {
+      "address": "TTR3CKuUn8hDuftPNC8vnFEVxPjSkCXJ3n",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "400109864",
+      "wholeRaw": "3500443217",
+      "status": "mixed",
+      "note": "该钱包现持份额中的归因上限；不代表全部存款来自MEXC。"
+    },
+    {
+      "address": "TLYGQZhWki4XJXw4meEGUYrJW3d4BgNNDh",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "10003498",
+      "wholeRaw": "681474552936",
+      "status": "mixed",
+      "note": "该钱包现持份额中的归因上限；不代表全部存款来自MEXC。"
+    },
+    {
+      "address": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "45858",
+      "wholeRaw": "45858",
+      "status": "boundary",
+      "note": "钱包份额极少；AMM后续权益另列待核。"
+    },
+    {
+      "address": "TMMb3vKig35i1dnTGdraHfMQc5gRmJUdGY",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "0",
+      "wholeRaw": "0",
+      "status": "closed",
+      "note": "复核时点jUSDT余额为零，原存款已赎回。"
+    },
+    {
+      "address": "TM9Y3bCBCKBVsZUy8QLBtCG7bBodyrijBN",
+      "asset": "USDT",
+      "decimals": 6,
+      "lowerRaw": "0",
+      "upperRaw": "0",
+      "wholeRaw": "0",
+      "status": "closed",
+      "note": "复核时点jUSDT余额为零，原存款已赎回。"
+    },
+    {
+      "address": "TRntW1AEUekGBZJtKcrAMx9krFKanN791T",
+      "asset": "USDD",
+      "decimals": 18,
+      "lowerRaw": "0",
+      "upperRaw": "1512142013544175776689",
+      "wholeRaw": "1526792571134017532948443",
+      "status": "mixed",
+      "note": "后续有赎回、还款及再存入；不能确认该批份额全部留存。"
+    },
+    {
+      "address": "TYYCBNNXJoW2eGCf8jm2rR6afFo2o3cR3J",
+      "asset": "USDD",
+      "decimals": 18,
+      "lowerRaw": "13191453955000000000000",
+      "upperRaw": "13191453955794179495935",
+      "wholeRaw": "120497197681443772836383",
+      "status": "confirmed",
+      "note": "对应Mint份额此后没有转出或赎回；含利息。"
+    }
+  ],
+  "unresolved": [
+    {
+      "address": "TUXi9WFBa1irFTRD87x2qp7Swd7NZ1zQ2Z",
+      "sourcePrincipalUpperRaw": "180185720",
+      "reason": "jUSDT进入SUN池后发生跨交易转移；LP余额为零，公共池后的持有人归因未定。"
+    },
+    {
+      "address": "TZ96hJzGCfqXFHEcxbtYCNhQShycRVd4jj",
+      "sourcePrincipalRaw": "498800000",
+      "reason": "还款进入公共借贷池，不形成个人存款权益，现金剩余不可据钱包余额确定。"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Arkham MEXC实体",
+      "url": "https://arkm.com/explorer/entity/mexc"
+    },
+    {
+      "title": "JustLend市场合约",
+      "url": "https://docs.justlend.org/developers/deployed_contracts/"
+    },
+    {
+      "title": "USDD PSM合约",
+      "url": "https://docs.usdd.io/developers/deployment-addresses"
+    }
+  ]
+}

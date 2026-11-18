@@ -1,0 +1,358 @@
+{
+  "version": 1,
+  "entity": "mexc",
+  "chain": "tron",
+  "source": "https://arkm.com/explorer/entity/mexc",
+  "checkedAt": "2026-11-16",
+  "coverage": "partial",
+  "note": "2026-11-16 登录 Arkham 核对实体 TRON 转入列表及两个热钱包明细。已核对 2 个热钱包、37 个充值地址，均保留来源链接；仅为可访问标签子集。账号完整历史分页需 Enterprise，未据此声称地址库完整；交易对手和提款接收方不自动加入来源库。",
+  "addresses": [
+    {
+      "address": "TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "label": "MEXC: Hot Wallet",
+      "kind": "hot-wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TEPSrSYPDSQ7yXpMFPq91Fb1QEWpMkRGfn",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TBjMxDQafsMmTKBydsryiz4AZLpSDyEfbb",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TBjMxDQafsMmTKBydsryiz4AZLpSDyEfbb",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TWR2DjqQqJxxsLNS2N77g3VTFigF4gYcfw",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TWR2DjqQqJxxsLNS2N77g3VTFigF4gYcfw",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TXLCVMujZjdvdPizUkK9ZwW34k9AjNQ1D5",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TXLCVMujZjdvdPizUkK9ZwW34k9AjNQ1D5",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/833093e91942a13bd04e383e4d0d6ba58f1da98f555864a879dc1ba448e5b5c4"
+    },
+    {
+      "address": "TN9hiLRB5AkHMTrsia6cWUbXD14BSpcJ48",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TN9hiLRB5AkHMTrsia6cWUbXD14BSpcJ48",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/0c2c790ce1a10fc72201047b1bd2956b0c0820f19a9eb3c64f40248bec8cde1b"
+    },
+    {
+      "address": "TBDjSVnM2bvhJB9rJMAP57TbtgFYydcoz3",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TBDjSVnM2bvhJB9rJMAP57TbtgFYydcoz3",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/2428a6903ee9263ee7f60cfa3613ac32c69610527ee0b62abeeed85210d71547"
+    },
+    {
+      "address": "TV4tav38jgmeBHV924GnWLHHJzF7j9rGmD",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TV4tav38jgmeBHV924GnWLHHJzF7j9rGmD",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/4a4534cf9dac5cd6f0ccab727294eceea18fef7232572c8791f03c26b8a64d01"
+    },
+    {
+      "address": "TCTDwJLTTnm7jAo6DWPAZmRGjhG7qCd2wi",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TCTDwJLTTnm7jAo6DWPAZmRGjhG7qCd2wi",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/50fa69b429ff65a902e1357d953cd7077227b198d2fd084661fe792edd5a430e"
+    },
+    {
+      "address": "TXCqxvxmyBuKMyDijceCZnPaFkEMzNXM6y",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TXCqxvxmyBuKMyDijceCZnPaFkEMzNXM6y",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/64e52ec0010ff2b8b4aec95fc99543f461d828a9090e39360b6d2577ebebdd6f"
+    },
+    {
+      "address": "TFhzYAiw2hQwE52EvvyqBt4Y718EXMJu14",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TFhzYAiw2hQwE52EvvyqBt4Y718EXMJu14",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/8310f2a5e2e3c96d80a72f4c416cdcfea20f1f868c9d7c511611394db1ebb63b"
+    },
+    {
+      "address": "TTmSbz9fFrCDrCnpRbZ8C4ncCZS5r1g67K",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TTmSbz9fFrCDrCnpRbZ8C4ncCZS5r1g67K",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/993605276c9629dd0b02b2db7e0aaf7b838f4ddd7ad8e823cec6edeecb9cd408"
+    },
+    {
+      "address": "TCHaMBiuvvWD1MmrWX5TMe8cPAF5XQMLqq",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TCHaMBiuvvWD1MmrWX5TMe8cPAF5XQMLqq",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/bc4632e83eb2ee80f584e59578f1acc6fb6bb4beabc720a5a5b9216f047fc39b"
+    },
+    {
+      "address": "TAf3jZbB6iyehaGsgJ8Xvv6hbp7doV3Yu3",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TAf3jZbB6iyehaGsgJ8Xvv6hbp7doV3Yu3",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/c40b6d85e79a28172823448822a72f297c419cd4777188a99e04e49fe81213fe"
+    },
+    {
+      "address": "TBFwnsZrppymmT6N61fKipZ53g47b6Zcyn",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TBFwnsZrppymmT6N61fKipZ53g47b6Zcyn",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/d6c8ca3fc6b6186747f74e82e2b9e8ae0d8395f363569a37021024f3820c3076"
+    },
+    {
+      "address": "TKuKHqrnfwP4sVb7a2ufaPMD5RGCeg3eFd",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TKuKHqrnfwP4sVb7a2ufaPMD5RGCeg3eFd",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/ecfbaa84c2b807d1bd88a83250dfb990578c86d2471a6f5a91eda6bb1052755f"
+    },
+    {
+      "address": "TH7FhA61RvpL1BgKCMkG72RTp3vK7f75Jr",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TH7FhA61RvpL1BgKCMkG72RTp3vK7f75Jr",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/f27b419048f0e6fca5edc77bbb57ef1236255daf2a584c5addc537614eb76d43"
+    },
+    {
+      "address": "TECjqAdJWa8neGxFpmdnGiwixzoTPdHMGL",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TECjqAdJWa8neGxFpmdnGiwixzoTPdHMGL",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/9cb92848f8fe8b5066ddc3c95a22f0e7772702889201f34a695e4c31673acbee"
+    },
+    {
+      "address": "TAVrUTQXhaYaJY6sgKfK5JBb7UEyHkpRGD",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TAVrUTQXhaYaJY6sgKfK5JBb7UEyHkpRGD",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/49e03e2cff258b4a4b13195ecc89eb95a640f360743f8f1a49f297e6648cb7fd"
+    },
+    {
+      "address": "TRnNN7bKcJJ5zPcD81Ai6gBY6PNyVyfesX",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TRnNN7bKcJJ5zPcD81Ai6gBY6PNyVyfesX",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/5dd03bb68ad1da407ae47e333a5f99df44538a4606eab254b1410349c661af05"
+    },
+    {
+      "address": "TB7ND8uyHB8mardfRgkpsPsiSom5uuD7UV",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TB7ND8uyHB8mardfRgkpsPsiSom5uuD7UV",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/0665b9759a2db941376146e5b7221148dbfaefaec3fd25bc1f28e3e67cc49fb5"
+    },
+    {
+      "address": "TFC8fGvVgRmUJFgoPKF7LpUGTy95X7fN25",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TFC8fGvVgRmUJFgoPKF7LpUGTy95X7fN25",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/3de48cb4dd7350cacc00f091e97b9d7ed192bba45c79838e103638d8d3fbe61b"
+    },
+    {
+      "address": "TTM1teBYKoGqvXBAUgX3EDYEcxnPBS533a",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TTM1teBYKoGqvXBAUgX3EDYEcxnPBS533a",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/2f64c1ebe4a6cb13d328186aa8b67ef76c61eb0400af36308b90537b3de58081"
+    },
+    {
+      "address": "TEE36EMFweX3HR4j8RNxdFw98QLmxAEwAA",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TEE36EMFweX3HR4j8RNxdFw98QLmxAEwAA",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/45ffafa5d4ae16d4c0e92ecfb87a038f801b1ec2571281c975857b14b361f4ee"
+    },
+    {
+      "address": "TTYrKffP9U6i9KYNitrqmHVEjUM2JwGHzn",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TTYrKffP9U6i9KYNitrqmHVEjUM2JwGHzn",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/481f165324989f67621a97655235c1f76ded0f6d9454e0b3caf5b5e8886923fd"
+    },
+    {
+      "address": "TFm6gm8dMnAX5mDbATK9WcybhK85FQ2Sk4",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TFm6gm8dMnAX5mDbATK9WcybhK85FQ2Sk4",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/4b300b6ed98460b7b29c1ad1976c2fece0e02a6a3718ead215467735fbe0832c"
+    },
+    {
+      "address": "TFPWMPvPqxz6mVszmSDWzY2JsA7T3roULd",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TFPWMPvPqxz6mVszmSDWzY2JsA7T3roULd",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/23640a2f9ac2a0eb6d08e980b21326b45a78bf1904f7ffb36c3e54c7e11398e1"
+    },
+    {
+      "address": "TNNWtZhZq7XGzfV29z42BAh7sVWnC3hMDG",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TNNWtZhZq7XGzfV29z42BAh7sVWnC3hMDG",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/28c2d329d1cecc211645015d243b37fcdbf9de27e862819443a5e367c9575702"
+    },
+    {
+      "address": "TA9yBJVQsvv8na1KNhGVipgi9e54SdEWRo",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TA9yBJVQsvv8na1KNhGVipgi9e54SdEWRo",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/2e038fc6abccc492b9e4fdb84dd336fb00b5c188f3bbdd28cad17d340c7beaeb"
+    },
+    {
+      "address": "TKQgC8fowwDYw6YvY96j3FcbBvBfAbxXyG",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TKQgC8fowwDYw6YvY96j3FcbBvBfAbxXyG",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/21b2eafef32d6fefcf370f425a1ff7f098ceee8407a252bee9863ffd6bd567f1"
+    },
+    {
+      "address": "TSH46ZGLe8Jf5NyXiiikxZ4vRcXrs7sNBr",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TSH46ZGLe8Jf5NyXiiikxZ4vRcXrs7sNBr",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/46221d36664503614586eb04536b9d5db91cdcdc98c5ff14c9ba7ac807367dbc"
+    },
+    {
+      "address": "TUg1FXSeN8w3Bvn8mguFLHsZJtB5RLnmCs",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TUg1FXSeN8w3Bvn8mguFLHsZJtB5RLnmCs",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/49e4ef5269a42a5abf8173062b20126e0086de2b32624502595d9eeab66629e0"
+    },
+    {
+      "address": "TPQVjt5cc2JweF5csff36T32os1xyNXjX4",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TPQVjt5cc2JweF5csff36T32os1xyNXjX4",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/51ea04ca2d0ea8195363a3680e6a64ede04b6acc5c5cc53107dffce6d9b95232"
+    },
+    {
+      "address": "THeUEt8f6gyuuRxaYwreQQbFvBi6Drgvo6",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/THeUEt8f6gyuuRxaYwreQQbFvBi6Drgvo6",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/6601f940f885498e3e562123ef041b4e92636b24e61834480069adb135ddf33c"
+    },
+    {
+      "address": "TFezziusdiwTYgUFjt6baFNJavkSgQ6GBR",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TFezziusdiwTYgUFjt6baFNJavkSgQ6GBR",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/67333774bc45f8e60b05fc5414adbe68b644bcf41239795e324fd07d9552c702"
+    },
+    {
+      "address": "TRHYtSeKitrQAVtbMdXMY4qxAeBk7cUYR8",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TRHYtSeKitrQAVtbMdXMY4qxAeBk7cUYR8",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/90d3e13ef89f466c4f7e2352e601e12dde060799f15972fe8f1b3ae97199ec80"
+    },
+    {
+      "address": "TPzGpSZEgMwPCfiuWdKgKRoEHkUZhHzFJv",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TPzGpSZEgMwPCfiuWdKgKRoEHkUZhHzFJv",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/bfbc006a35db3da1facb6fa3ebf714497a516c2fdb4004cc91092275c2e4d1d6"
+    },
+    {
+      "address": "TUgUFwb9RXSHqt3dqi38hkG21vdgmvdBLH",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TUgUFwb9RXSHqt3dqi38hkG21vdgmvdBLH",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/c1403e3a3c0005ae387c964a217f073efe4e0f9d649f583fe5baba33497f5318"
+    },
+    {
+      "address": "TYd1Nqt2uQdsQrDLJwqU1zuzGKjU6AWZKh",
+      "label": "MEXC Deposit",
+      "kind": "deposit",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TYd1Nqt2uQdsQrDLJwqU1zuzGKjU6AWZKh",
+      "checkedAt": "2026-11-16",
+      "evidenceTransaction": "https://arkm.com/explorer/tx/f6552d8799f937fb3fab412fecf2470c541ffe89d15c97151f5ec2853fd736c3"
+    },
+    {
+      "address": "TB37WWozkkenGVYWD7Do2N5WT2CedqDktJ",
+      "label": "MEXC: Hot Wallet",
+      "kind": "hot-wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TB37WWozkkenGVYWD7Do2N5WT2CedqDktJ",
+      "checkedAt": "2026-11-16"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ const path = require("node:path");
 const { createXinbiMonitor } = require("./xinbi-monitor");
 const { JUSDT } = require("./xinbi-investigation");
 const { createProxyMonitor, decodePosition } = require("./proxy-monitor");
+const { readMexcSnapshot } = require("./mexc-monitor");
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, "config.json");
@@ -1664,7 +1665,7 @@ async function getSnapshotResponse({ forceRefresh = false } = {}) {
   const generatedAt = snapshotCache?.generatedAt ? new Date(snapshotCache.generatedAt).getTime() : 0;
   const stale = !generatedAt || Date.now() - generatedAt > refreshMs;
 
-  if (forceRefresh || stale || !snapshotCache) {
+  if (process.env.DASHBOARD_READ_ONLY !== "1" && (forceRefresh || stale || !snapshotCache)) {
     triggerSnapshotRefresh(forceRefresh ? "manual" : snapshotCache ? "stale" : "initial");
   }
 
@@ -1693,7 +1694,7 @@ async function startSnapshotService() {
 async function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const requested = url.pathname === "/" ? "/index.html" : url.pathname;
-  if (!["/index.html", "/app.js", "/styles.css", "/xinbi-ui.js", "/proxy-ui.js"].includes(requested)) {
+  if (!["/index.html", "/app.js", "/styles.css", "/xinbi-ui.js", "/proxy-ui.js", "/mexc-ui.js", "/dashboard-tabs.js"].includes(requested)) {
     res.writeHead(404); res.end("Not found"); return;
   }
   const filePath = path.normalize(path.join(ROOT, requested));
@@ -1738,6 +1739,12 @@ const xinbiMonitor = createXinbiMonitor({
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === "/api/mexc") {
+      if (req.method !== "GET") { res.setHeader("allow", "GET"); sendJson(res, 405, {error:"read only"}); return; }
+      try { sendJson(res, 200, await readMexcSnapshot(ROOT)); }
+      catch { sendJson(res, 503, {error:"MEXC 快照或地址清单读取失败，请检查本地采集状态"}); }
+      return;
+    }
     if (url.pathname === "/api/xinbi-proxy" && req.method === "GET") {
       try {
         sendJson(res, 200, proxyMonitor.getSnapshot({
@@ -1790,7 +1797,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (url.pathname === "/api/snapshot") {
-      if (url.searchParams.get("refresh") === "1") xinbiMonitor.refresh();
+      if (process.env.DASHBOARD_READ_ONLY !== "1" && url.searchParams.get("refresh") === "1") xinbiMonitor.refresh();
       const snapshot = await getSnapshotResponse({ forceRefresh: url.searchParams.get("refresh") === "1" });
       sendJson(res, 200, sanitizeSnapshotForPublic(snapshot));
       return;
@@ -1803,6 +1810,7 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) server.listen(PORT, HOST, () => {
   console.log(`JustLend live dashboard listening on http://${HOST}:${PORT}`);
+  if (process.env.DASHBOARD_READ_ONLY === "1") return;
   startSnapshotService().catch((error) => {
     console.error(`[snapshot] service failed: ${error.stack || error.message}`);
   });

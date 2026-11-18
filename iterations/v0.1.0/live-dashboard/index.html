@@ -14,12 +14,17 @@
         <h1>JustLend 外部资金风险监控</h1>
         <p>面向少数风险人员，优先呈现进入 JustLend 的风险线索、链上证据与监控覆盖边界。</p>
       </div>
-      <div class="header-actions">
+      <div class="header-actions" id="legacyHeaderActions">
         <button id="refreshBtn" class="btn primary">刷新数据</button>
         <span class="sync-meta">最近同步：<strong id="syncTime">--</strong></span>
       </div>
     </header>
 
+    <div class="workspace-tabs" role="tablist" aria-label="监控专项">
+      <button id="legacyTab" type="button" role="tab" aria-selected="true" aria-controls="legacyPanel">现有监控 <span>冻结 · 新币 · 代理</span></button>
+      <button id="mexcTab" type="button" role="tab" aria-selected="false" aria-controls="mexcPanel" tabindex="-1">MEXC 专项 <span>USDT · USDD</span></button>
+    </div>
+    <div id="legacyPanel" role="tabpanel" aria-labelledby="legacyTab">
     <nav class="dashboard-nav" aria-label="看板导航">
       <a href="#riskOverview">当前结论</a>
       <a href="#proxyMonitor">代理 E 监测</a>
@@ -96,7 +101,7 @@
         <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>出资地址</th><th>USDT</th><th>交易哈希</th><th>链上匹配</th></tr></thead><tbody id="proxyDeposits"></tbody></table></div>
       </details>
       <details><summary>E 转出的 jUSDT：接收地址及交易证据</summary>
-        <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>E → 接收地址</th><th>jUSDT</th><th>交易哈希</th></tr></thead><tbody id="proxyRights"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>E → 接收地址</th><th>jToken / 市场</th><th>交易哈希</th></tr></thead><tbody id="proxyRights"></tbody></table></div>
       </details>
       <details><summary>后续接收地址经 H 再存（不叠加入金总额）</summary>
         <div class="table-wrap"><table><thead><tr><th>北京时间</th><th>接收地址 → H → 市场</th><th>USDT</th><th>交易哈希</th></tr></thead><tbody id="proxyReentries"></tbody></table></div>
@@ -311,6 +316,55 @@
       <button id="configOpenBtn" class="btn secondary" type="button">查看配置状态</button>
       <span class="config-footer-copy">配置状态仅用于排查数据口径和地址库接入情况。</span>
     </section>
+    </div>
+
+    <div id="mexcPanel" role="tabpanel" aria-labelledby="mexcTab" hidden>
+      <section class="mexc-hero">
+        <div><div class="eyebrow">MEXC → JUSTLEND / TRON</div><h2>MEXC 相关资金流向</h2>
+          <p>核对来源本金、换币存入与留存权益；区分已确认资金和混同路径中的可能金额。</p>
+          <div class="mexc-tags"><span>TRON</span><span>USDT / jUSDT</span><span>USDD / jUSDD</span><span>近 30 天回查</span></div>
+        </div>
+        <div class="header-actions"><button type="button" class="btn primary" id="mexcRefresh">刷新专项数据</button><span id="mexcTime" class="sync-meta">等待首次读取</span></div>
+      </section>
+      <div id="mexcNotice" class="mexc-notice" role="status" aria-live="polite">正在读取专项快照，尚不能判断是否有流入。</div>
+      <div id="mexcReviewNote" class="mexc-review-note"></div>
+      <div class="mexc-metrics" id="mexcMetrics"></div>
+      <section class="card mexc-card mexc-deepening" id="mexcUSDTDeepening" hidden></section>
+      <section class="card mexc-card mexc-deepening" id="mexcDeepening" hidden></section>
+      <section class="card mexc-card" id="mexcRetentionSection">
+        <div class="section-head"><div><span class="section-kicker">01 / 留存权益</span><h2>当前留存 · 以复核时点为准</h2></div><span id="mexcRetentionTime" class="pill muted"></span></div>
+        <p class="section-copy">按仍持有的 jToken 权益计算。USDT 与 USDD 分开计量；还款进入公共池，不计为个人存款权益。钱包全额不等于 MEXC 可归因金额。</p>
+        <div id="mexcRetentionSummary" class="mexc-retention-summary"></div>
+        <div class="table-wrap"><table><thead><tr><th>钱包 / 市场</th><th>可归因留存</th><th>钱包全部存款</th><th>复核依据</th></tr></thead><tbody id="mexcRetention"></tbody></table></div>
+        <details><summary>公共池及其他待核留存</summary><div id="mexcUnresolved"></div></details>
+      </section>
+      <section class="card mexc-card">
+        <div class="section-head"><div><span class="section-kicker">02 / 交易复核</span><h2>来源、换币与 JustLend 入金</h2></div><span id="mexcCount" class="pill muted">等待数据</span></div>
+        <div class="mexc-toolbar"><label>关联强度 <select id="mexcStrength"><option value="all">全部强度</option><option value="confirmed">已确认</option><option value="mixed">中 · 存在混同</option><option value="weak">弱 · 间接关联</option><option value="diverted">未增加可归因本金</option><option value="pending">新增待复核</option></select></label><label>资产 <select id="mexcAsset"><option value="all">全部资产</option><option value="USDT">USDT</option><option value="USDD">USDD</option></select></label><label>路径 <select id="mexcKind"><option value="all">全部路径</option><option value="direct">直接入金</option><option value="wallet">钱包中转</option><option value="contract">合约路径</option><option value="conversion">USDT → USDD 换币</option></select></label>
+          <label>时间 <select id="mexcPeriod"><option value="30">近 30 天</option><option value="7">近 7 天</option><option value="1">近 24 小时</option></select></label><span>北京时间 · 展开记录查看每一跳</span></div>
+        <p class="section-copy">筛选仅作用于下方明细，顶部金额保留完整复核范围。多笔交易共享同一来源时，展示分组去重上限，不逐笔累加。</p>
+        <div id="mexcEvents" class="mexc-events"></div>
+      </section>
+      <section class="card mexc-card">
+        <div class="section-head"><div><span class="section-kicker">03 / 持续采集</span><h2>jUSDT / jUSDD 转手与持仓快照</h2></div><span class="pill muted">独立口径</span></div>
+        <p class="section-copy">由已核验的 Mint 交易开始追踪，最多 4 次权益转手。关联钱包持仓含其他来源资金，与入金金额不可相加。</p>
+        <details><summary>关联钱包持仓快照 <span id="mexcPositionCount"></span></summary>
+          <p id="mexcPositionNote" class="section-copy"></p>
+          <div class="table-wrap"><table><thead><tr><th>关联钱包</th><th>jToken 份额</th><th>全部存款权益</th><th>借款</th><th>读取状态 / 北京时间</th></tr></thead><tbody id="mexcPositions"></tbody></table></div>
+        </details>
+        <details><summary>jToken 权益转手 <span id="mexcRightsCount"></span></summary><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>发送方 → 接收方</th><th>jToken / 市场</th><th>交易证据</th></tr></thead><tbody id="mexcRights"></tbody></table></div></details>
+        <details><summary>赎回记录 <span id="mexcRedeemCount"></span></summary><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>赎回地址</th><th>份额 / 底层资产</th><th>核验 / 交易</th></tr></thead><tbody id="mexcRedeems"></tbody></table></div></details>
+        <details><summary>合约跨交易转手 · 待核 <span id="mexcAmbiguousCount"></span></summary><p class="section-copy">仅为等量转出候选，不能确认接收人权益来自该批资金；不自动继续归因。</p><div class="table-wrap"><table><thead><tr><th>北京时间</th><th>合约 → 接收方</th><th>jToken / 市场</th><th>交易证据</th></tr></thead><tbody id="mexcAmbiguous"></tbody></table></div></details>
+      </section>
+      <section class="card mexc-card">
+        <div class="section-head"><div><span class="section-kicker">04 / 来源与覆盖</span><h2>地址依据与监控边界</h2></div><a href="https://arkm.com/explorer/entity/mexc" target="_blank" rel="noopener noreferrer">查看 Arkham 实体 ↗</a></div>
+        <p id="mexcSourceNote" class="section-copy"></p>
+        <div class="table-wrap"><table><thead><tr><th>已核对地址</th><th>Arkham 标签</th><th>核对日期</th><th>USDT 冻结状态 / 检查时间</th></tr></thead><tbody id="mexcSources"></tbody></table></div>
+        <div id="mexcMarketCoverage" class="mexc-market-coverage"></div><div id="mexcCoverage" class="mexc-coverage"></div>
+        <details><summary>口径、扫描限制与异常详情</summary><ul id="mexcLimitations"></ul><div id="mexcErrors"></div></details>
+        <p class="mexc-legal">监管事件、Arkham 标签和 USDT 链上冻结是三个独立维度。此页用于核查链上关联，不自动认定制裁命中或洗钱。</p>
+      </section>
+    </div>
   </main>
 
   <div class="modal-backdrop" id="configModal" aria-hidden="true">
@@ -368,5 +422,7 @@
   <script src="./app.js"></script>
   <script src="./xinbi-ui.js"></script>
   <script src="./proxy-ui.js"></script>
+  <script src="./mexc-ui.js"></script>
+  <script src="./dashboard-tabs.js"></script>
 </body>
 </html>

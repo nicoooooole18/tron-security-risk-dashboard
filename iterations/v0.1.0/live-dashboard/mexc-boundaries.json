@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "addresses": [
+    {
+      "address": "TAT51WDhqSgozpH5pypBkEhe9kYXBAF8XJ",
+      "label": "Mixin: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TAT51WDhqSgozpH5pypBkEhe9kYXBAF8XJ",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TBA6CypYJizwA9XdC7Ubgc5F1bxrQ7SqPt",
+      "label": "Gate: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TBA6CypYJizwA9XdC7Ubgc5F1bxrQ7SqPt",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TDqSquXBgUCLYvYC4XZgrprLK589dkhSCf",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TDqSquXBgUCLYvYC4XZgrprLK589dkhSCf",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TYASr5UV6HEcXatwdFQfmLVUqQQQMUxHLS",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TYASr5UV6HEcXatwdFQfmLVUqQQQMUxHLS",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TNXoiAJ3dct8Fjg4M9fkLFh9S2v9TXc32G",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TNXoiAJ3dct8Fjg4M9fkLFh9S2v9TXc32G",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TJDENsfBJs4RFETt1X1W8wMDc8M5XnJhCe",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TJDENsfBJs4RFETt1X1W8wMDc8M5XnJhCe",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TQrY8tryqsYVCYS3MFbtffiPp2ccyn4STm",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TQrY8tryqsYVCYS3MFbtffiPp2ccyn4STm",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TJ5usJLLwjwn7Pw3TPbdzreG7dvgKzfQ5y",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TJ5usJLLwjwn7Pw3TPbdzreG7dvgKzfQ5y",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TCLgK89AnXbC9rewvhNb9UgXCc2qJJpBXh",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TCLgK89AnXbC9rewvhNb9UgXCc2qJJpBXh",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TAzsQ9Gx8eqFNFSKbeXrbi45CuVPHzA8wr",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TAzsQ9Gx8eqFNFSKbeXrbi45CuVPHzA8wr",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TLaGjwhvA8XQYSxFAcAXy7Dvuue9eGYitv",
+      "label": "OKX: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TLaGjwhvA8XQYSxFAcAXy7Dvuue9eGYitv",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TK4ykR48cQQoyFcZ5N4xZCbsBaHcg6n3gJ",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TK4ykR48cQQoyFcZ5N4xZCbsBaHcg6n3gJ",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TX5XiRXdyz7sdFwF5mnhT1QoGCpbkncpke",
+      "label": "NEAR Intents: Bridge Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TX5XiRXdyz7sdFwF5mnhT1QoGCpbkncpke",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TYR4w7SWcaWCHHoTvvR5aVWh6y7pa6wgdK",
+      "label": "Sher888: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TYR4w7SWcaWCHHoTvvR5aVWh6y7pa6wgdK",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TWhDfwC8QE6pQyiYy248dNor3uphPEw5M2",
+      "label": "Poloniex: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TWhDfwC8QE6pQyiYy248dNor3uphPEw5M2",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TJTKCzQpsG19CSMYF9TPtxz6wSHPSyeKfa",
+      "label": "Binance: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TJTKCzQpsG19CSMYF9TPtxz6wSHPSyeKfa",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TDoXUNZ6PajKuiUkcYg3EDSV9bnqGqsbcf",
+      "label": "FixedFloat: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TDoXUNZ6PajKuiUkcYg3EDSV9bnqGqsbcf",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TBAPnuwEht65McDbxDvDYs2XLRSSbYQMUM",
+      "label": "THORChain: Vault",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TBAPnuwEht65McDbxDvDYs2XLRSSbYQMUM",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "THPaGKe6aZkUcNht24hcscZPLwtcJAbpun",
+      "label": "THORChain: Vault",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/THPaGKe6aZkUcNht24hcscZPLwtcJAbpun",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TCTSGYpsV7hjvaFDrjzcvWr9UU7pWyjHnR",
+      "label": "Cobo.com: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TCTSGYpsV7hjvaFDrjzcvWr9UU7pWyjHnR",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TXFBqBbqJommqZf7BV8NNYzePh97UmJodJ",
+      "label": "Bitfinex: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TXFBqBbqJommqZf7BV8NNYzePh97UmJodJ",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TUpHuDkiCCmwaTZBHZvQdwWzGNm5t8J2b9",
+      "label": "KuCoin: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TUpHuDkiCCmwaTZBHZvQdwWzGNm5t8J2b9",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TYVWGh8XkmU49Hi9PkGAZXiiJPB3J5zJZy",
+      "label": "Relay.link: Solver",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TYVWGh8XkmU49Hi9PkGAZXiiJPB3J5zJZy",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TAZ6b1ihx6k6sw5zSgXRyq9FaWy9PHGg3a",
+      "label": "BVNK: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TAZ6b1ihx6k6sw5zSgXRyq9FaWy9PHGg3a",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TTRMwhxtUdgykYPoeq6eEUKLmj26Y4KtcG",
+      "label": "BingX: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TTRMwhxtUdgykYPoeq6eEUKLmj26Y4KtcG",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TRou4EavgzEMoBp3V93LNaaiKY3Y3Rg5Cx",
+      "label": "LBank: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TRou4EavgzEMoBp3V93LNaaiKY3Y3Rg5Cx",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TZ8Ksz21Hk1tQuztCKCUJBRXStCav9uyjM",
+      "label": "Stake.com: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TZ8Ksz21Hk1tQuztCKCUJBRXStCav9uyjM",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TQgxyP1jDXGBvmgwqnJ7jKkEqWEogfRM5V",
+      "label": "Well Wallet: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TQgxyP1jDXGBvmgwqnJ7jKkEqWEogfRM5V",
+      "serviceSource": "https://www.wellwallet.io/terms-of-use",
+      "checkedAt": "2026-11-16"
+    },
+    {
+      "address": "TL9ihHWHkqXd11HFdCtyTx2r6qmVH7cfJg",
+      "label": "Swapster: Hot Wallet",
+      "status": "verified",
+      "source": "https://arkm.com/explorer/address/TL9ihHWHkqXd11HFdCtyTx2r6qmVH7cfJg",
+      "serviceSource": "https://swapster.fi/wallet.html",
+      "checkedAt": "2026-11-16"
+    }
+  ]
+}
